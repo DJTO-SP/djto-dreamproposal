@@ -302,7 +302,7 @@ textarea.fi { resize:vertical; }
             <input type="file" id="e_pdf_file" accept=".pdf,.png,.jpg,.jpeg" style="display:none" onchange="fillFilename('e_pdf_file','e_pdf')">
             <button class="pdf-preview-btn" onclick="previewPdf('e_pdf')">미리보기</button>
           </div>
-          <div class="fi-hint">📁 <b>attachments</b> 폴더 안에 있는 파일을 선택하면 파일명이 자동 입력됩니다.</div>
+          <div class="fi-hint">📁 연도 폴더(2017, 2018...) 안에 있는 파일을 선택하면 경로가 자동 입력됩니다.</div>
         </div>
       </div>
       <div class="edit-actions">
@@ -432,7 +432,7 @@ textarea.fi { resize:vertical; }
               <input type="file" id="f_pdf_file" accept=".pdf,.png,.jpg,.jpeg" style="display:none" onchange="fillFilename('f_pdf_file','f_pdf')">
               <button class="pdf-preview-btn" onclick="previewPdf('f_pdf')">미리보기</button>
             </div>
-            <div class="fi-hint">📁 <b>attachments</b> 폴더 안에 있는 파일을 선택하면 파일명이 자동 입력됩니다.</div>
+            <div class="fi-hint">📁 연도 폴더(2017, 2018...) 안에 있는 파일을 선택하면 경로가 자동 입력됩니다.</div>
           </div>
         </div>
         <div class="form-actions">
@@ -562,8 +562,10 @@ function fillFilename(fileInputId, textInputId) {
   var file = document.getElementById(fileInputId).files[0];
   if (!file) return;
   var fname = file.name;
-  // 파일명 입력란에 파일명 세팅
-  document.getElementById(textInputId).value = fname;
+  // 파일명 앞에 연도 폴더 자동 추가 (2017_01_... → 2017/2017_01_...)
+  var yearMatch = fname.match(/^(\d{4})[_-]/);
+  var storedName = yearMatch ? yearMatch[1] + '/' + fname : fname;
+  document.getElementById(textInputId).value = storedName;
 
   var isForm = textInputId === 'f_pdf';
   var titleId  = isForm ? 'f_title'  : 'e_title';
