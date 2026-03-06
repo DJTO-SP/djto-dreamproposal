@@ -454,7 +454,11 @@ function loadFromSheet() {
   fetch(SHEET_URL)
     .then(function(r){ return r.text(); })
     .then(function(text) {
-      var json = JSON.parse(text.replace(/^.*?\(/, '').replace(/\);?$/, ''));
+      // 구글 시트 응답에서 JSON 부분만 추출
+      var start = text.indexOf('{');
+      var end = text.lastIndexOf('}');
+      var jsonStr = text.substring(start, end + 1);
+      var json = JSON.parse(jsonStr);
       var rows = json.table.rows;
       var cols = json.table.cols.map(function(c){ return c.label; });
       function get(r, label) {
