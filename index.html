@@ -445,6 +445,49 @@ textarea.fi { resize:vertical; }
 </main>
 
 <script>
+
+// ── 구글 시트 연동 ──────────────────────────────
+var SHEET_ID = '1TzKHf4QxH8XqB05duVSXlSdM42_ThGJuy0C1Qewvywo';
+var SHEET_URL = 'https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:json&sheet=Sheet1';
+
+function loadFromSheet() {
+  fetch(SHEET_URL)
+    .then(function(r){ return r.text(); })
+    .then(function(text) {
+      var json = JSON.parse(text.replace(/^.*?\(/, '').replace(/\);?$/, ''));
+      var rows = json.table.rows;
+      var cols = json.table.cols.map(function(c){ return c.label; });
+      function get(r, label) {
+        var idx = cols.indexOf(label);
+        return idx >= 0 && r.c[idx] ? String(r.c[idx].v||'') : '';
+      }
+      DATA = rows.filter(function(r){ return r.c && r.c[0] && r.c[0].v; }).map(function(r, i) {
+        var seq = get(r, '순번');
+        var year = seq.match(/^(\d{4})/)?.[1] || '';
+        var kw = get(r, '키워드');
+        return {
+          id: Date.now() + i,
+          title:    get(r, '제목'),
+          proposer: get(r, '제안자'),
+          dept:     get(r, '부서'),
+          period:   year,
+          category: get(r, '분류'),
+          award:    get(r, '심사결과'),
+          summary:  get(r, '요약') + (kw ? ' [키워드: '+kw+']' : ''),
+          pdf:      get(r, '첨부파일'),
+          seq:      seq
+        };
+      });
+      renderAll();
+      showToast('시트에서 ' + DATA.length + '건 불러왔습니다', 'ok');
+    })
+    .catch(function(e) {
+      showToast('시트 불러오기 실패: ' + e.message, 'err');
+    });
+}
+// ────────────────────────────────────────────────
+
+
 // ★ 관리자 비밀번호 ★
 var ADMIN_PW = "1234";
 
