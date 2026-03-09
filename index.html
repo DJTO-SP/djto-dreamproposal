@@ -207,6 +207,25 @@ textarea.fi { resize:vertical; }
 .summary-lines { line-height:1.85; }
 .summary-lines .sl { display:block; padding-left:4px; }
 
+/* 인라인 빠른편집 셀렉트 */
+.inline-sel { padding:3px 6px; border:1.5px solid #dde5f0; border-radius:6px; font-size:12px; background:#f6f8fd; font-family:inherit; outline:none; cursor:pointer; }
+.inline-sel:focus { border-color:var(--blue); }
+
+/* 연도/분류 탭 네비 */
+.sub-nav { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px; }
+.sub-nav-btn { padding:8px 18px; border-radius:10px; border:2px solid #dde5f0; background:#fff; font-weight:700; font-size:14px; color:#556; cursor:pointer; font-family:inherit; transition:all .15s; }
+.sub-nav-btn:hover { border-color:var(--blue); color:var(--blue); }
+.sub-nav-btn.on { background:var(--navy); border-color:var(--navy); color:#fff; }
+.sub-panel { display:none; } .sub-panel.on { display:block; }
+
+/* 이전/다음 네비 */
+.detail-nav { display:flex; justify-content:space-between; align-items:center; margin-top:20px; padding-top:18px; border-top:1px solid var(--lgray); }
+.det-nav-btn { display:flex; align-items:center; gap:8px; padding:9px 18px; border-radius:10px; border:1.5px solid #dde5f0; background:#fff; font-weight:600; font-size:13px; color:#445; cursor:pointer; font-family:inherit; transition:all .15s; max-width:45%; }
+.det-nav-btn:hover { border-color:var(--blue); color:var(--blue); background:#f0f5ff; }
+.det-nav-btn:disabled { opacity:.3; cursor:default; pointer-events:none; }
+.det-nav-title { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; }
+.det-nav-pos { color:#aaa; font-size:12px; font-weight:600; }
+
 /* 잠금 */
 .locked-notice { background:#f0f4ff; border:1.5px dashed #b0c4e8; border-radius:12px; padding:40px; text-align:center; color:#557; font-size:14px; line-height:1.9; }
 .lock-big { font-size:38px; margin-bottom:10px; }
@@ -360,10 +379,16 @@ textarea.fi { resize:vertical; }
   </div>
 
   <!-- 연도별 -->
-  <div class="tab-content" id="tab-year"><div id="yearArea"></div></div>
+  <div class="tab-content" id="tab-year">
+    <div class="sub-nav" id="yearNav"></div>
+    <div id="yearArea"></div>
+  </div>
 
   <!-- 분류별 -->
-  <div class="tab-content" id="tab-cat"><div id="catArea"></div></div>
+  <div class="tab-content" id="tab-cat">
+    <div class="sub-nav" id="catNav"></div>
+    <div id="catArea"></div>
+  </div>
 
   <!-- 채택제안 -->
   <div class="tab-content" id="tab-adopted"><div id="adoptedArea"></div></div>
@@ -727,7 +752,7 @@ function renderTable() {
     {key:'title',  label:'제목',   w:''},
     ...(isAdmin?[{key:'proposer',label:'제안자',w:'80px'},{key:'dept',label:'부서',w:'100px'}]:[]),
     {key:'category',label:'분류',  w:'130px'},
-    {key:'award',  label:'심사결과',w:'100px'},
+    {key:'award',  label:'심사결과',w:'120px'},
     {key:'period', label:'기간',   w:'110px'},
     {key:'pdf',    label:'PDF',    w:'50px'},
   ];
@@ -739,21 +764,43 @@ function renderTable() {
     document.getElementById('tblBody').innerHTML='<tr><td colspan="'+cols.length+'" class="empty">검색 결과가 없습니다.</td></tr>';
     return;
   }
-  document.getElementById('tblBody').innerHTML=list.map((d,i)=>
-    '<tr onclick="openDetail('+d.id+')">'
-    +'<td class="num">'+String(i+1).padStart(2,'0')+'</td>'
-    +titleCell(d)
-    +(isAdmin?'<td style="font-size:13px;color:#445">'+esc(d.proposer)+'</td><td style="font-size:12px;color:#667">'+esc(d.dept)+'</td>':'')
-    +'<td>'+catBadge(d.category)+'</td>'
-    +'<td>'+awardBadge(d.award)+'</td>'
-    +'<td>'+periodBadge(d.period)+'</td>'
-    +'<td style="text-align:center">'+(d.pdf?'<span title="'+esc(d.pdf)+'">📄</span>':'')+'</td>'
-    +'</tr>'
-  ).join('');
+  document.getElementById('tblBody').innerHTML=list.map((d,i)=>{
+    var catCell, awardCell;
+    if (isAdmin) {
+      var catOpts=['관광아이디어 발굴','조직혁신','사회적가치실현','기타'].map(v=>'<option'+(d.category===v?' selected':'')+'>'+v+'</option>').join('');
+      catCell='<td onclick="event.stopPropagation()"><select class="inline-sel" onchange="quickEdit('+d.id+',\'category\',this.value)">'+catOpts+'</select></td>';
+      var awdOpts=AWARD_LABELS.map(v=>'<option'+(d.award===v?' selected':'')+'>'+v+'</option>').join('');
+      awardCell='<td onclick="event.stopPropagation()"><select class="inline-sel" onchange="quickEdit('+d.id+',\'award\',this.value)">'+awdOpts+'</select></td>';
+    } else {
+      catCell='<td>'+catBadge(d.category)+'</td>';
+      awardCell='<td>'+awardBadge(d.award)+'</td>';
+    }
+    return '<tr onclick="openDetail('+d.id+')">'
+      +'<td class="num">'+String(i+1).padStart(2,'0')+'</td>'
+      +titleCell(d)
+      +(isAdmin?'<td style="font-size:13px;color:#445">'+esc(d.proposer)+'</td><td style="font-size:12px;color:#667">'+esc(d.dept)+'</td>':'')
+      +catCell+awardCell
+      +'<td>'+periodBadge(d.period)+'</td>'
+      +'<td style="text-align:center">'+(d.pdf?'<span title="'+esc(d.pdf)+'">📄</span>':'')+'</td>'
+      +'</tr>';
+  }).join('');
 }
 function doSort(col) { sortDir=(sortCol===col)?sortDir*-1:-1; sortCol=col; renderTable(); }
 
+// ── 빠른 편집 ────────────────────────────────────────
+function quickEdit(id, field, val) {
+  var idx=DATA.findIndex(x=>x.id===id); if(idx===-1) return;
+  DATA[idx][field]=val;
+  showToast('저장됐습니다!','ok'); showSave();
+  // 상세보기가 열려있으면 갱신
+  if(_curId===id) openDetail(id);
+}
+
 // ── 상세 ─────────────────────────────────────────────
+function getDetailList() {
+  // 현재 필터 기준 목록 반환 (상세 이전/다음용)
+  return getFiltered();
+}
 function openDetail(id) {
   var d=DATA.find(x=>x.id===id); if(!d) return;
   _curId=id;
@@ -790,6 +837,17 @@ function openDetail(id) {
   } else {
     pdfHtml='<div class="dbox" style="margin-bottom:14px"><div class="dbox-lbl">📎 첨부 파일</div><div class="dbox-txt" style="color:#bbb">첨부 파일 없음</div></div>';
   }
+  // 이전/다음 버튼
+  var list=getDetailList();
+  var idx=list.findIndex(x=>x.id===id);
+  var prev=list[idx-1], next=list[idx+1];
+  var navHtml='<div class="detail-nav">'
+    +'<button class="det-nav-btn" '+(prev?'onclick="openDetail('+prev.id+')"':'disabled')+'>'
+    +'◀ <span class="det-nav-title">'+(prev?esc(prev.title):'처음입니다')+'</span></button>'
+    +'<span class="det-nav-pos">'+(idx+1)+' / '+list.length+'</span>'
+    +'<button class="det-nav-btn" '+(next?'onclick="openDetail('+next.id+')"':'disabled')+'>'
+    +'<span class="det-nav-title">'+(next?esc(next.title):'마지막입니다')+'</span> ▶</button>'
+    +'</div>';
   document.getElementById('detailBody').innerHTML=
     '<div class="detail-top">'
     +'<div class="detail-cat-ico" style="background:'+cc+'1a">'+( CAT_ICON[d.category]||'💡')+'</div>'
@@ -798,7 +856,8 @@ function openDetail(id) {
     +'</div>'
     +'<div class="dbox" style="margin-bottom:14px"><div class="dbox-lbl">💬 요약</div><div class="dbox-txt summary-lines">'+fmtSummary(d.summary||'요약 없음')+'</div>'+(d.keywords?'<div style="margin-top:10px">'+fmtKeywords(d.keywords)+'</div>':'')+'</div>'
     +pdfHtml
-    +'<div class="award-flow"><div class="af-lbl">심사 결과 단계</div><div class="af-steps">'+steps+'</div></div>';
+    +'<div class="award-flow"><div class="af-lbl">심사 결과 단계</div><div class="af-steps">'+steps+'</div></div>'
+    +navHtml;
 }
 function closeDetail() {
   document.getElementById('detailCard').style.display='none';
@@ -807,84 +866,134 @@ function closeDetail() {
 }
 
 // ── 연도별 ───────────────────────────────────────────
+var _curYear = null;
 function renderYear() {
   var periods=[...new Set(DATA.map(d=>d.period))].sort((a,b)=>periodSort(b)-periodSort(a));
   if (!periods.length) { document.getElementById('yearArea').innerHTML='<div class="card"><div class="empty">등록된 제안이 없습니다.</div></div>'; return; }
   var yearGroups={};
   periods.forEach(p=>{ var y=parseInt(p); if(!yearGroups[y]) yearGroups[y]=[]; yearGroups[y].push(p); });
-  document.getElementById('yearArea').innerHTML=Object.keys(yearGroups).sort((a,b)=>b-a).map(yr=>{
-    var all=DATA.filter(d=>parseInt(d.period)===parseInt(yr));
-    var adopted=all.filter(d=>ADOPTED.has(d.award)).length, top=all.filter(d=>d.award==='최우수').length, rev=all.filter(d=>d.award==='심사중').length;
-    var inner=yearGroups[yr].map(p=>{
-      var list=DATA.filter(d=>d.period===p);
-      var sub=p.includes('상반기')?'🌱 상반기':p.includes('하반기')?'🍂 하반기':'';
-      var rows=list.map((d,i)=>'<tr onclick="switchTab(\'list\',document.querySelectorAll(\'.nav-btn\')[0]);setTimeout(()=>openDetail('+d.id+'),50)">'
-        +'<td class="num">'+String(i+1).padStart(2,'0')+'</td>'+titleCell(d)
-        +'<td>'+catBadge(d.category)+'</td><td>'+awardBadge(d.award)+'</td>'
-        +'<td style="text-align:center">'+(d.pdf?(['png','jpg','jpeg'].includes(d.pdf.split('.').pop().toLowerCase())?'🖼️':'📄'):'')+'</td></tr>').join('');
-      return (sub?'<tr style="background:#f6f8fd"><td colspan="5" style="padding:8px 14px 4px;font-weight:700;font-size:12px;color:#778;border-bottom:none">'+sub+'</td></tr>':'')+rows;
-    }).join('');
-    return '<div class="yr-section"><div class="yr-hdr" style="background:linear-gradient(90deg,var(--navy),#2c4a8a)">'
-      +'<div class="yr-title">'+yr+'년</div><div class="yr-chips">'
-      +'<div class="yr-chip"><div class="yv yv1">'+all.length+'건</div><div class="yl">전체</div></div>'
-      +'<div class="yr-chip"><div class="yv yv2">'+adopted+'건</div><div class="yl">채택</div></div>'
-      +'<div class="yr-chip"><div class="yv yv3">'+rev+'건</div><div class="yl">심사중</div></div>'
-      +'<div class="yr-chip"><div class="yv yv4">'+top+'건</div><div class="yl">최우수</div></div>'
-      +'</div></div>'
-      +'<div class="tbl-wrap"><table><thead><tr>'
-      +'<th style="width:44px">번호</th><th>제목</th><th style="width:130px">분류</th><th style="width:100px">결과</th><th style="width:44px">PDF</th>'
-      +'</tr></thead><tbody>'+inner+'</tbody></table></div></div>';
+  var years=Object.keys(yearGroups).sort((a,b)=>b-a);
+  if (!_curYear || !yearGroups[_curYear]) _curYear=years[0];
+  // 서브 탭 버튼
+  document.getElementById('yearNav').innerHTML=years.map(yr=>
+    '<button class="sub-nav-btn'+(yr==_curYear?' on':'')+'" onclick="selectYear('+yr+')">📅 '+yr+'년</button>'
+  ).join('');
+  showYearPanel(_curYear, yearGroups);
+}
+function selectYear(yr) {
+  _curYear=yr;
+  var periods=[...new Set(DATA.map(d=>d.period))].sort((a,b)=>periodSort(b)-periodSort(a));
+  var yearGroups={};
+  periods.forEach(p=>{ var y=parseInt(p); if(!yearGroups[y]) yearGroups[y]=[]; yearGroups[y].push(p); });
+  var years=Object.keys(yearGroups).sort((a,b)=>b-a);
+  document.querySelectorAll('#yearNav .sub-nav-btn').forEach((btn,i)=>{
+    btn.classList.toggle('on', years[i]==yr);
+  });
+  showYearPanel(yr, yearGroups);
+}
+function showYearPanel(yr, yearGroups) {
+  var all=DATA.filter(d=>parseInt(d.period)===parseInt(yr));
+  var adopted=all.filter(d=>ADOPTED.has(d.award)).length, top=all.filter(d=>d.award==='최우수').length, rev=all.filter(d=>d.award==='심사중').length;
+  var inner=yearGroups[yr].map(p=>{
+    var list=DATA.filter(d=>d.period===p);
+    var sub=p.includes('상반기')?'🌱 상반기':p.includes('하반기')?'🍂 하반기':'';
+    var rows=list.map((d,i)=>'<tr onclick="switchTab(\'list\',document.querySelectorAll(\'.nav-btn\')[0]);setTimeout(()=>openDetail('+d.id+'),50)">'
+      +'<td class="num">'+String(i+1).padStart(2,'0')+'</td>'+titleCell(d)
+      +'<td>'+catBadge(d.category)+'</td><td>'+awardBadge(d.award)+'</td>'
+      +'<td style="text-align:center">'+(d.pdf?(['png','jpg','jpeg'].includes(d.pdf.split('.').pop().toLowerCase())?'🖼️':'📄'):'')+'</td></tr>').join('');
+    return (sub?'<tr style="background:#f6f8fd"><td colspan="5" style="padding:8px 14px 4px;font-weight:700;font-size:12px;color:#778;border-bottom:none">'+sub+'</td></tr>':'')+rows;
   }).join('');
+  document.getElementById('yearArea').innerHTML=
+    '<div class="yr-section"><div class="yr-hdr" style="background:linear-gradient(90deg,var(--navy),#2c4a8a)">'
+    +'<div class="yr-title">'+yr+'년</div><div class="yr-chips">'
+    +'<div class="yr-chip"><div class="yv yv1">'+all.length+'건</div><div class="yl">전체</div></div>'
+    +'<div class="yr-chip"><div class="yv yv2">'+adopted+'건</div><div class="yl">채택</div></div>'
+    +'<div class="yr-chip"><div class="yv yv3">'+rev+'건</div><div class="yl">심사중</div></div>'
+    +'<div class="yr-chip"><div class="yv yv4">'+top+'건</div><div class="yl">최우수</div></div>'
+    +'</div></div>'
+    +'<div class="tbl-wrap"><table><thead><tr>'
+    +'<th style="width:44px">번호</th><th>제목</th><th style="width:130px">분류</th><th style="width:100px">결과</th><th style="width:44px">PDF</th>'
+    +'</tr></thead><tbody>'+inner+'</tbody></table></div></div>';
 }
 
 // ── 분류별 ───────────────────────────────────────────
+var _curCat = null;
+var CAT_LIST = ['관광아이디어 발굴','조직혁신','사회적가치실현','기타'];
 function renderCat() {
-  var cats=['관광아이디어 발굴','조직혁신','사회적가치실현','기타'];
-  var html=cats.map(cat=>{
-    var list=DATA.filter(d=>d.category===cat); if(!list.length) return '';
-    var adopted=list.filter(d=>ADOPTED.has(d.award)).length, rate=Math.round(adopted/list.length*100), c=CAT_COLOR[cat];
-    var rows=list.map((d,i)=>'<tr onclick="switchTab(\'list\',document.querySelectorAll(\'.nav-btn\')[0]);setTimeout(()=>openDetail('+d.id+'),50)">'
-      +'<td class="num">'+String(i+1).padStart(2,'0')+'</td>'+titleCell(d)
-      +'<td>'+periodBadge(d.period)+'</td><td>'+awardBadge(d.award)+'</td>'
-      +'<td style="text-align:center">'+(d.pdf?(['png','jpg','jpeg'].includes(d.pdf.split('.').pop().toLowerCase())?'🖼️':'📄'):'')+'</td></tr>').join('');
-    return '<div class="cat-section"><div class="cat-hdr" style="background:'+c+'">'
-      +'<div class="cat-icon">'+CAT_ICON[cat]+'</div><div class="cat-name">'+cat+'</div>'
-      +'<div class="cat-chips">'
-      +'<div class="cat-chip"><div class="cv">'+list.length+'건</div><div class="cl">전체</div></div>'
-      +'<div class="cat-chip"><div class="cv">'+adopted+'건</div><div class="cl">채택</div></div>'
-      +'<div class="cat-chip"><div class="cv">'+rate+'%</div><div class="cl">채택률</div></div>'
-      +'</div><div class="cat-bar-wrap"><div class="cat-bar"><div class="cat-bar-fill" style="width:'+rate+'%"></div></div><span class="cat-bar-lbl">채택률</span></div>'
-      +'</div><div class="tbl-wrap"><table><thead><tr>'
-      +'<th style="width:44px">번호</th><th>제목</th><th style="width:110px">기간</th><th style="width:100px">결과</th><th style="width:44px">PDF</th>'
-      +'</tr></thead><tbody>'+rows+'</tbody></table></div></div>';
-  }).join('');
-  document.getElementById('catArea').innerHTML=html||'<div class="card"><div class="empty">등록된 제안이 없습니다.</div></div>';
+  var available=CAT_LIST.filter(c=>DATA.some(d=>d.category===c));
+  if (!available.length) { document.getElementById('catArea').innerHTML='<div class="card"><div class="empty">등록된 제안이 없습니다.</div></div>'; return; }
+  if (!_curCat || !available.includes(_curCat)) _curCat=available[0];
+  document.getElementById('catNav').innerHTML=available.map(c=>
+    '<button class="sub-nav-btn'+(c===_curCat?' on':'')+'" onclick="selectCat(\''+c+'\')">'+(CAT_ICON[c]||'📌')+' '+c+'</button>'
+  ).join('');
+  showCatPanel(_curCat);
+}
+function selectCat(cat) {
+  _curCat=cat;
+  var available=CAT_LIST.filter(c=>DATA.some(d=>d.category===c));
+  document.querySelectorAll('#catNav .sub-nav-btn').forEach((btn,i)=>{
+    btn.classList.toggle('on', available[i]===cat);
+  });
+  showCatPanel(cat);
+}
+function showCatPanel(cat) {
+  var list=DATA.filter(d=>d.category===cat); if(!list.length) return;
+  var adopted=list.filter(d=>ADOPTED.has(d.award)).length, rate=Math.round(adopted/list.length*100), c=CAT_COLOR[cat];
+  var rows=list.map((d,i)=>'<tr onclick="switchTab(\'list\',document.querySelectorAll(\'.nav-btn\')[0]);setTimeout(()=>openDetail('+d.id+'),50)">'
+    +'<td class="num">'+String(i+1).padStart(2,'0')+'</td>'+titleCell(d)
+    +'<td>'+periodBadge(d.period)+'</td><td>'+awardBadge(d.award)+'</td>'
+    +'<td style="text-align:center">'+(d.pdf?(['png','jpg','jpeg'].includes(d.pdf.split('.').pop().toLowerCase())?'🖼️':'📄'):'')+'</td></tr>').join('');
+  document.getElementById('catArea').innerHTML=
+    '<div class="cat-section"><div class="cat-hdr" style="background:'+c+'">'
+    +'<div class="cat-icon">'+CAT_ICON[cat]+'</div><div class="cat-name">'+cat+'</div>'
+    +'<div class="cat-chips">'
+    +'<div class="cat-chip"><div class="cv">'+list.length+'건</div><div class="cl">전체</div></div>'
+    +'<div class="cat-chip"><div class="cv">'+adopted+'건</div><div class="cl">채택</div></div>'
+    +'<div class="cat-chip"><div class="cv">'+rate+'%</div><div class="cl">채택률</div></div>'
+    +'</div><div class="cat-bar-wrap"><div class="cat-bar"><div class="cat-bar-fill" style="width:'+rate+'%"></div></div><span class="cat-bar-lbl">채택률</span></div>'
+    +'</div><div class="tbl-wrap"><table><thead><tr>'
+    +'<th style="width:44px">번호</th><th>제목</th><th style="width:110px">기간</th><th style="width:100px">결과</th><th style="width:44px">PDF</th>'
+    +'</tr></thead><tbody>'+rows+'</tbody></table></div></div>';
 }
 
 // ── 채택제안 ─────────────────────────────────────────
 function renderAdopted() {
+  var adoptedList=DATA.filter(d=>ADOPTED.has(d.award));
+  if (!adoptedList.length) {
+    document.getElementById('adoptedArea').innerHTML='<div class="card"><div class="empty">아직 채택된 제안이 없습니다.</div></div>'; return;
+  }
   var GRADES=[
     {key:'최우수',bg:'linear-gradient(90deg,#7a5500,#c4920a)',icon:'🥇'},
     {key:'우수',  bg:'linear-gradient(90deg,#1a3070,#2c5cc5)',icon:'🥈'},
     {key:'장려',  bg:'linear-gradient(90deg,#155035,#27ae60)',icon:'🥉'},
     {key:'특별상',bg:'linear-gradient(90deg,#3d0e80,#7b2fd4)',icon:'🌟'},
   ];
-  if (!DATA.filter(d=>ADOPTED.has(d.award)).length) {
-    document.getElementById('adoptedArea').innerHTML='<div class="card"><div class="empty">아직 채택된 제안이 없습니다.</div></div>'; return;
-  }
-  document.getElementById('adoptedArea').innerHTML=GRADES.map(g=>{
-    var list=DATA.filter(d=>d.award===g.key); if(!list.length) return '';
-    var rows=list.map((d,i)=>'<tr onclick="switchTab(\'list\',document.querySelectorAll(\'.nav-btn\')[0]);setTimeout(()=>openDetail('+d.id+'),50)">'
-      +'<td class="num">'+String(i+1).padStart(2,'0')+'</td>'+titleCell(d)
-      +'<td>'+catBadge(d.category)+'</td><td>'+periodBadge(d.period)+'</td>'
-      +'<td style="text-align:center">'+(d.pdf?(['png','jpg','jpeg'].includes(d.pdf.split('.').pop().toLowerCase())?'🖼️':'📄'):'')+'</td></tr>').join('');
-    return '<div class="adopted-section"><div class="adopted-hdr" style="background:'+g.bg+'">'
-      +'<span style="font-size:24px">'+g.icon+'</span><span class="adopted-grade">'+g.key+'</span>'
-      +'<span class="adopted-count">'+list.length+'건</span></div>'
+  // 연도 목록 추출 (내림차순)
+  var years=[...new Set(adoptedList.map(d=>parseInt(d.period)))].sort((a,b)=>b-a);
+  var html=years.map(yr=>{
+    var yearData=adoptedList.filter(d=>parseInt(d.period)===yr);
+    var gradeRows=GRADES.map(g=>{
+      var list=yearData.filter(d=>d.award===g.key); if(!list.length) return '';
+      var rows=list.map((d,i)=>'<tr onclick="switchTab(\'list\',document.querySelectorAll(\'.nav-btn\')[0]);setTimeout(()=>openDetail('+d.id+'),50)">'
+        +'<td class="num">'+String(i+1).padStart(2,'0')+'</td>'+titleCell(d)
+        +'<td>'+catBadge(d.category)+'</td><td>'+periodBadge(d.period)+'</td>'
+        +'<td style="text-align:center">'+(d.pdf?(['png','jpg','jpeg'].includes(d.pdf.split('.').pop().toLowerCase())?'🖼️':'📄'):'')+'</td></tr>').join('');
+      return '<tr style="background:#f6f8fd"><td colspan="5" style="padding:8px 14px 4px">'
+        +'<span style="font-size:18px">'+g.icon+'</span> '
+        +'<span style="font-weight:800;font-size:14px;color:#334">'+g.key+'</span> '
+        +'<span style="font-size:12px;color:#aaa">'+list.length+'건</span></td></tr>'
+        +rows;
+    }).join('');
+    return '<div class="adopted-section" style="margin-bottom:20px">'
+      +'<div class="adopted-hdr" style="background:linear-gradient(90deg,var(--navy),#2c4a8a)">'
+      +'<span style="font-size:22px">📅</span>'
+      +'<span class="adopted-grade">'+yr+'년 채택제안</span>'
+      +'<span class="adopted-count">'+yearData.length+'건</span></div>'
       +'<div class="tbl-wrap"><table><thead><tr>'
       +'<th style="width:44px">번호</th><th>제목</th><th style="width:130px">분류</th><th style="width:110px">기간</th><th style="width:44px">PDF</th>'
-      +'</tr></thead><tbody>'+rows+'</tbody></table></div></div>';
+      +'</tr></thead><tbody>'+gradeRows+'</tbody></table></div></div>';
   }).join('');
+  document.getElementById('adoptedArea').innerHTML=html;
 }
 
 // ── 등록 ─────────────────────────────────────────────
