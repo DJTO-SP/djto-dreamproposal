@@ -803,6 +803,8 @@ function getDetailList() {
 }
 function openDetail(id) {
   var d=DATA.find(x=>x.id===id); if(!d) return;
+  // 브라우저 히스토리에 상태 추가
+  history.pushState({detail: id}, '', '#detail-'+id);
   _curId=id;
   document.getElementById('listCard').style.display='none';
   document.getElementById('statsArea').style.display='none';
@@ -863,7 +865,17 @@ function closeDetail() {
   document.getElementById('detailCard').style.display='none';
   document.getElementById('listCard').style.display='block';
   document.getElementById('statsArea').style.display='none';
+  _curId=null;
 }
+
+// 브라우저 뒤로가기/앞으로가기 처리
+window.addEventListener('popstate', function(e) {
+  if (e.state && e.state.detail) {
+    openDetail(e.state.detail);
+  } else {
+    closeDetail();
+  }
+});
 
 // ── 연도별 ───────────────────────────────────────────
 var _curYear = null;
@@ -1070,6 +1082,7 @@ function copyData() {
 
 function renderAll() { renderStats(); populateFilters(); renderTable(); }
 renderAll();
+window.onload = function() { loadFromSheet(); };
 </script>
 </body>
 </html>
