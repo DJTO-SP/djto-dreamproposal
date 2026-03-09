@@ -826,7 +826,6 @@ function initGoogleAuth() {
 function googleLogin() {
   if (!_tokenClient) { showToast('Google 라이브러리 로딩 중...', 'err'); return; }
   if (_gToken) {
-    // 이미 연결됨 - 로그아웃
     _gToken = null;
     document.getElementById('googleBtn').textContent = '🔑 Google';
     document.getElementById('googleBtn').style.background = '#fff';
@@ -836,9 +835,6 @@ function googleLogin() {
   }
   _tokenClient.requestAccessToken();
 }
-window.addEventListener('load', function() {
-  setTimeout(initGoogleAuth, 1000);
-});
 
 // ── 구글 시트 쓰기 ───────────────────────────────────
 function findRowBySeq(seq, callback) {
@@ -921,15 +917,19 @@ function openDetail(id) {
   } else {
     pdfHtml='<div class="dbox" style="margin-bottom:14px"><div class="dbox-lbl">📎 첨부 파일</div><div class="dbox-txt" style="color:#bbb">첨부 파일 없음</div></div>';
   }
-  // 이전/다음 버튼
-  var list=getDetailList();
+  // 이전/다음 버튼 - 현재 탭 기준 목록
+  var list;
+  if (_fromTab === 'year') list = DATA.filter(d=>parseInt(d.period)===parseInt(_curYear||'0')).sort((a,b)=>periodSort(b.period)-periodSort(a.period));
+  else if (_fromTab === 'cat') list = DATA.filter(d=>d.category===(_curCat||''));
+  else if (_fromTab === 'adopted') list = DATA.filter(d=>ADOPTED.has(d.award));
+  else list = getFiltered();
   var idx=list.findIndex(x=>x.id===id);
   var prev=list[idx-1], next=list[idx+1];
   var navHtml='<div class="detail-nav">'
-    +'<button class="det-nav-btn" '+(prev?'onclick="openDetail('+prev.id+')"':'disabled')+'>'
+    +'<button class="det-nav-btn" '+(prev?'onclick="openDetailFrom('+prev.id+',\''+_fromTab+'\')"':'disabled')+'>'
     +'◀ <span class="det-nav-title">'+(prev?esc(prev.title):'처음입니다')+'</span></button>'
     +'<span class="det-nav-pos">'+(idx+1)+' / '+list.length+'</span>'
-    +'<button class="det-nav-btn" '+(next?'onclick="openDetail('+next.id+')"':'disabled')+'>'
+    +'<button class="det-nav-btn" '+(next?'onclick="openDetailFrom('+next.id+',\''+_fromTab+'\')"':'disabled')+'>'
     +'<span class="det-nav-title">'+(next?esc(next.title):'마지막입니다')+'</span> ▶</button>'
     +'</div>';
   document.getElementById('detailBody').innerHTML=
@@ -1059,6 +1059,8 @@ function showCatPanel(cat) {
   var list=DATA.filter(d=>d.category===cat); if(!list.length) return;
   var adopted=list.filter(d=>ADOPTED.has(d.award)).length, rate=Math.round(adopted/list.length*100), c=CAT_COLOR[cat];
   var rows=list.map((d,i)=>'<tr onclick="openDetailFrom('+d.id+',\'cat\')">'
+    +'<td class="num">'+String(i+1).padStart(2,'0')+'</td>'+titleCell(d)
+    +'<td>'+periodBadge(d.period)+'</td><td>'+awardBadge(d.award)+'</td>'
     +'<td style="text-align:center">'+(d.pdf?(['png','jpg','jpeg'].includes(d.pdf.split('.').pop().toLowerCase())?'🖼️':'📄'):'')+'</td></tr>').join('');
   document.getElementById('catArea').innerHTML=
     '<div class="cat-section"><div class="cat-hdr" style="background:'+c+'">'
@@ -1092,6 +1094,8 @@ function renderAdopted() {
     var gradeRows=GRADES.map(g=>{
       var list=yearData.filter(d=>d.award===g.key); if(!list.length) return '';
       var rows=list.map((d,i)=>'<tr onclick="openDetailFrom('+d.id+',\'adopted\')">'
+        +'<td class="num">'+String(i+1).padStart(2,'0')+'</td>'+titleCell(d)
+        +'<td>'+catBadge(d.category)+'</td><td>'+periodBadge(d.period)+'</td>'
         +'<td style="text-align:center">'+(d.pdf?(['png','jpg','jpeg'].includes(d.pdf.split('.').pop().toLowerCase())?'🖼️':'📄'):'')+'</td></tr>').join('');
       return '<tr style="background:#f6f8fd"><td colspan="5" style="padding:8px 14px 4px">'
         +'<span style="font-size:18px">'+g.icon+'</span> '
@@ -1186,7 +1190,10 @@ function copyData() {
 
 function renderAll() { renderStats(); populateFilters(); renderTable(); }
 renderAll();
-window.onload = function() { loadFromSheet(); };
+window.onload = function() {
+  loadFromSheet();
+  setTimeout(initGoogleAuth, 1000);
+};
 </script>
 </body>
 </html>
