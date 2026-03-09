@@ -468,8 +468,7 @@ function loadFromSheet() {
       var jsonStr = text.substring(start, end + 1);
       var json = JSON.parse(jsonStr);
       var rows = json.table.rows;
-      var cols = json.table.cols.map(function(c){ return c.label; });
-      console.log('시트 컬럼:', cols);
+      var cols = json.table.cols.map(function(c){ return (c.label||'').trim(); });
       function get(r, label) {
         var idx = cols.indexOf(label);
         return idx >= 0 && r.c[idx] ? String(r.c[idx].v||'') : '';
