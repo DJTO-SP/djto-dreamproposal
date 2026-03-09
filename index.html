@@ -306,7 +306,7 @@ textarea.fi { resize:vertical; }
         <div>
           <label>제안 분류</label>
           <select class="fi" id="e_category">
-            <option>관광아이디어 발굴</option><option>조직혁신</option>
+            <option>관광아이디어발굴</option><option>조직혁신</option>
             <option>사회적가치실현</option><option>기타</option>
           </select>
         </div>
@@ -442,7 +442,7 @@ textarea.fi { resize:vertical; }
           <div>
             <label>제안 분류</label>
             <select class="fi" id="f_category">
-              <option>관광아이디어 발굴</option><option>조직혁신</option>
+              <option>관광아이디어발굴</option><option>조직혁신</option>
               <option>사회적가치실현</option><option>기타</option>
             </select>
           </div>
@@ -537,7 +537,7 @@ var DATA = [
     "proposer": "익명",
     "dept": "센터마케팅팀",
     "period": "2025상반기",
-    "category": "관광아이디어 발굴",
+    "category": "관광아이디어발굴",
     "award": "미채택",
     "summary": "전시 공백 시간에 DCC 전시장을 시민 배드민턴 공간으로 활용하자는 제안임. 예약제로 운영해 시설 활용도와 수익을 높이고 시민 체력 증진을 도모함.",
     "pdf": ""
@@ -551,9 +551,9 @@ var _curId  = null;
 var _editId = null;
 var ADOPTED = new Set(['최우수','우수','장려','특별상']);
 
-var CAT_COLOR = {"관광아이디어 발굴":"#2c6fbd","조직혁신":"#2a9d8f","사회적가치실현":"#b07800","기타":"#6b7280"};
-var CAT_ICON  = {"관광아이디어 발굴":"🗺️","조직혁신":"🔄","사회적가치실현":"🤝","기타":"📌"};
-var CAT_CLASS = {"관광아이디어 발굴":"b-관광아이디어발굴","조직혁신":"b-조직혁신","사회적가치실현":"b-사회적가치실현","기타":"b-기타"};
+var CAT_COLOR = {"관광아이디어발굴":"#2c6fbd","조직혁신":"#2a9d8f","사회적가치실현":"#b07800","기타":"#6b7280"};
+var CAT_ICON  = {"관광아이디어발굴":"🗺️","조직혁신":"🔄","사회적가치실현":"🤝","기타":"📌"};
+var CAT_CLASS = {"관광아이디어발굴":"b-관광아이디어발굴","조직혁신":"b-조직혁신","사회적가치실현":"b-사회적가치실현","기타":"b-기타"};
 var AWARD_LABELS = ["심사중","최우수","우수","장려","특별상","미채택"];
 
 function periodSort(p) {
@@ -726,7 +726,7 @@ function populateFilters() {
   AWARD_LABELS.forEach(v=>fa.innerHTML+='<option'+(sa===v?' selected':'')+'>'+v+'</option>');
   var fc=document.getElementById('fCat'), sc=fc.value;
   fc.innerHTML='<option value="">전체 분류</option>';
-  ['관광아이디어 발굴','조직혁신','사회적가치실현','기타'].forEach(v=>
+  ['관광아이디어발굴','조직혁신','사회적가치실현','기타'].forEach(v=>
     fc.innerHTML+='<option'+(sc===v?' selected':'')+'>'+v+'</option>');
 }
 
@@ -767,7 +767,7 @@ function renderTable() {
   document.getElementById('tblBody').innerHTML=list.map((d,i)=>{
     var catCell, awardCell;
     if (isAdmin) {
-      var catOpts=['관광아이디어 발굴','조직혁신','사회적가치실현','기타'].map(v=>'<option'+(d.category===v?' selected':'')+'>'+v+'</option>').join('');
+      var catOpts=['관광아이디어발굴','조직혁신','사회적가치실현','기타'].map(v=>'<option'+(d.category===v?' selected':'')+'>'+v+'</option>').join('');
       catCell='<td onclick="event.stopPropagation()"><select class="inline-sel" onchange="quickEdit('+d.id+',\'category\',this.value)">'+catOpts+'</select></td>';
       var awdOpts=AWARD_LABELS.map(v=>'<option'+(d.award===v?' selected':'')+'>'+v+'</option>').join('');
       awardCell='<td onclick="event.stopPropagation()"><select class="inline-sel" onchange="quickEdit('+d.id+',\'award\',this.value)">'+awdOpts+'</select></td>';
@@ -918,7 +918,7 @@ function showYearPanel(yr, yearGroups) {
 
 // ── 분류별 ───────────────────────────────────────────
 var _curCat = null;
-var CAT_LIST = ['관광아이디어 발굴','조직혁신','사회적가치실현','기타'];
+var CAT_LIST = ['관광아이디어발굴','조직혁신','사회적가치실현','기타'];
 function renderCat() {
   var available=CAT_LIST.filter(c=>DATA.some(d=>d.category===c));
   if (!available.length) { document.getElementById('catArea').innerHTML='<div class="card"><div class="empty">등록된 제안이 없습니다.</div></div>'; return; }
