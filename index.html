@@ -1019,7 +1019,8 @@ function showYearPanel(yr, yearGroups) {
     var rows=list.map((d,i)=>'<tr onclick="openDetailFrom('+d.id+',\'year\')">'
       +'<td class="num">'+String(i+1).padStart(2,'0')+'</td>'+titleCell(d)
       +'<td>'+catBadge(d.category)+'</td><td>'+awardBadge(d.award)+'</td>'
-      +'<td style="text-align:center">'+(d.pdf?(['png','jpg','jpeg'].includes(d.pdf.split('.').pop().toLowerCase())?'🖼️':'📄'):'')+'</td></tr>').join('');'<tr style="background:#f6f8fd"><td colspan="5" style="padding:8px 14px 4px;font-weight:700;font-size:12px;color:#778;border-bottom:none">'+sub+'</td></tr>':'')+rows;
+      +'<td style="text-align:center">'+(d.pdf?(['png','jpg','jpeg'].includes(d.pdf.split('.').pop().toLowerCase())?'🖼️':'📄'):'')+'</td></tr>').join('');
+    return (sub?'<tr style="background:#f6f8fd"><td colspan="5" style="padding:8px 14px 4px;font-weight:700;font-size:12px;color:#778;border-bottom:none">'+sub+'</td></tr>':'')+rows;
   }).join('');
   document.getElementById('yearArea').innerHTML=
     '<div class="yr-section"><div class="yr-hdr" style="background:linear-gradient(90deg,var(--navy),#2c4a8a)">'
