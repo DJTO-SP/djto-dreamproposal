@@ -199,6 +199,14 @@ textarea.fi { resize:vertical; }
 .toast.ok { background:var(--teal); } .toast.err { background:var(--rose); }
 @keyframes fadeDown { from{opacity:0;transform:translateY(-8px)} to{opacity:1} }
 
+/* 키워드 칩 */
+.kw-chips { display:flex; flex-wrap:wrap; gap:5px; margin-top:8px; }
+.kw-chip { display:inline-block; padding:2px 9px; border-radius:12px; font-size:11.5px; font-weight:600; background:#e8f0fe; color:#3256c5; border:1px solid #c5d5f8; white-space:nowrap; }
+
+/* 요약 줄바꿈 */
+.summary-lines { line-height:1.85; }
+.summary-lines .sl { display:block; padding-left:4px; }
+
 /* 잠금 */
 .locked-notice { background:#f0f4ff; border:1.5px dashed #b0c4e8; border-radius:12px; padding:40px; text-align:center; color:#557; font-size:14px; line-height:1.9; }
 .lock-big { font-size:38px; margin-bottom:10px; }
@@ -477,7 +485,8 @@ function loadFromSheet() {
           period:   year,
           category: get(r, '분류'),
           award:    get(r, '심사결과'),
-          summary:  get(r, '요약') + (kw ? ' [키워드: '+kw+']' : ''),
+          summary:  get(r, '요약'),
+          keywords: kw,
           pdf:      get(r, '첨부파일'),
           seq:      seq
         };
@@ -538,10 +547,30 @@ function catBadge(c)  { return '<span class="badge '+(CAT_CLASS[c]||'b-기타')+
 function awardBadge(a){ return '<span class="abadge a-'+a+'"><span class="adot"></span>'+a+'</span>'; }
 function esc(s)       { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
+// 요약 텍스트를 ● 기준으로 줄바꿈 HTML로 변환
+function fmtSummary(s) {
+  if (!s) return '';
+  // ● 기준으로 분리, 빈 항목 제거
+  var parts = s.split('●').map(function(p){ return p.trim(); }).filter(Boolean);
+  if (parts.length <= 1) return '<span class="sl">'+esc(s)+'</span>';
+  return parts.map(function(p){ return '<span class="sl">● '+esc(p)+'</span>'; }).join('');
+}
+
+// 키워드를 칩 HTML로 변환
+function fmtKeywords(kw) {
+  if (!kw) return '';
+  var chips = kw.split(/[,，、]/).map(function(k){ return k.trim(); }).filter(Boolean);
+  if (!chips.length) return '';
+  return '<div class="kw-chips">'+chips.map(function(k){
+    return '<span class="kw-chip"># '+esc(k)+'</span>';
+  }).join('')+'</div>';
+}
+
 function titleCell(d) {
-  return '<td><div class="tip-wrap"><div class="title-main">'+esc(d.title)+'</div>'
-    +(d.summary?'<div class="tip-box">'+esc(d.summary)+'</div>':'')
-    +'</div></td>';
+  var summaryHtml = d.summary
+    ? '<div class="tip-box summary-lines">'+fmtSummary(d.summary)+(d.keywords?'<div style="margin-top:6px">'+fmtKeywords(d.keywords)+'</div>':'')+'</div>'
+    : '';
+  return '<td><div class="tip-wrap"><div class="title-main">'+esc(d.title)+'</div>'+summaryHtml+'</div></td>';
 }
 
 // ── 탭 ───────────────────────────────────────────────
@@ -767,7 +796,7 @@ function openDetail(id) {
     +'<div><div class="dtitle">'+esc(d.title)+'</div>'
     +'<div class="dmeta">'+catBadge(d.category)+' '+periodBadge(d.period)+' '+adminMeta+'</div></div>'
     +'</div>'
-    +'<div class="dbox" style="margin-bottom:14px"><div class="dbox-lbl">💬 요약</div><div class="dbox-txt">'+esc(d.summary||'요약 없음')+'</div></div>'
+    +'<div class="dbox" style="margin-bottom:14px"><div class="dbox-lbl">💬 요약</div><div class="dbox-txt summary-lines">'+fmtSummary(d.summary||'요약 없음')+'</div>'+(d.keywords?'<div style="margin-top:10px">'+fmtKeywords(d.keywords)+'</div>':'')+'</div>'
     +pdfHtml
     +'<div class="award-flow"><div class="af-lbl">심사 결과 단계</div><div class="af-steps">'+steps+'</div></div>';
 }
