@@ -610,12 +610,16 @@ function switchTab(name, btn) {
   document.getElementById('tab-'+name).classList.add('on');
   if (btn) btn.classList.add('on');
   else {
-    // 탭 이름으로 버튼 활성화
     var tabMap = {list:0, year:1, cat:2, adopted:3};
     var idx = tabMap[name];
     if (idx !== undefined) document.querySelectorAll('.nav-btn')[idx].classList.add('on');
   }
-  closeDetail();
+  // 상세/목록 카드 초기화
+  document.getElementById('detailCard').style.display='none';
+  document.getElementById('listCard').style.display = (name==='list') ? 'block' : 'none';
+  document.getElementById('statsArea').style.display='none';
+  _curId=null;
+  _fromTab='list';
   if (name==='list')    renderAll();
   if (name==='year')    renderYear();
   if (name==='cat')     renderCat();
@@ -950,19 +954,24 @@ function closeDetail() {
   // 원래 탭으로 복귀
   if (_fromTab === 'year') {
     document.getElementById('tab-list').classList.remove('on');
+    document.getElementById('listCard').style.display='none';
     document.getElementById('tab-year').classList.add('on');
     document.querySelectorAll('.nav-btn').forEach((b,i)=>b.classList.toggle('on', i===1));
   } else if (_fromTab === 'cat') {
     document.getElementById('tab-list').classList.remove('on');
+    document.getElementById('listCard').style.display='none';
     document.getElementById('tab-cat').classList.add('on');
     document.querySelectorAll('.nav-btn').forEach((b,i)=>b.classList.toggle('on', i===2));
   } else if (_fromTab === 'adopted') {
     document.getElementById('tab-list').classList.remove('on');
+    document.getElementById('listCard').style.display='none';
     document.getElementById('tab-adopted').classList.add('on');
     document.querySelectorAll('.nav-btn').forEach((b,i)=>b.classList.toggle('on', i===3));
   } else {
+    document.getElementById('tab-list').classList.add('on');
     document.getElementById('listCard').style.display='block';
     document.getElementById('statsArea').style.display='none';
+    document.querySelectorAll('.nav-btn').forEach((b,i)=>b.classList.toggle('on', i===0));
   }
 }
 
