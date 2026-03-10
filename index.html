@@ -943,7 +943,7 @@ function openDetail(id) {
     +'</div>'
     +'<div class="dbox" style="margin-bottom:14px"><div class="dbox-lbl">💬 요약</div><div class="dbox-txt summary-lines">'+fmtSummary(d.summary||'요약 없음')+'</div>'+(d.keywords?'<div style="margin-top:10px">'+fmtKeywords(d.keywords)+'</div>':'')+'</div>'
     +pdfHtml
-    +'<div class="award-flow"><div class="af-lbl">심사 결과 단계</div><div class="af-steps">'+steps+'</div></div>'
+    +''
     +navHtml;
 }
 function openDetailFrom(id, fromTab) {
