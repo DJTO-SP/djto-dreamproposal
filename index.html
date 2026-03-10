@@ -112,10 +112,17 @@ tbody tr:hover td { background:#eef3ff; }
 .cat-bar-lbl { color:#fff; font-size:11px; font-weight:600; }
 
 /* 채택제안 */
+.grade-card { border-radius:14px; padding:18px 16px; cursor:pointer; transition:transform .15s,box-shadow .15s; display:flex; flex-direction:column; align-items:center; gap:8px; border:3px solid transparent; }
+.grade-card:hover { transform:translateY(-3px); box-shadow:0 8px 24px rgba(0,0,0,.15); }
+.grade-card.on { border-color:#fff; box-shadow:0 8px 28px rgba(0,0,0,.22); transform:translateY(-3px); }
+.grade-card-icon { font-size:32px; }
+.grade-card-name { font-weight:800; font-size:15px; color:#fff; }
+.grade-card-cnt { background:rgba(255,255,255,.28); border-radius:20px; padding:3px 14px; font-weight:700; font-size:13px; color:#fff; }
 .adopted-section { border-radius:14px; overflow:hidden; box-shadow:0 2px 12px rgba(30,58,110,.09); margin-bottom:20px; }
 .adopted-hdr { padding:14px 22px; display:flex; align-items:center; gap:14px; }
 .adopted-grade { font-weight:800; font-size:18px; color:#fff; }
 .adopted-count { background:rgba(255,255,255,.25); border-radius:20px; padding:3px 12px; font-weight:700; font-size:13px; color:#fff; }
+@media(max-width:600px){ #adoptedCards{grid-template-columns:repeat(2,1fr)!important;} }
 
 /* 상세 */
 .detail-hdr { padding:16px 26px; border-bottom:1px solid var(--lgray); display:flex; align-items:center; gap:12px; }
@@ -408,7 +415,10 @@ textarea.fi { resize:vertical; }
   </div>
 
   <!-- 채택제안 -->
-  <div class="tab-content" id="tab-adopted"><div id="adoptedArea"></div></div>
+  <div class="tab-content" id="tab-adopted">
+    <div id="adoptedCards" style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px"></div>
+    <div id="adoptedArea"></div>
+  </div>
 
   <!-- 통계 -->
   <div class="tab-content" id="tab-stats">
@@ -429,8 +439,9 @@ textarea.fi { resize:vertical; }
           <canvas id="chartAward" height="200"></canvas>
         </div>
         <div class="card" style="padding:24px">
-          <div style="font-weight:800;font-size:15px;color:#1a2035;margin-bottom:18px">📈 채택률 현황</div>
-          <div id="adoptRateArea" style="margin-top:8px"></div>
+          <div style="font-weight:800;font-size:15px;color:#1a2035;margin-bottom:18px">📈 연도별 채택률</div>
+          <canvas id="chartRate" height="200"></canvas>
+          <div id="adoptRateArea"></div>
         </div>
       </div>
     </div>
@@ -1125,35 +1136,52 @@ function showCatPanel(cat) {
 }
 
 // ── 채택제안 ─────────────────────────────────────────
+var _curGrade = null;
+var GRADES = [
+  {key:'최우수', bg:'linear-gradient(90deg,#7a5500,#c4920a)', icon:'🥇'},
+  {key:'우수',   bg:'linear-gradient(90deg,#1a3070,#2c5cc5)', icon:'🥈'},
+  {key:'장려',   bg:'linear-gradient(90deg,#155035,#27ae60)', icon:'🥉'},
+  {key:'특별상', bg:'linear-gradient(90deg,#3d0e80,#7b2fd4)', icon:'🌟'},
+];
 function renderAdopted() {
   var adoptedList=DATA.filter(d=>ADOPTED.has(d.award));
+  var cardsEl=document.getElementById('adoptedCards');
   if (!adoptedList.length) {
+    cardsEl.innerHTML='';
     document.getElementById('adoptedArea').innerHTML='<div class="card"><div class="empty">아직 채택된 제안이 없습니다.</div></div>'; return;
   }
-  var GRADES=[
-    {key:'최우수',bg:'linear-gradient(90deg,#7a5500,#c4920a)',icon:'🥇'},
-    {key:'우수',  bg:'linear-gradient(90deg,#1a3070,#2c5cc5)',icon:'🥈'},
-    {key:'장려',  bg:'linear-gradient(90deg,#155035,#27ae60)',icon:'🥉'},
-    {key:'특별상',bg:'linear-gradient(90deg,#3d0e80,#7b2fd4)',icon:'🌟'},
-  ];
-  var html=GRADES.map(g=>{
-    var list=adoptedList.filter(d=>d.award===g.key);
-    if (!list.length) return '';
-    list.sort((a,b)=>periodSort(b.period)-periodSort(a.period));
-    var rows=list.map((d,i)=>'<tr onclick="openDetailFrom('+d.id+',\'adopted\')">'
-      +'<td class="num">'+String(i+1).padStart(2,'0')+'</td>'+titleCell(d)
-      +'<td>'+catBadge(d.category)+'</td><td>'+periodBadge(d.period)+'</td>'
-      +'<td style="text-align:center">'+(d.pdf?(['png','jpg','jpeg'].includes(d.pdf.split('.').pop().toLowerCase())?'🖼️':'📄'):'')+'</td></tr>').join('');
-    return '<div class="adopted-section" style="margin-bottom:20px">'
-      +'<div class="adopted-hdr" style="background:'+g.bg+'">'
-      +'<span style="font-size:24px">'+g.icon+'</span>'
-      +'<span class="adopted-grade">'+g.key+'</span>'
-      +'<span class="adopted-count">'+list.length+'건</span></div>'
-      +'<div class="tbl-wrap"><table><thead><tr>'
-      +'<th style="width:44px">번호</th><th>제목</th><th style="width:130px">분류</th><th style="width:110px">기간</th><th style="width:44px">PDF</th>'
-      +'</tr></thead><tbody>'+rows+'</tbody></table></div></div>';
+  if (!_curGrade || !GRADES.find(g=>g.key===_curGrade&&adoptedList.some(d=>d.award===g.key))) _curGrade=GRADES.find(g=>adoptedList.some(d=>d.award===g.key)).key;
+  cardsEl.innerHTML=GRADES.map(g=>{
+    var cnt=adoptedList.filter(d=>d.award===g.key).length;
+    var isOn=_curGrade===g.key;
+    return '<div class="grade-card'+(isOn?' on':'')+'" style="background:'+g.bg+'" onclick="selectGrade(\'' +g.key+ '\')">'      +'<div class="grade-card-icon">'+g.icon+'</div>'      +'<div class="grade-card-name">'+g.key+'</div>'      +'<div class="grade-card-cnt">'+cnt+'건</div></div>';
   }).join('');
-  document.getElementById('adoptedArea').innerHTML=html;
+  showAdoptedPanel(_curGrade);
+}
+function selectGrade(key) {
+  _curGrade=key;
+  document.querySelectorAll('#adoptedCards .grade-card').forEach((card,i)=>{
+    card.classList.toggle('on', GRADES[i] && GRADES[i].key===key);
+  });
+  showAdoptedPanel(key);
+}
+function showAdoptedPanel(key) {
+  var g=GRADES.find(x=>x.key===key);
+  var list=DATA.filter(d=>d.award===key);
+  list.sort((a,b)=>periodSort(b.period)-periodSort(a.period));
+  var rows=list.map((d,i)=>'<tr onclick="openDetailFrom('+d.id+',\'adopted\')">'
+    +'<td class="num">'+String(i+1).padStart(2,'0')+'</td>'+titleCell(d)
+    +'<td>'+catBadge(d.category)+'</td><td>'+periodBadge(d.period)+'</td>'
+    +'<td style="text-align:center">'+(d.pdf?(['png','jpg','jpeg'].includes(d.pdf.split('.').pop().toLowerCase())?'🖼️':'📄'):'')+'</td></tr>').join('');
+  document.getElementById('adoptedArea').innerHTML=
+    '<div class="adopted-section">'
+    +'<div class="adopted-hdr" style="background:'+g.bg+'">'
+    +'<span style="font-size:24px">'+g.icon+'</span>'
+    +'<span class="adopted-grade">'+g.key+'</span>'
+    +'<span class="adopted-count">'+list.length+'건</span></div>'
+    +'<div class="tbl-wrap"><table><thead><tr>'
+    +'<th style="width:44px">번호</th><th>제목</th><th style="width:130px">분류</th><th style="width:110px">기간</th><th style="width:44px">PDF</th>'
+    +'</tr></thead><tbody>'+rows+'</tbody></table></div></div>';
 }
 
 // ── 등록 ─────────────────────────────────────────────
@@ -1235,14 +1263,10 @@ function renderStats2() {
   // ── 요약 카드 ──
   var total=DATA.length;
   var adopted=DATA.filter(d=>ADOPTED.has(d.award)).length;
-  var reviewing=DATA.filter(d=>d.award==='심사중').length;
-  var top=DATA.filter(d=>d.award==='최우수').length;
   var adoptRate=total>0?Math.round(adopted/total*100):0;
   document.getElementById('statsCards').innerHTML=[
     {cls:'sc1',vcls:'sv1',icon:'📝',val:total+'건',        label:'전체 제안'},
     {cls:'sc2',vcls:'sv2',icon:'🏆',val:adopted+'건',      label:'채택 수상 ('+adoptRate+'%)'},
-    {cls:'sc3',vcls:'sv3',icon:'🔍',val:reviewing+'건',    label:'심사 중'},
-    {cls:'sc4',vcls:'sv4',icon:'⭐',val:top+'건',          label:'최우수 수상'},
   ].map(s=>'<div class="stat-card '+s.cls+'"><div class="stat-icon">'+s.icon+'</div>'
     +'<div><div class="stat-val '+s.vcls+'">'+s.val+'</div><div class="stat-label">'+s.label+'</div></div></div>'
   ).join('');
@@ -1284,22 +1308,42 @@ function renderStats2() {
     }
   });
 
-  // ── 채택률 바 ──
-  var rateHtml=AWARD_LABELS.filter(a=>a!=='심사중'&&a!=='미채택').map(a=>{
-    var cnt=DATA.filter(d=>d.award===a).length;
-    var pct=total>0?Math.round(cnt/total*100):0;
-    var colorMap={'최우수':'#f0c000','우수':'#4a7ef5','장려':'#2ecc71','특별상':'#9b59b6'};
-    var c=colorMap[a]||'#888';
-    return '<div style="margin-bottom:14px">'
-      +'<div style="display:flex;justify-content:space-between;font-size:13px;font-weight:600;margin-bottom:5px">'
-      +'<span>'+a+'</span><span style="color:'+c+'">'+cnt+'건 ('+pct+'%)</span></div>'
-      +'<div style="background:#f0f3f8;border-radius:8px;height:10px;overflow:hidden">'
-      +'<div style="width:'+pct+'%;height:100%;background:'+c+';border-radius:8px;transition:width .6s"></div></div></div>';
-  }).join('');
-  rateHtml+='<div style="margin-top:18px;padding-top:14px;border-top:1px solid #eee;display:flex;justify-content:space-between;font-size:13px">'
-    +'<span style="color:#778">전체 채택률</span>'
-    +'<span style="font-weight:800;font-size:18px;color:var(--teal)">'+adoptRate+'%</span></div>';
-  document.getElementById('adoptRateArea').innerHTML=rateHtml;
+  // ── 연도별 채택률 꺾은선 그래프 ──
+  var yearRates=years.map(y=>{
+    var total_y=DATA.filter(d=>parseInt(d.period)===y).length;
+    var adopted_y=DATA.filter(d=>parseInt(d.period)===y&&ADOPTED.has(d.award)).length;
+    return total_y>0?Math.round(adopted_y/total_y*100):0;
+  });
+  if (!window._chartRate) window._chartRate=null;
+  if (window._chartRate) window._chartRate.destroy();
+  window._chartRate = new Chart(document.getElementById('chartRate'), {
+    type: 'line',
+    data: {
+      labels: years.map(y=>y+'년'),
+      datasets:[{
+        label:'채택률 (%)',
+        data: yearRates,
+        borderColor:'#2a9d8f',
+        backgroundColor:'rgba(42,157,143,0.12)',
+        borderWidth:3,
+        pointBackgroundColor:'#2a9d8f',
+        pointRadius:6,
+        pointHoverRadius:8,
+        fill:true,
+        tension:0.3
+      }]
+    },
+    options:{
+      responsive:true,
+      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: ctx=>ctx.parsed.y+'%' } } },
+      scales:{
+        y:{ beginAtZero:true, max:100, ticks:{ callback:v=>v+'%' }, grid:{color:'rgba(0,0,0,0.05)'} },
+        x:{ grid:{display:false} }
+      }
+    }
+  });
+  document.getElementById('adoptRateArea').innerHTML=
+    '<div style="text-align:center;margin-top:8px;color:#778;font-size:12px">전체 채택률 <span style="font-weight:800;font-size:20px;color:var(--teal)">'+adoptRate+'%</span></div>';
 }
 
 function renderAll() { renderStats(); populateFilters(); renderTable(); }
