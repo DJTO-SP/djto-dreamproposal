@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800;900&family=Exo+2:wght@700;900&display=swap" rel="stylesheet">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>대전관광공사 혁신드림제안제도 통합관리대장</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -244,6 +245,7 @@ textarea.fi { resize:vertical; }
     <button class="nav-btn" onclick="switchTab('year',this)"><span class="nav-icon">📅</span> 연도별</button>
     <button class="nav-btn" onclick="switchTab('cat',this)"><span class="nav-icon">🗂️</span> 분류별</button>
     <button class="nav-btn" onclick="switchTab('adopted',this)"><span class="nav-icon">🏅</span> 채택제안</button>
+    <button class="nav-btn" onclick="switchTab('stats',this)"><span class="nav-icon">📊</span> 통계</button>
     <button class="nav-btn" onclick="handleFormTab(this)"><span class="nav-icon">✏️</span> 신규등록</button>
   </nav>
   <div style="display:flex;align-items:center;gap:12px">
@@ -299,8 +301,7 @@ textarea.fi { resize:vertical; }
         <div>
           <label>등록 연도</label>
           <select class="fi" id="e_period">
-            <option>2025하반기</option><option>2025상반기</option>
-            <option>2024하반기</option><option>2024상반기</option>
+            <option>2026</option><option>2025</option><option>2024</option>
             <option>2023</option><option>2022</option><option>2021</option>
             <option>2020</option><option>2019</option><option>2018</option><option>2017</option>
           </select>
@@ -346,6 +347,19 @@ textarea.fi { resize:vertical; }
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- 일괄변경 바 -->
+<div id="bulkBar" style="display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e3a6e;color:#fff;padding:12px 20px;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,.3);align-items:center;gap:12px;z-index:500;font-size:13px;font-weight:600">
+  <span id="bulkCount"></span>
+  <span style="color:#a0b4d8">심사결과를</span>
+  <select id="bulkSel" style="padding:6px 10px;border-radius:7px;border:none;font-size:13px;font-family:inherit;cursor:pointer" onchange="bulkChangeAward(this.value)">
+    <option value="">선택…</option>
+    <option>심사중</option><option>최우수</option><option>우수</option>
+    <option>장려</option><option>특별상</option><option>미채택</option>
+  </select>
+  <span style="color:#a0b4d8">으로 일괄 변경</span>
+  <button onclick="_checkedIds.clear();document.getElementById('bulkBar').style.display='none';renderTable()" style="background:rgba(255,255,255,.15);border:none;color:#fff;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:12px">✕ 취소</button>
+</div>
 
 <main>
     <!-- 목록 탭 -->
@@ -396,6 +410,32 @@ textarea.fi { resize:vertical; }
   <!-- 채택제안 -->
   <div class="tab-content" id="tab-adopted"><div id="adoptedArea"></div></div>
 
+  <!-- 통계 -->
+  <div class="tab-content" id="tab-stats">
+    <div class="stats-grid">
+      <!-- 요약 카드 4개 -->
+      <div id="statsCards" class="stats" style="margin-bottom:22px"></div>
+
+      <!-- 연도별 제안 수 -->
+      <div class="card" style="padding:24px;margin-bottom:18px">
+        <div style="font-weight:800;font-size:15px;color:#1a2035;margin-bottom:18px">📅 연도별 제안 수</div>
+        <canvas id="chartYear" height="90"></canvas>
+      </div>
+
+      <!-- 심사결과 도넛 + 채택률 -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px">
+        <div class="card" style="padding:24px">
+          <div style="font-weight:800;font-size:15px;color:#1a2035;margin-bottom:18px">🏅 심사결과 분포</div>
+          <canvas id="chartAward" height="200"></canvas>
+        </div>
+        <div class="card" style="padding:24px">
+          <div style="font-weight:800;font-size:15px;color:#1a2035;margin-bottom:18px">📈 채택률 현황</div>
+          <div id="adoptRateArea" style="margin-top:8px"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- 신규등록 -->
   <div class="tab-content" id="tab-form">
     <div id="formLocked" class="locked-notice">
@@ -434,12 +474,9 @@ textarea.fi { resize:vertical; }
             <label>등록 연도</label>
             <!-- ★ 기간 목록은 여기서 추가하세요 ★ -->
             <select class="fi" id="f_period">
-              <option>2025하반기</option><option>2025상반기</option>
-              <option>2024하반기</option><option>2024상반기</option>
+              <option>2026</option><option>2025</option><option>2024</option>
               <option>2023</option><option>2022</option><option>2021</option>
-            <option>2020</option><option>2019</option><option>2018</option><option>2017</option>
-            <option>2020</option><option>2019</option><option>2018</option>
-            <option>2017</option>
+              <option>2020</option><option>2019</option><option>2018</option><option>2017</option>
             </select>
           </div>
           <div>
@@ -537,21 +574,8 @@ function loadFromSheet() {
 // ★ 관리자 비밀번호 ★
 var ADMIN_PW = "1234";
 
-// ★ 데이터 ★
-var DATA = [
-  {
-    "id": 1772604689415,
-    "title": "DCC 전시홀 활용 방안",
-    "proposer": "익명",
-    "dept": "센터마케팅팀",
-    "period": "2025상반기",
-    "category": "관광아이디어발굴",
-    "award": "미채택",
-    "summary": "전시 공백 시간에 DCC 전시장을 시민 배드민턴 공간으로 활용하자는 제안임. 예약제로 운영해 시설 활용도와 수익을 높이고 시민 체력 증진을 도모함.",
-    "pdf": ""
-  }
-];
-// ════════════════════════════════════════════════════
+// ★ 데이터 (시트에서 자동 로드) ★
+var DATA = [];
 
 var isAdmin = false;
 var sortCol = "period", sortDir = -1;
@@ -629,6 +653,7 @@ function switchTab(name, btn) {
   if (name==='year')    renderYear();
   if (name==='cat')     renderCat();
   if (name==='adopted') renderAdopted();
+  if (name==='stats')   renderStats2();
 }
 function handleFormTab(btn) {
   switchTab('form', btn);
@@ -751,11 +776,34 @@ function populateFilters() {
 }
 
 // ── 목록 ─────────────────────────────────────────────
+var _checkedIds = new Set();
+
+function toggleCheck(id, cb) {
+  if (cb.checked) _checkedIds.add(id);
+  else _checkedIds.delete(id);
+  document.getElementById('bulkBar').style.display = _checkedIds.size > 0 ? 'flex' : 'none';
+  document.getElementById('bulkCount').textContent = _checkedIds.size+'건 선택됨';
+}
+function bulkChangeAward(val) {
+  if (!val) return;
+  _checkedIds.forEach(id=>{
+    var idx=DATA.findIndex(x=>x.id===id); if(idx===-1) return;
+    DATA[idx].award=val;
+    if (_gToken) saveToSheet(DATA[idx]);
+  });
+  _checkedIds.clear();
+  document.getElementById('bulkBar').style.display='none';
+  document.getElementById('bulkSel').value='';
+  showToast('일괄 변경 완료!','ok');
+  renderAll();
+}
 function getFiltered() {
   var q=document.getElementById('srch').value.toLowerCase();
   var fc=document.getElementById('fCat').value, fa=document.getElementById('fAward').value, fp=document.getElementById('fPeriod').value;
   return DATA.filter(d=>{
-    var mq=!q||d.title.toLowerCase().includes(q)||( d.summary&&d.summary.toLowerCase().includes(q))
+    var mq=!q||d.title.toLowerCase().includes(q)
+             ||(d.summary&&d.summary.toLowerCase().includes(q))
+             ||(d.keywords&&d.keywords.toLowerCase().includes(q))
              ||(isAdmin&&((d.proposer&&d.proposer.toLowerCase().includes(q))||(d.dept&&d.dept.toLowerCase().includes(q))));
     return mq&&(!fc||d.category===fc)&&(!fa||d.award===fa)&&(!fp||d.period===fp);
   }).sort((a,b)=>{
@@ -765,9 +813,12 @@ function getFiltered() {
   });
 }
 function renderTable() {
+  _checkedIds.clear();
+  document.getElementById('bulkBar').style.display='none';
   var list=getFiltered();
   document.getElementById('cntLbl').textContent=list.length+'건';
   var cols=[
+    ...(isAdmin?[{key:'chk', label:'', w:'36px'}]:[]),
     {key:'id',     label:'번호',   w:'44px'},
     {key:'title',  label:'제목',   w:''},
     ...(isAdmin?[{key:'proposer',label:'제안자',w:'80px'},{key:'dept',label:'부서',w:'100px'}]:[]),
@@ -795,7 +846,9 @@ function renderTable() {
       catCell='<td>'+catBadge(d.category)+'</td>';
       awardCell='<td>'+awardBadge(d.award)+'</td>';
     }
-    return '<tr onclick="_fromTab=\'list\';openDetail('+d.id+')">'
+    var rowClick = isAdmin ? 'openEdit('+d.id+')' : '_fromTab=\'list\';openDetail('+d.id+')';
+    return '<tr onclick="'+rowClick+'">'
+      +(isAdmin?'<td onclick="event.stopPropagation()"><input type="checkbox" onchange="toggleCheck('+d.id+',this)"></td>':'')
       +'<td class="num">'+String(i+1).padStart(2,'0')+'</td>'
       +titleCell(d)
       +(isAdmin?'<td style="font-size:13px;color:#445">'+esc(d.proposer)+'</td><td style="font-size:12px;color:#667">'+esc(d.dept)+'</td>':'')
@@ -874,7 +927,7 @@ function saveToSheet(d) {
 function quickEdit(id, field, val) {
   var idx=DATA.findIndex(x=>x.id===id); if(idx===-1) return;
   DATA[idx][field]=val;
-  showToast('저장됐습니다!','ok'); showSave();
+  showToast('저장됐습니다!','ok');
   if (_gToken) saveToSheet(DATA[idx]);
   if(_curId===id) openDetail(id);
 }
@@ -1083,30 +1136,22 @@ function renderAdopted() {
     {key:'장려',  bg:'linear-gradient(90deg,#155035,#27ae60)',icon:'🥉'},
     {key:'특별상',bg:'linear-gradient(90deg,#3d0e80,#7b2fd4)',icon:'🌟'},
   ];
-  // 연도 목록 추출 (내림차순)
-  var years=[...new Set(adoptedList.map(d=>parseInt(d.period)))].sort((a,b)=>b-a);
-  var html=years.map(yr=>{
-    var yearData=adoptedList.filter(d=>parseInt(d.period)===yr);
-    var gradeRows=GRADES.map(g=>{
-      var list=yearData.filter(d=>d.award===g.key); if(!list.length) return '';
-      var rows=list.map((d,i)=>'<tr onclick="openDetailFrom('+d.id+',\'adopted\')">'
-        +'<td class="num">'+String(i+1).padStart(2,'0')+'</td>'+titleCell(d)
-        +'<td>'+catBadge(d.category)+'</td><td>'+periodBadge(d.period)+'</td>'
-        +'<td style="text-align:center">'+(d.pdf?(['png','jpg','jpeg'].includes(d.pdf.split('.').pop().toLowerCase())?'🖼️':'📄'):'')+'</td></tr>').join('');
-      return '<tr style="background:#f6f8fd"><td colspan="5" style="padding:8px 14px 4px">'
-        +'<span style="font-size:18px">'+g.icon+'</span> '
-        +'<span style="font-weight:800;font-size:14px;color:#334">'+g.key+'</span> '
-        +'<span style="font-size:12px;color:#aaa">'+list.length+'건</span></td></tr>'
-        +rows;
-    }).join('');
+  var html=GRADES.map(g=>{
+    var list=adoptedList.filter(d=>d.award===g.key);
+    if (!list.length) return '';
+    list.sort((a,b)=>periodSort(b.period)-periodSort(a.period));
+    var rows=list.map((d,i)=>'<tr onclick="openDetailFrom('+d.id+',\'adopted\')">'
+      +'<td class="num">'+String(i+1).padStart(2,'0')+'</td>'+titleCell(d)
+      +'<td>'+catBadge(d.category)+'</td><td>'+periodBadge(d.period)+'</td>'
+      +'<td style="text-align:center">'+(d.pdf?(['png','jpg','jpeg'].includes(d.pdf.split('.').pop().toLowerCase())?'🖼️':'📄'):'')+'</td></tr>').join('');
     return '<div class="adopted-section" style="margin-bottom:20px">'
-      +'<div class="adopted-hdr" style="background:linear-gradient(90deg,var(--navy),#2c4a8a)">'
-      +'<span style="font-size:22px">📅</span>'
-      +'<span class="adopted-grade">'+yr+'년 채택제안</span>'
-      +'<span class="adopted-count">'+yearData.length+'건</span></div>'
+      +'<div class="adopted-hdr" style="background:'+g.bg+'">'
+      +'<span style="font-size:24px">'+g.icon+'</span>'
+      +'<span class="adopted-grade">'+g.key+'</span>'
+      +'<span class="adopted-count">'+list.length+'건</span></div>'
       +'<div class="tbl-wrap"><table><thead><tr>'
       +'<th style="width:44px">번호</th><th>제목</th><th style="width:130px">분류</th><th style="width:110px">기간</th><th style="width:44px">PDF</th>'
-      +'</tr></thead><tbody>'+gradeRows+'</tbody></table></div></div>';
+      +'</tr></thead><tbody>'+rows+'</tbody></table></div></div>';
   }).join('');
   document.getElementById('adoptedArea').innerHTML=html;
 }
@@ -1128,7 +1173,7 @@ function submitForm() {
   });
   ['f_title','f_proposer','f_summary','f_pdf'].forEach(id=>document.getElementById(id).value='');
   showToast('등록되었습니다!','ok');
-  showSave();
+ 
   switchTab('list',document.querySelectorAll('.nav-btn')[0]);
 }
 
@@ -1165,7 +1210,7 @@ function saveEdit() {
     summary,
     pdf:     document.getElementById('e_pdf').value.trim(),
   };
-  closeEdit(); showToast('수정되었습니다!','ok'); showSave(); renderAll();
+  closeEdit(); showToast('수정되었습니다!','ok'); renderAll();
   if (_gToken) saveToSheet(DATA[idx]);
   // 상세 화면이 열려 있으면 갱신
   if (_curId===DATA[idx].id) openDetail(_curId);
@@ -1173,15 +1218,88 @@ function saveEdit() {
 function deleteItem() {
   if (!confirm('이 제안을 삭제하시겠습니까?')) return;
   DATA=DATA.filter(x=>x.id!==_editId);
-  closeEdit(); closeDetail(); showToast('삭제되었습니다','ok'); showSave(); renderAll();
+  closeEdit(); closeDetail(); showToast('삭제되었습니다','ok'); renderAll();
 }
 
 // ── 저장 ─────────────────────────────────────────────
-function showSave() {}
-function copyData() {
-  var text='var DATA = '+JSON.stringify(DATA,null,2)+';';
-  if (navigator.clipboard) navigator.clipboard.writeText(text).then(()=>showToast('복사됐습니다!','ok'));
-  else { var ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); showToast('복사됐습니다!','ok'); }
+
+// ── 통계 탭 ──────────────────────────────────────────
+var _chartYear = null, _chartAward = null;
+
+function renderStats2() {
+  if (!DATA.length) {
+    document.getElementById('statsCards').innerHTML='<div style="grid-column:1/-1;text-align:center;color:#bbb;padding:40px">데이터를 불러오는 중...</div>';
+    return;
+  }
+
+  // ── 요약 카드 ──
+  var total=DATA.length;
+  var adopted=DATA.filter(d=>ADOPTED.has(d.award)).length;
+  var reviewing=DATA.filter(d=>d.award==='심사중').length;
+  var top=DATA.filter(d=>d.award==='최우수').length;
+  var adoptRate=total>0?Math.round(adopted/total*100):0;
+  document.getElementById('statsCards').innerHTML=[
+    {cls:'sc1',vcls:'sv1',icon:'📝',val:total+'건',        label:'전체 제안'},
+    {cls:'sc2',vcls:'sv2',icon:'🏆',val:adopted+'건',      label:'채택 수상 ('+adoptRate+'%)'},
+    {cls:'sc3',vcls:'sv3',icon:'🔍',val:reviewing+'건',    label:'심사 중'},
+    {cls:'sc4',vcls:'sv4',icon:'⭐',val:top+'건',          label:'최우수 수상'},
+  ].map(s=>'<div class="stat-card '+s.cls+'"><div class="stat-icon">'+s.icon+'</div>'
+    +'<div><div class="stat-val '+s.vcls+'">'+s.val+'</div><div class="stat-label">'+s.label+'</div></div></div>'
+  ).join('');
+
+  // ── 연도별 막대 그래프 ──
+  var years=[...new Set(DATA.map(d=>parseInt(d.period)||0))].filter(Boolean).sort((a,b)=>a-b);
+  var yearTotals=years.map(y=>DATA.filter(d=>parseInt(d.period)===y).length);
+  var yearAdopted=years.map(y=>DATA.filter(d=>parseInt(d.period)===y&&ADOPTED.has(d.award)).length);
+
+  if (_chartYear) _chartYear.destroy();
+  _chartYear = new Chart(document.getElementById('chartYear'), {
+    type: 'bar',
+    data: {
+      labels: years.map(y=>y+'년'),
+      datasets: [
+        { label:'전체 제안', data:yearTotals,  backgroundColor:'rgba(44,111,189,0.7)', borderRadius:6, borderSkipped:false },
+        { label:'채택 수상', data:yearAdopted, backgroundColor:'rgba(42,157,143,0.85)', borderRadius:6, borderSkipped:false },
+      ]
+    },
+    options: {
+      responsive:true, plugins:{ legend:{position:'top'}, tooltip:{mode:'index'} },
+      scales:{ y:{beginAtZero:true, ticks:{stepSize:1}, grid:{color:'rgba(0,0,0,0.05)'} }, x:{grid:{display:false}} }
+    }
+  });
+
+  // ── 심사결과 도넛 ──
+  var awardCounts=AWARD_LABELS.map(a=>DATA.filter(d=>d.award===a).length);
+  var awardColors=['#f39c12','#f0c000','#4a7ef5','#2ecc71','#9b59b6','#bbb'];
+  if (_chartAward) _chartAward.destroy();
+  _chartAward = new Chart(document.getElementById('chartAward'), {
+    type: 'doughnut',
+    data: {
+      labels: AWARD_LABELS,
+      datasets:[{ data:awardCounts, backgroundColor:awardColors, borderWidth:2, borderColor:'#fff', hoverOffset:8 }]
+    },
+    options: {
+      responsive:true, cutout:'62%',
+      plugins:{ legend:{position:'bottom', labels:{font:{size:12}, padding:12}}, tooltip:{} }
+    }
+  });
+
+  // ── 채택률 바 ──
+  var rateHtml=AWARD_LABELS.filter(a=>a!=='심사중'&&a!=='미채택').map(a=>{
+    var cnt=DATA.filter(d=>d.award===a).length;
+    var pct=total>0?Math.round(cnt/total*100):0;
+    var colorMap={'최우수':'#f0c000','우수':'#4a7ef5','장려':'#2ecc71','특별상':'#9b59b6'};
+    var c=colorMap[a]||'#888';
+    return '<div style="margin-bottom:14px">'
+      +'<div style="display:flex;justify-content:space-between;font-size:13px;font-weight:600;margin-bottom:5px">'
+      +'<span>'+a+'</span><span style="color:'+c+'">'+cnt+'건 ('+pct+'%)</span></div>'
+      +'<div style="background:#f0f3f8;border-radius:8px;height:10px;overflow:hidden">'
+      +'<div style="width:'+pct+'%;height:100%;background:'+c+';border-radius:8px;transition:width .6s"></div></div></div>';
+  }).join('');
+  rateHtml+='<div style="margin-top:18px;padding-top:14px;border-top:1px solid #eee;display:flex;justify-content:space-between;font-size:13px">'
+    +'<span style="color:#778">전체 채택률</span>'
+    +'<span style="font-weight:800;font-size:18px;color:var(--teal)">'+adoptRate+'%</span></div>';
+  document.getElementById('adoptRateArea').innerHTML=rateHtml;
 }
 
 function renderAll() { renderStats(); populateFilters(); renderTable(); }
