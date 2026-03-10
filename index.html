@@ -65,8 +65,7 @@ tbody tr:hover td { background:#eef3ff; }
 
 /* 툴팁 */
 .tip-wrap { position:relative; display:inline-block; max-width:100%; }
-.tip-box { display:none; position:absolute; left:0; top:calc(100% + 6px); z-index:300; width:420px; background:#1e2d50; color:#e0e8f8; font-size:12.5px; line-height:1.7; padding:11px 14px; border-radius:9px; box-shadow:0 6px 24px rgba(0,0,0,.25); white-space:normal; pointer-events:none; }
-.tip-box::before { content:''; position:absolute; top:-6px; left:16px; border-left:6px solid transparent; border-right:6px solid transparent; border-bottom:6px solid #1e2d50; }
+.tip-box { display:none; position:fixed; z-index:300; width:420px; background:#1e2d50; color:#e0e8f8; font-size:12.5px; line-height:1.7; padding:11px 14px; border-radius:9px; box-shadow:0 6px 24px rgba(0,0,0,.25); white-space:normal; pointer-events:none; }
 .tip-wrap:hover .tip-box { display:block; }
 
 /* 배지 */
@@ -513,7 +512,7 @@ function loadFromSheet() {
           dept:     get(r, '부서'),
           period:   year,
           category: get(r, '분류'),
-          award:    get(r, '심사결과'),
+          award:    (get(r, '심사결과')||'').trim(),
           summary:  get(r, '요약'),
           keywords: kw,
           pdf:      get(r, '첨부파일'),
@@ -896,7 +895,8 @@ function openDetail(id) {
   var adminMeta=isAdmin
     ?'<span class="admin-tag">'+esc(d.dept)+' · '+esc(d.proposer)+'</span>'
     :'<span class="lock-tag">🔒 제안자 정보는 관리자 공개</span>';
-  var steps=AWARD_LABELS.map(s=>'<span class="af-step '+(d.award===s?'abadge a-'+s:'')+'">'+ s+'</span>').join('');
+  var award = (d.award||'').trim();
+  var steps=AWARD_LABELS.map(s=>'<span class="af-step '+(award===s?'abadge a-'+s:'')+'">'+ s+'</span>').join('');
   var pdfHtml='';
   if (d.pdf) {
     var fn=d.pdf, ext=fn.split('.').pop().toLowerCase();
@@ -1181,6 +1181,25 @@ function copyData() {
 
 function renderAll() { renderStats(); populateFilters(); renderTable(); }
 renderAll();
+
+// ── 툴팁 위치 동적 계산 ──────────────────────────────
+document.addEventListener('mouseover', function(e) {
+  var wrap = e.target.closest('.tip-wrap');
+  if (!wrap) return;
+  var box = wrap.querySelector('.tip-box');
+  if (!box) return;
+  var rect = wrap.getBoundingClientRect();
+  var boxH = 200; // 예상 높이
+  var spaceBelow = window.innerHeight - rect.bottom;
+  if (spaceBelow < boxH + 20) {
+    box.style.top = '';
+    box.style.bottom = (window.innerHeight - rect.top + 6) + 'px';
+  } else {
+    box.style.bottom = '';
+    box.style.top = (rect.bottom + 6) + 'px';
+  }
+  box.style.left = Math.min(rect.left, window.innerWidth - 430) + 'px';
+});
 window.onload = function() {
   loadFromSheet();
   setTimeout(initGoogleAuth, 1000);
