@@ -484,27 +484,32 @@ textarea.fi { resize:vertical; }
 
 // ── 구글 시트 연동 ──────────────────────────────
 var SHEET_ID = '1TzKHf4QxH8XqB05duVSXlSdM42_ThGJuy0C1Qewvywo';
-var SHEET_URL = 'https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:json&sheet=Sheet1';
+var SHEET_URL = 'https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:json&sheet=sheet1';
 
 function loadFromSheet() {
   fetch(SHEET_URL)
     .then(function(r){ return r.text(); })
     .then(function(text) {
-      // 구글 시트 응답에서 JSON 부분만 추출
       var start = text.indexOf('{');
       var end = text.lastIndexOf('}');
       var jsonStr = text.substring(start, end + 1);
       var json = JSON.parse(jsonStr);
       var rows = json.table.rows;
-      var cols = json.table.cols.map(function(c){ return (c.label||'').trim(); });
+      if (!rows || rows.length === 0) { showToast('시트 데이터 없음', 'err'); return; }
+
+      // 첫 번째 행을 헤더로 사용 (label이 비어있는 경우 대비)
+      var headerRow = rows[0];
+      var cols = headerRow.c.map(function(c){ return c && c.v ? String(c.v).trim() : ''; });
+
       function get(r, label) {
         var idx = cols.indexOf(label);
-        return idx >= 0 && r.c[idx] ? String(r.c[idx].v||'') : '';
+        return idx >= 0 && r.c[idx] && r.c[idx].v ? String(r.c[idx].v) : '';
       }
-      DATA = rows.filter(function(r){ return r.c && r.c[0] && r.c[0].v; }).map(function(r, i) {
+
+      DATA = rows.slice(1).filter(function(r){ return r.c && r.c[0] && r.c[0].v; }).map(function(r, i) {
         var seq = get(r, '순번');
         var year = seq.match(/^(\d{4})/)?.[1] || '';
-        var kw = get(r, '키워드');
+        var kw = get(r, '키워드') || get(r, '키워드 ');
         return {
           id: Date.now() + i,
           title:    get(r, '제목'),
