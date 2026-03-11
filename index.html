@@ -13,22 +13,30 @@
 </head>
 <body>
 
-<header>
-  <div class="dream-banner-title">대전관광공사 <span>혁신드림</span>제안제도 통합관리대장</div>
-  <nav>
-    <button class="nav-btn on" onclick="switchTab('list',this)"><span class="nav-icon">📋</span> 목록</button>
-    <button class="nav-btn" onclick="switchTab('year',this)"><span class="nav-icon">📅</span> 연도별</button>
-    <button class="nav-btn" onclick="switchTab('cat',this)"><span class="nav-icon">🗂️</span> 분류별</button>
-    <button class="nav-btn" onclick="switchTab('adopted',this)"><span class="nav-icon">🏅</span> 채택제안</button>
-    <button class="nav-btn" onclick="switchTab('stats',this)"><span class="nav-icon">📊</span> 통계</button>
-
-  </nav>
-  <div style="display:flex;align-items:center;gap:12px">
-  <span style="color:#a0b4d8;font-size:12px;font-weight:500">전략기획팀 이지민주임&nbsp;📞1148</span>
-  <button class="admin-btn" onclick="loadFromSheet()" style="background:#4ecdc4;margin-right:6px">🔄 새로고침</button>
-  <button class="admin-btn" id="googleBtn" onclick="googleLogin()" style="background:#fff;color:#444;border-color:#ddd">🔑 Google</button>
-  <button class="admin-btn" id="adminBtn" onclick="toggleAdmin()">🔒 관리자</button>
+<div class="dream-banner">
+  <div class="dream-banner-inner">
+    <div class="dream-banner-text">
+      <div class="dream-banner-title">대전관광공사 <span>혁신드림</span>제안제도 통합관리대장</div>
+    </div>
+    <img class="dream-banner-img" src="dream-banner.png" alt="꿈씨패밀리">
+  </div>
 </div>
+<header>
+  <div class="header-inner">
+    <nav>
+      <button class="nav-btn on" onclick="switchTab('list',this)"><span class="nav-icon">📋</span> 목록</button>
+      <button class="nav-btn" onclick="switchTab('year',this)"><span class="nav-icon">📅</span> 연도별</button>
+      <button class="nav-btn" onclick="switchTab('cat',this)"><span class="nav-icon">🗂️</span> 분류별</button>
+      <button class="nav-btn" onclick="switchTab('adopted',this)"><span class="nav-icon">🏅</span> 채택제안</button>
+      <button class="nav-btn" onclick="switchTab('stats',this)"><span class="nav-icon">📊</span> 통계</button>
+    </nav>
+    <div style="display:flex;align-items:center;gap:12px">
+      <span style="color:#a0b4d8;font-size:12px;font-weight:500">전략기획팀 이지민주임&nbsp;📞1148</span>
+      <button class="admin-btn" onclick="loadFromSheet()" style="background:#4ecdc4;margin-right:6px">🔄 새로고침</button>
+      <button class="admin-btn" id="googleBtn" onclick="googleLogin()" style="background:#fff;color:#444;border-color:#ddd">🔑 Google</button>
+      <button class="admin-btn" id="adminBtn" onclick="toggleAdmin()">🔒 관리자</button>
+    </div>
+  </div>
 </header>
 
 <!-- 비밀번호 모달 -->
