@@ -231,8 +231,6 @@ textarea.fi { resize:vertical; }
 .det-nav-pos { color:#aaa; font-size:12px; font-weight:600; }
 
 /* 잠금 */
-.locked-notice { background:#f0f4ff; border:1.5px dashed #b0c4e8; border-radius:12px; padding:40px; text-align:center; color:#557; font-size:14px; line-height:1.9; }
-.lock-big { font-size:38px; margin-bottom:10px; }
 </style>
 </head>
 <body>
@@ -249,7 +247,7 @@ textarea.fi { resize:vertical; }
     <button class="nav-btn" onclick="switchTab('cat',this)"><span class="nav-icon">🗂️</span> 분류별</button>
     <button class="nav-btn" onclick="switchTab('adopted',this)"><span class="nav-icon">🏅</span> 채택제안</button>
     <button class="nav-btn" onclick="switchTab('stats',this)"><span class="nav-icon">📊</span> 통계</button>
-    <button class="nav-btn" onclick="handleFormTab(this)"><span class="nav-icon">✏️</span> 신규등록</button>
+
   </nav>
   <div style="display:flex;align-items:center;gap:12px">
   <span style="color:#a0b4d8;font-size:12px;font-weight:500">전략기획팀 이지민주임&nbsp;📞1148</span>
@@ -442,86 +440,6 @@ textarea.fi { resize:vertical; }
       </div>
     </div>
   </div>
-
-  <!-- 신규등록 -->
-  <div class="tab-content" id="tab-form">
-    <div id="formLocked" class="locked-notice">
-      <div class="lock-big">🔒</div>
-      <strong>신규 등록은 관리자만 가능합니다</strong><br>
-      우측 상단의 <b>관리자</b> 버튼을 눌러 로그인하면 등록 화면이 열립니다.
-    </div>
-    <div id="formContent" style="display:none;max-width:700px;margin:0 auto" class="card">
-      <div class="form-hdr">
-        <div class="form-ttl">✏️ 신규 제안 등록</div>
-        <div class="form-hint">* 표시 항목은 필수입니다</div>
-      </div>
-      <div class="form-body">
-        <div class="form-grid">
-          <div class="form-full">
-            <label>제안 제목 <span class="req">*</span></label>
-            <input class="fi" id="f_title" type="text" placeholder="제안 제목을 입력하세요">
-          </div>
-          <div>
-            <label>제안자</label>
-            <input class="fi" id="f_proposer" type="text" placeholder="이름">
-          </div>
-          <div>
-            <label>소속 부서</label>
-            <select class="fi" id="f_dept" onchange="deptToggle('f_dept','f_dept_etc')">
-              <option>안전감사팀</option><option>전략기획팀</option><option>인사노무팀</option>
-              <option>총무회계팀</option><option>관광사업팀</option><option>융합사업팀</option>
-              <option>홍보마케팅팀</option><option>축제행사팀</option><option>관광개발팀</option>
-              <option>시설운영팀</option><option>시민광장팀</option><option>운영지원팀</option>
-              <option>센터마케팅팀</option><option>전시기획팀</option><option>MICE뷰로팀</option>
-              <option>세계태양광총회TF팀</option><option>기타(직접입력)</option>
-            </select>
-            <input class="fi" id="f_dept_etc" type="text" placeholder="부서명 직접 입력" style="display:none;margin-top:6px">
-          </div>
-          <div>
-            <label>등록 연도</label>
-            <!-- ★ 기간 목록은 여기서 추가하세요 ★ -->
-            <select class="fi" id="f_period">
-              <option>2026</option><option>2025</option><option>2024</option>
-              <option>2023</option><option>2022</option><option>2021</option>
-              <option>2020</option><option>2019</option><option>2018</option><option>2017</option>
-            </select>
-          </div>
-          <div>
-            <label>제안 분류</label>
-            <select class="fi" id="f_category">
-              <option>관광아이디어발굴</option><option>조직혁신</option>
-              <option>사회적가치실현</option><option>기타</option>
-            </select>
-          </div>
-          <div>
-            <label>심사 결과</label>
-            <select class="fi" id="f_award">
-              <option>심사중</option><option>최우수</option><option>우수</option>
-              <option>장려</option><option>특별상</option><option>미채택</option>
-            </select>
-          </div>
-          <div class="form-full">
-            <label>요약 <span class="req">*</span></label>
-            <textarea class="fi" id="f_summary" rows="3" placeholder="제안 내용을 간략히 요약해주세요. (목록과 툴팁에 표시됩니다)"></textarea>
-          </div>
-          <div class="form-full">
-            <label>첨부 파일 <span style="font-size:11px;color:#aaa;font-weight:400">(PDF · PNG · JPG)</span></label>
-            <div class="pdf-input-wrap">
-              <input class="fi" id="f_pdf" type="text" placeholder="예: 2017_01_교육기부.png">
-              <label for="f_pdf_file" class="pdf-preview-btn" style="cursor:pointer;margin:0">📂 파일 선택</label>
-              <input type="file" id="f_pdf_file" accept=".pdf,.png,.jpg,.jpeg" style="display:none" onchange="fillFilename('f_pdf_file','f_pdf')">
-              <button class="pdf-preview-btn" onclick="previewPdf('f_pdf')">미리보기</button>
-            </div>
-            <div class="fi-hint">📁 연도 폴더(2017, 2018...) 안에 있는 파일을 선택하면 경로가 자동 입력됩니다.</div>
-          </div>
-        </div>
-        <div class="form-actions">
-          <button class="btn-cancel" onclick="switchTab('list',document.querySelectorAll('.nav-btn')[0])">취소</button>
-          <button class="btn-submit" onclick="submitForm()">등록하기</button>
-        </div>
-      </div>
-    </div>
-  </div>
 </main>
 
 <script>
@@ -661,11 +579,6 @@ function switchTab(name, btn) {
   if (name==='cat')     renderCat();
   if (name==='adopted') renderAdopted();
   if (name==='stats')   renderStats2();
-}
-function handleFormTab(btn) {
-  switchTab('form', btn);
-  document.getElementById('formLocked').style.display  = isAdmin?'none':'block';
-  document.getElementById('formContent').style.display = isAdmin?'block':'none';
 }
 
 // ── 관리자 ───────────────────────────────────────────
@@ -1175,26 +1088,6 @@ function showAdoptedPanel(key) {
     '<div class="yr-section"><div class="yr-hdr" style="background:'+g.bg+'">'    +'<div class="yr-title">'+g.icon+' '+g.key+'</div>'    +'<div class="yr-chips">'    +'<div class="yr-chip"><div class="yv yv1">'+list.length+'건</div><div class="yl">전체</div></div>'    +(years.length?'<div class="yr-chip"><div class="yv" style="color:#fff;font-size:13px">'+yearRange+'</div><div class="yl">기간</div></div>':'')    +'</div></div>'    +'<div class="tbl-wrap"><table><thead><tr>'    +'<th style="width:44px">번호</th><th>제목</th><th style="width:130px">분류</th><th style="width:110px">기간</th><th style="width:44px">PDF</th>'    +'</tr></thead><tbody>'+rows+'</tbody></table></div></div>';
 }
 
-// ── 등록 ─────────────────────────────────────────────
-function submitForm() {
-  if (!isAdmin) { showToast('관리자만 등록할 수 있습니다','err'); return; }
-  var title   =document.getElementById('f_title').value.trim();
-  var proposer=document.getElementById('f_proposer').value.trim();
-  var summary =document.getElementById('f_summary').value.trim();
-  if (!title||!summary) { showToast('제목, 요약은 필수입니다','err'); return; }
-  DATA.push({ id:Date.now(), title, proposer,
-    dept:    getDept('f_dept','f_dept_etc'),
-    period:  document.getElementById('f_period').value,
-    category:document.getElementById('f_category').value,
-    award:   document.getElementById('f_award').value,
-    summary,
-    pdf:     document.getElementById('f_pdf').value.trim(),
-  });
-  ['f_title','f_proposer','f_summary','f_pdf'].forEach(id=>document.getElementById(id).value='');
-  showToast('등록되었습니다!','ok');
- 
-  switchTab('list',document.querySelectorAll('.nav-btn')[0]);
-}
 
 // ── 수정 ─────────────────────────────────────────────
 function openEdit(id) {
