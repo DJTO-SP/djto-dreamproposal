@@ -261,10 +261,11 @@ function toggleCheck(id, cb) {
 }
 function bulkChangeAward(val) {
   if (!val) return;
+  if (!_gToken) { showToast('🔑 Google 로그인 후 변경 가능합니다','err'); document.getElementById('bulkSel').value=''; return; }
   _checkedIds.forEach(id=>{
     var idx=DATA.findIndex(x=>x.id===id); if(idx===-1) return;
     DATA[idx].award=val;
-    if (_gToken) saveToSheet(DATA[idx]);
+    saveToSheet(DATA[idx]);
   });
   _checkedIds.clear();
   document.getElementById('bulkBar').style.display='none';
@@ -381,6 +382,27 @@ function findRowBySeq(seq, callback) {
   }).catch(()=>callback(-1));
 }
 
+function deleteFromSheet(seq) {
+  if (!_gToken || !seq) return;
+  // Sheet1의 sheetId 먼저 조회
+  fetch('https://sheets.googleapis.com/v4/spreadsheets/'+SHEET_ID+'?fields=sheets.properties', {
+    headers: { Authorization: 'Bearer ' + _gToken }
+  }).then(r=>r.json()).then(meta=>{
+    var sheet1 = (meta.sheets||[]).find(s=>s.properties.title==='Sheet1');
+    var sheetId = sheet1 ? sheet1.properties.sheetId : 0;
+    findRowBySeq(seq, function(rowNum) {
+      if (rowNum < 0) return;
+      fetch('https://sheets.googleapis.com/v4/spreadsheets/'+SHEET_ID+':batchUpdate', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + _gToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ requests: [{ deleteDimension: { range: {
+          sheetId: sheetId, dimension: 'ROWS', startIndex: rowNum-1, endIndex: rowNum
+        }}}]})
+      }).catch(()=>showToast('시트 삭제 실패','err'));
+    });
+  }).catch(()=>showToast('시트 삭제 실패','err'));
+}
+
 function saveToSheet(d) {
   if (!_gToken) return; // 토큰 없으면 스킵
   if (!d.seq) return;   // 순번 없으면 스킵
@@ -400,10 +422,11 @@ function saveToSheet(d) {
 
 // ── 빠른 편집 ────────────────────────────────────────
 function quickEdit(id, field, val) {
+  if (!_gToken) { showToast('🔑 Google 로그인 후 수정 가능합니다','err'); return; }
   var idx=DATA.findIndex(x=>x.id===id); if(idx===-1) return;
   DATA[idx][field]=val;
   showToast('저장됐습니다!','ok');
-  if (_gToken) saveToSheet(DATA[idx]);
+  saveToSheet(DATA[idx]);
   if(_curId===id) openDetail(id);
 }
 
@@ -677,14 +700,18 @@ function saveEdit() {
     summary,
     pdf:     document.getElementById('e_pdf').value.trim(),
   };
+  if (!_gToken) { showToast('🔑 Google 로그인 후 수정 가능합니다','err'); return; }
   closeEdit(); showToast('수정되었습니다!','ok'); renderAll();
-  if (_gToken) saveToSheet(DATA[idx]);
+  saveToSheet(DATA[idx]);
   // 상세 화면이 열려 있으면 갱신
   if (_curId===DATA[idx].id) openDetail(_curId);
 }
 function deleteItem() {
+  if (!_gToken) { showToast('🔑 Google 로그인 후 삭제 가능합니다','err'); return; }
   if (!confirm('이 제안을 삭제하시겠습니까?')) return;
+  var d = DATA.find(x=>x.id===_editId);
   DATA=DATA.filter(x=>x.id!==_editId);
+  if (d) deleteFromSheet(d.seq);
   closeEdit(); closeDetail(); showToast('삭제되었습니다','ok'); renderAll();
 }
 
