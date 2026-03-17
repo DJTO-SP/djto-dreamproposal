@@ -403,12 +403,12 @@ function deleteFromSheet(seq) {
   }).catch(()=>showToast('시트 삭제 실패','err'));
 }
 
-function saveToSheet(d) {
-  if (!_gToken) return; // 토큰 없으면 스킵
-  if (!d.seq) return;   // 순번 없으면 스킵
-  findRowBySeq(d.seq, function(rowNum) {
+function saveToSheet(d, oldSeq) {
+  if (!_gToken) return;
+  if (!d.seq) return;
+  var lookupSeq = oldSeq || d.seq;
+  findRowBySeq(lookupSeq, function(rowNum) {
     if (rowNum < 0) { showToast('시트에서 행을 찾지 못했습니다', 'err'); return; }
-    // 컬럼 순서: 순번|제목|분류|요약|키워드|제안자|부서|심사결과|첨부파일
     var values = [[d.seq, d.title, d.category, d.summary, d.keywords||'', d.proposer, d.dept, d.award, d.pdf||'']];
     fetch('https://sheets.googleapis.com/v4/spreadsheets/'+SHEET_ID+'/values/Sheet1!A'+rowNum+'?valueInputOption=RAW', {
       method: 'PUT',
@@ -692,17 +692,21 @@ function saveEdit() {
   var summary=document.getElementById('e_summary').value.trim();
   if (!title||!summary) { showToast('제목, 요약은 필수입니다','err'); return; }
   var idx=DATA.findIndex(x=>x.id===_editId); if(idx===-1) return;
+  var newPeriod = document.getElementById('e_period').value;
+  var oldSeq = DATA[idx].seq || '';
+  var newSeq = newPeriod && oldSeq ? oldSeq.replace(/^\d{4}/, newPeriod) : oldSeq;
   DATA[idx]={...DATA[idx], title, proposer,
     dept:    getDept('e_dept','e_dept_etc'),
-    period:  document.getElementById('e_period').value,
+    period:  newPeriod,
     category:document.getElementById('e_category').value,
     award:   document.getElementById('e_award').value,
     summary,
     pdf:     document.getElementById('e_pdf').value.trim(),
+    seq:     newSeq,
   };
   if (!_gToken) { showToast('🔑 Google 로그인 후 수정 가능합니다','err'); return; }
   closeEdit(); showToast('수정되었습니다!','ok'); renderAll();
-  saveToSheet(DATA[idx]);
+  saveToSheet(DATA[idx], oldSeq);
   // 상세 화면이 열려 있으면 갱신
   if (_curId===DATA[idx].id) openDetail(_curId);
 }
