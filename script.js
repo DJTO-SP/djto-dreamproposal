@@ -630,11 +630,41 @@ var GRADES = [
   {key:'장려',   bg:'linear-gradient(90deg,#155035,#27ae60)', icon:'🥉'},
   {key:'특별상', bg:'linear-gradient(90deg,#3d0e80,#7b2fd4)', icon:'🌟'},
 ];
+function renderAdoptedHero() {
+  var heroEl = document.getElementById('adoptedHero');
+  if (!heroEl) return;
+  var thisYear = new Date().getFullYear();
+  var yearList = DATA.filter(function(d){ return ADOPTED.has(d.award) && parseInt(d.period) === thisYear; });
+  if (!yearList.length) {
+    heroEl.innerHTML =
+      '<div class="adopted-hero">'
+      +'<div class="adopted-hero-badge">🏆 올해의 채택제안</div>'
+      +'<div class="adopted-hero-title">'+thisYear+'년 채택제안 하이라이트</div>'
+      +'<div class="adopted-hero-sub">올해 채택된 제안에 응원과 의견을 남겨보세요! 💬</div>'
+      +'<div class="adopted-hero-empty">🌱 '+thisYear+'년 채택된 제안이 아직 없습니다.<br><span>채택제안이 등록되면 여기에 표시됩니다.</span></div>'
+      +'</div>';
+    return;
+  }
+  var rows = yearList.map(function(d,i) {
+    return '<tr onclick="openDetailFrom('+d.id+',\'adopted\')">'      +'<td class="num">'+String(i+1).padStart(2,'0')+'</td>'      +titleCell(d)      +'<td>'+catBadge(d.category)+'</td>'      +'<td>'+periodBadge(d.period)+'</td>'      +'<td style="text-align:center">'+(d.pdf?(['png','jpg','jpeg'].includes(d.pdf.split('.').pop().toLowerCase())?'🖼️':'📄'):'')+'</td>'      +'</tr>';
+  }).join('');
+  heroEl.innerHTML =
+    '<div class="adopted-hero">'
+    +'<div class="adopted-hero-badge">🏆 올해의 채택제안</div>'
+    +'<div class="adopted-hero-title">'+thisYear+'년 채택제안 하이라이트</div>'
+    +'<div class="adopted-hero-sub">올해 채택된 제안에 응원과 의견을 남겨보세요! 💬</div>'
+    +'<div class="tbl-wrap" style="margin-top:14px">'
+    +'<table><thead><tr>'
+    +'<th style="width:44px">번호</th><th>제목</th><th style="width:130px">분류</th><th style="width:110px">기간</th><th style="width:44px">PDF</th>'
+    +'</tr></thead><tbody>'+rows+'</tbody></table></div>'
+    +'</div>';
+}
 function renderAdopted() {
+  renderAdoptedHero();
   var adoptedList=DATA.filter(d=>ADOPTED.has(d.award));
   if (!adoptedList.length) {
     document.getElementById('adoptedNav').innerHTML='';
-    document.getElementById('adoptedArea').innerHTML='<div class="card"><div class="empty">아직 채택된 제안이 없습니다.</div></div>'; return;
+    document.getElementById('adoptedArea').innerHTML=''; return;
   }
   var available=GRADES.filter(g=>adoptedList.some(d=>d.award===g.key));
   if (!_curGrade || !available.find(g=>g.key===_curGrade)) _curGrade=available[0].key;

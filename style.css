@@ -221,3 +221,64 @@ textarea.fi { resize:vertical; }
 .det-nav-pos { color:#aaa; font-size:12px; font-weight:600; }
 
 /* 잠금 */
+
+/* ── 채택제안 히어로 배너 ──────────────────────────── */
+.adopted-hero {
+  background: linear-gradient(135deg, #1a3a6e 0%, #2563c4 60%, #0ea5a0 100%);
+  border-radius: 16px;
+  padding: 28px 32px 24px;
+  margin-bottom: 18px;
+  position: relative;
+  overflow: hidden;
+}
+.adopted-hero::before {
+  content: '✨';
+  position: absolute;
+  right: 28px;
+  top: 20px;
+  font-size: 48px;
+  opacity: 0.2;
+  pointer-events: none;
+}
+.adopted-hero-badge {
+  display: inline-block;
+  background: rgba(255,255,255,0.18);
+  color: #ffd966;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 20px;
+  margin-bottom: 10px;
+  letter-spacing: 0.3px;
+}
+.adopted-hero-title {
+  color: #fff;
+  font-size: 22px;
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+.adopted-hero-sub {
+  color: rgba(255,255,255,0.75);
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+.adopted-hero-empty {
+  color: rgba(255,255,255,0.7);
+  font-size: 13px;
+  margin-top: 16px;
+  line-height: 1.8;
+}
+.adopted-hero-empty span { font-size: 12px; opacity: 0.6; }
+.adopted-hero .tbl-wrap { margin-top: 14px; }
+.adopted-hero table { background: transparent; }
+.adopted-hero thead th {
+  background: rgba(255,255,255,0.12) !important;
+  color: rgba(255,255,255,0.8) !important;
+  border-bottom: 1px solid rgba(255,255,255,0.15) !important;
+}
+.adopted-hero tbody tr:hover td { background: rgba(255,255,255,0.1) !important; }
+.adopted-hero tbody td {
+  color: rgba(255,255,255,0.9);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.adopted-hero .num { color: rgba(255,255,255,0.4); }
