@@ -645,18 +645,26 @@ function renderAdoptedHero() {
       +'</div>';
     return;
   }
-  var rows = yearList.map(function(d,i) {
-    return '<tr onclick="openDetailFrom('+d.id+',\'adopted\')">'      +'<td class="num">'+String(i+1).padStart(2,'0')+'</td>'      +titleCell(d)      +'<td>'+catBadge(d.category)+'</td>'      +'<td>'+periodBadge(d.period)+'</td>'      +'<td style="text-align:center">'+(d.pdf?(['png','jpg','jpeg'].includes(d.pdf.split('.').pop().toLowerCase())?'🖼️':'📄'):'')+'</td>'      +'</tr>';
+  var cards = yearList.map(function(d) {
+    var isImg = d.pdf && ['png','jpg','jpeg'].includes(d.pdf.split('.').pop().toLowerCase());
+    var pdfIcon = d.pdf ? (isImg ? '🖼️' : '📄') : '';
+    var awardGrad = {
+      '최우수': 'linear-gradient(135deg,#7a5500,#c4920a)',
+      '우수':   'linear-gradient(135deg,#1a3070,#2c5cc5)',
+      '장려':   'linear-gradient(135deg,#155035,#27ae60)',
+      '특별상': 'linear-gradient(135deg,#3d0e80,#7b2fd4)',
+    }[d.award] || 'linear-gradient(135deg,#333,#666)';
+    return '<div class="hero-card">'
+      +'<div class="hero-card-award" style="background:'+awardGrad+'">'+d.award+'</div>'
+      +'<div class="hero-card-pdf">'+(pdfIcon||'<span style="opacity:.3">—</span>')+'</div>'
+      +'</div>';
   }).join('');
   heroEl.innerHTML =
     '<div class="adopted-hero">'
     +'<div class="adopted-hero-badge">🏆 올해의 채택제안</div>'
     +'<div class="adopted-hero-title">'+thisYear+'년 채택제안 하이라이트</div>'
-    +'<div class="adopted-hero-sub">올해 채택된 제안에 응원과 의견을 남겨보세요! 💬</div>'
-    +'<div class="tbl-wrap" style="margin-top:14px">'
-    +'<table><thead><tr>'
-    +'<th style="width:44px">번호</th><th>제목</th><th style="width:130px">분류</th><th style="width:110px">기간</th><th style="width:44px">PDF</th>'
-    +'</tr></thead><tbody>'+rows+'</tbody></table></div>'
+    +'<div class="adopted-hero-sub">올해 채택된 제안을 클릭해서 자세히 확인해보세요! 💬</div>'
+    +'<div class="hero-cards">'+cards+'</div>'
     +'</div>';
 }
 function renderAdopted() {
