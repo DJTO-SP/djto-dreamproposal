@@ -795,8 +795,8 @@ function renderStats2() {
     data: {
       labels: years.map(y=>y+'년'),
       datasets: [
-        { label:'전체 제안', data:yearTotals,  backgroundColor:bgTotal, borderRadius:20, borderSkipped:false, barPercentage:0.4, categoryPercentage:0.55 },
-        { label:'채택 수상', data:yearAdopted, backgroundColor:bgAdopt, borderRadius:20, borderSkipped:false, barPercentage:0.4, categoryPercentage:0.55 },
+        { label:'전체 제안', data:yearTotals,  backgroundColor:bgTotal, borderRadius:{topLeft:14,topRight:14,bottomLeft:0,bottomRight:0}, borderSkipped:false, barPercentage:0.7, categoryPercentage:0.7 },
+        { label:'채택 수상', data:yearAdopted, backgroundColor:bgAdopt, borderRadius:{topLeft:14,topRight:14,bottomLeft:0,bottomRight:0}, borderSkipped:false, barPercentage:0.7, categoryPercentage:0.7 },
       ]
     },
     options: {
@@ -813,15 +813,16 @@ function renderStats2() {
     }
   });
 
-  // ── 심사결과 도넛 ──
-  var awardCounts=AWARD_LABELS.map(a=>DATA.filter(d=>d.award===a).length);
-  var awardColors=['#A6B6BA','#5FC1C7','#738488','#A2D7DD','#D0D8DA','#EFECE7'];
+  // ── 심사결과 도넛 (심사중 제외) ──
+  var donutLabels=AWARD_LABELS.filter(a=>a!=='심사중');
+  var donutCounts=donutLabels.map(a=>DATA.filter(d=>d.award===a).length);
+  var donutColors=['#5FC1C7','#738488','#A2D7DD','#D0D8DA','#EFECE7'];
   if (_chartAward) _chartAward.destroy();
   _chartAward = new Chart(document.getElementById('chartAward'), {
     type: 'doughnut',
     data: {
-      labels: AWARD_LABELS,
-      datasets:[{ data:awardCounts, backgroundColor:awardColors, borderWidth:2, borderColor:'#fff', hoverOffset:8 }]
+      labels: donutLabels,
+      datasets:[{ data:donutCounts, backgroundColor:donutColors, borderWidth:2, borderColor:'#fff', hoverOffset:8 }]
     },
     options: {
       responsive:true, cutout:'62%',
