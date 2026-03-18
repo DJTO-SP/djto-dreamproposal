@@ -790,8 +790,8 @@ function renderStats2() {
     data: {
       labels: years.map(y=>y+'년'),
       datasets: [
-        { label:'전체 제안', data:yearTotals,  backgroundColor:'rgba(44,111,189,0.7)', borderRadius:6, borderSkipped:false },
-        { label:'채택 수상', data:yearAdopted, backgroundColor:'rgba(42,157,143,0.85)', borderRadius:6, borderSkipped:false },
+        { label:'전체 제안', data:yearTotals,  backgroundColor:'rgba(100,180,220,0.7)', borderRadius:10, borderSkipped:false, barPercentage:0.6 },
+        { label:'채택 수상', data:yearAdopted, backgroundColor:'rgba(95,193,199,0.8)', borderRadius:10, borderSkipped:false, barPercentage:0.6 },
       ]
     },
     options: {
@@ -802,7 +802,7 @@ function renderStats2() {
 
   // ── 심사결과 도넛 ──
   var awardCounts=AWARD_LABELS.map(a=>DATA.filter(d=>d.award===a).length);
-  var awardColors=['#f39c12','#f0c000','#4a7ef5','#2ecc71','#9b59b6','#bbb'];
+  var awardColors=['#f6c28b','#fce5a0','#a8c8f0','#a0ddb8','#c8b4e8','#d5d5d5'];
   if (_chartAward) _chartAward.destroy();
   _chartAward = new Chart(document.getElementById('chartAward'), {
     type: 'doughnut',
