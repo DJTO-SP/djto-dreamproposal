@@ -646,26 +646,39 @@ function renderAdoptedHero() {
     return;
   }
   var cards = yearList.map(function(d) {
-    var isImg = d.pdf && ['png','jpg','jpeg'].includes(d.pdf.split('.').pop().toLowerCase());
-    var pdfIcon = d.pdf ? (isImg ? '🖼️' : '📄') : '';
     var awardGrad = {
       '최우수': 'linear-gradient(135deg,#7a5500,#c4920a)',
       '우수':   'linear-gradient(135deg,#1a3070,#2c5cc5)',
       '장려':   'linear-gradient(135deg,#155035,#27ae60)',
       '특별상': 'linear-gradient(135deg,#3d0e80,#7b2fd4)',
     }[d.award] || 'linear-gradient(135deg,#333,#666)';
-    return '<div class="hero-card">'
+    var catIcon = CAT_ICON[d.category] || '📌';
+    return '<div class="hero-card" onclick="openDetailFrom('+d.id+',\'adopted\')">'
       +'<div class="hero-card-award" style="background:'+awardGrad+'">'+d.award+'</div>'
-      +'<div class="hero-card-pdf">'+(pdfIcon||'<span style="opacity:.3">—</span>')+'</div>'
+      +'<div class="hero-card-title">'+esc(d.title)+'</div>'
+      +'<div class="hero-card-meta">'+catIcon+' '+esc(d.category||'')+'</div>'
       +'</div>';
   }).join('');
   heroEl.innerHTML =
     '<div class="adopted-hero">'
     +'<div class="adopted-hero-badge">🏆 올해의 채택제안</div>'
-    +'<div class="adopted-hero-title">'+thisYear+'년 채택제안 하이라이트</div>'
     +'<div class="adopted-hero-sub">올해 채택된 제안을 클릭해서 자세히 확인해보세요! 💬</div>'
-    +'<div class="hero-cards">'+cards+'</div>'
+    +'<div class="hero-cards" id="heroCarousel">'+cards+'</div>'
     +'</div>';
+  // 호버 시 자동 스크롤
+  var carousel = document.getElementById('heroCarousel');
+  if (carousel && carousel.scrollWidth > carousel.clientWidth) {
+    var scrollDir = 1;
+    var scrollTimer = null;
+    carousel.addEventListener('mouseenter', function() {
+      scrollTimer = setInterval(function() {
+        carousel.scrollLeft += scrollDir * 2;
+        if (carousel.scrollLeft >= carousel.scrollWidth - carousel.clientWidth) scrollDir = -1;
+        if (carousel.scrollLeft <= 0) scrollDir = 1;
+      }, 20);
+    });
+    carousel.addEventListener('mouseleave', function() { clearInterval(scrollTimer); });
+  }
 }
 function renderAdopted() {
   renderAdoptedHero();
