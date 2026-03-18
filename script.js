@@ -625,10 +625,10 @@ function showCatPanel(cat) {
 // ── 채택제안 ─────────────────────────────────────────
 var _curGrade = null;
 var GRADES = [
-  {key:'최우수', bg:'linear-gradient(90deg,#0f2557,#1e3a6e)', icon:'🥇'},
-  {key:'우수',   bg:'linear-gradient(90deg,#1a3a6e,#2c5cc5)', icon:'🥈'},
-  {key:'장려',   bg:'linear-gradient(90deg,#2c5cc5,#4a80e0)', icon:'🥉'},
-  {key:'특별상', bg:'linear-gradient(90deg,#4a80e0,#7aa3f0)', icon:'🌟'},
+  {key:'최우수', bg:'#2d6a2e', icon:'🥇'},
+  {key:'우수',   bg:'#4a8c3f', icon:'🥈'},
+  {key:'장려',   bg:'#6aad5a', icon:'🥉'},
+  {key:'특별상', bg:'#8ec87e', icon:'🌟'},
 ];
 function renderAdoptedHero() {
   var heroEl = document.getElementById('adoptedHero');
@@ -647,11 +647,11 @@ function renderAdoptedHero() {
   }
   var cards = yearList.map(function(d, i) {
     var awardGrad = {
-      '최우수': 'linear-gradient(135deg,#0f2557,#1e3a6e)',
-      '우수':   'linear-gradient(135deg,#1a3a6e,#2c5cc5)',
-      '장려':   'linear-gradient(135deg,#2c5cc5,#4a80e0)',
-      '특별상': 'linear-gradient(135deg,#4a80e0,#7aa3f0)',
-    }[d.award] || 'linear-gradient(135deg,#333,#666)';
+      '최우수': '#2d6a2e',
+      '우수':   '#4a8c3f',
+      '장려':   '#6aad5a',
+      '특별상': '#8ec87e',
+    }[d.award] || '#666';
     var catIcon = CAT_ICON[d.category] || '📌';
     return '<div class="hero-card" style="animation-delay:'+(i*0.12)+'s" onclick="openDetailFrom('+d.id+',\'adopted\')">'
       +'<div class="hero-card-award" style="background:'+awardGrad+'">'+d.award+'</div>'
