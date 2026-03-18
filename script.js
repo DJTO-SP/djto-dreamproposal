@@ -52,7 +52,7 @@ function loadFromSheet() {
 
 
 // ★ 관리자 비밀번호 ★
-var ADMIN_PW = "1234";
+var ADMIN_PW = "alsk0118**";
 
 // ★ 데이터 (시트에서 자동 로드) ★
 var DATA = [];
