@@ -4,7 +4,7 @@ body { font-family: 'Malgun Gothic', '맑은 고딕', 'Apple SD Gothic Neo', san
 
 /* 배너 */
 .dream-banner { background:#fff; border-bottom:2px solid #e8edf5; min-height:100px; }
-.dream-banner-inner { max-width:1160px; margin:0 auto; padding:50px 32px 14px 32px; display:flex; align-items:flex-end; justify-content:space-between; }
+.dream-banner-inner { max-width:1160px; margin:0 auto; padding:4px 32px 14px 32px; display:flex; align-items:flex-end; justify-content:space-between; }
 .dream-banner-title { font-size:26px; font-weight:900; color:#1a2035; letter-spacing:-1px; line-height:1; font-family:'Noto Sans KR', 'Malgun Gothic', sans-serif; white-space:nowrap; }
 .dream-banner-title span { color:var(--blue); }
 .dream-banner-img { height:80px; object-fit:contain; filter:drop-shadow(0 2px 8px rgba(0,0,0,.1)); }
