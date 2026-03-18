@@ -771,9 +771,8 @@ function renderStats2() {
   document.getElementById('statsCards').innerHTML=[
     {cls:'sc1',vcls:'sv1',icon:'📝',val:total+'건',        label:'전체 제안',   mi:0},
     {cls:'sc2',vcls:'sv2',icon:'🏆',val:adopted+'건',      label:'채택 수상 ('+adoptRate+'%)', mi:1},
-  ].map(s=>'<div class="stat-card '+s.cls+'"><div class="stat-icon">'+s.icon+'</div>'
+  ].map(s=>'<div class="stat-card '+s.cls+'">'
     +'<div><div class="stat-val '+s.vcls+'">'+s.val+'</div><div class="stat-label">'+s.label+'</div></div>'
-    +'<img class="stat-mascot" src="'+MASCOTS[s.mi]+'" alt="">'
     +'</div>'
   ).join('');
 
