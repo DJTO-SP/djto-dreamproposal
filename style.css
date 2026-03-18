@@ -283,16 +283,17 @@ textarea.fi { resize:vertical; }
 }
 .adopted-hero .num { color: rgba(255,255,255,0.4); }
 
-/* 히어로 카드 캐러셀 */
+/* 히어로 카드 */
+@keyframes heroCardIn {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 .hero-cards {
   display: flex;
+  flex-wrap: wrap;
   gap: 14px;
   margin-top: 18px;
-  overflow-x: hidden;
-  scroll-behavior: smooth;
-  padding-bottom: 4px;
 }
-.hero-cards:hover { overflow-x: auto; }
 .hero-card {
   display: flex;
   flex-direction: column;
@@ -305,6 +306,8 @@ textarea.fi { resize:vertical; }
   border-radius: 14px;
   cursor: pointer;
   transition: transform .25s, background .25s, border-color .25s;
+  opacity: 0;
+  animation: heroCardIn .5s ease forwards;
 }
 .hero-card:hover {
   transform: translateY(-3px);
