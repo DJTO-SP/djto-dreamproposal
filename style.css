@@ -284,58 +284,43 @@ textarea.fi { resize:vertical; }
 }
 .adopted-hero .num { color: rgba(255,255,255,0.4); }
 
-/* 히어로 카드 */
-@keyframes heroCardIn {
-  from { opacity: 0; transform: translateY(24px); }
-  to   { opacity: 1; transform: translateY(0); }
+/* 히어로 리스트 */
+@keyframes heroItemIn {
+  from { opacity: 0; transform: translateX(-12px); }
+  to   { opacity: 1; transform: translateX(0); }
 }
-.hero-cards {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 14px;
-  margin-top: 18px;
-}
-.hero-card {
+.hero-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  min-width: 200px;
-  max-width: 200px;
-  padding: 16px;
-  background: #f8fafc;
-  border: 1.5px solid #e2e8f0;
-  border-radius: 14px;
+  gap: 6px;
+  margin-top: 14px;
+}
+.hero-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
   cursor: pointer;
-  transition: transform .25s, background .25s, border-color .25s, box-shadow .25s;
+  transition: background .15s;
   opacity: 0;
-  animation: heroCardIn .5s ease forwards;
+  animation: heroItemIn .35s ease forwards;
 }
-.hero-card:hover {
-  transform: translateY(-3px);
-  background: #fff;
-  border-color: #cbd5e1;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-}
-.hero-card-award {
+.hero-item:hover { background: #f1f5f9; }
+.hero-item-award {
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
   color: #fff;
   padding: 3px 10px;
   border-radius: 20px;
-  letter-spacing: 0.3px;
-  align-self: flex-start;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
-.hero-card-title {
-  color: #1a2035;
+.hero-item-title {
   font-size: 13px;
-  font-weight: 700;
-  line-height: 1.4;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  font-weight: 600;
+  color: #1a2035;
   overflow: hidden;
-}
-.hero-card-meta {
-  font-size: 11px;
-  color: #94a3b8;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

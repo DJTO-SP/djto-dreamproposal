@@ -625,10 +625,10 @@ function showCatPanel(cat) {
 // ── 채택제안 ─────────────────────────────────────────
 var _curGrade = null;
 var GRADES = [
-  {key:'최우수', bg:'#2d6a2e', icon:'🥇'},
-  {key:'우수',   bg:'#4a8c3f', icon:'🥈'},
-  {key:'장려',   bg:'#6aad5a', icon:'🥉'},
-  {key:'특별상', bg:'#8ec87e', icon:'🌟'},
+  {key:'최우수', bg:'#4a9ea8', icon:'🥇'},
+  {key:'우수',   bg:'#5fc1c7', icon:'🥈'},
+  {key:'장려',   bg:'#7ed4d4', icon:'🥉'},
+  {key:'특별상', bg:'#a2e3df', icon:'🌟'},
 ];
 function renderAdoptedHero() {
   var heroEl = document.getElementById('adoptedHero');
@@ -645,25 +645,18 @@ function renderAdoptedHero() {
       +'</div>';
     return;
   }
-  var cards = yearList.map(function(d, i) {
-    var awardGrad = {
-      '최우수': '#2d6a2e',
-      '우수':   '#4a8c3f',
-      '장려':   '#6aad5a',
-      '특별상': '#8ec87e',
-    }[d.award] || '#666';
-    var catIcon = CAT_ICON[d.category] || '📌';
-    return '<div class="hero-card" style="animation-delay:'+(i*0.12)+'s" onclick="openDetailFrom('+d.id+',\'adopted\')">'
-      +'<div class="hero-card-award" style="background:'+awardGrad+'">'+d.award+'</div>'
-      +'<div class="hero-card-title">'+esc(d.title)+'</div>'
-      +'<div class="hero-card-meta">'+catIcon+' '+esc(d.category||'')+'</div>'
+  var awardColors = {'최우수':'#4a9ea8','우수':'#5fc1c7','장려':'#7ed4d4','특별상':'#a2e3df'};
+  var items = yearList.map(function(d, i) {
+    var c = awardColors[d.award] || '#888';
+    return '<div class="hero-item" style="animation-delay:'+(i*0.08)+'s" onclick="openDetailFrom('+d.id+',\'adopted\')">'
+      +'<span class="hero-item-award" style="background:'+c+'">'+d.award+'</span>'
+      +'<span class="hero-item-title">'+esc(d.title)+'</span>'
       +'</div>';
   }).join('');
   heroEl.innerHTML =
     '<div class="adopted-hero">'
-    +'<div class="adopted-hero-badge">🏆 올해의 채택제안</div>'
-    +'<div class="adopted-hero-sub">올해 채택된 제안을 클릭해서 자세히 확인해보세요! 💬</div>'
-    +'<div class="hero-cards">'+cards+'</div>'
+    +'<div class="adopted-hero-badge">🏆 '+thisYear+'년 채택제안 <span style="font-weight:400;opacity:.7">'+yearList.length+'건</span></div>'
+    +'<div class="hero-list">'+items+'</div>'
     +'</div>';
 }
 function renderAdopted() {
