@@ -777,8 +777,10 @@ function renderStats2() {
     +'</div>'
   ).join('');
 
-  // ── 연도별 막대 그래프 ──
-  var years=[...new Set(DATA.map(d=>parseInt(d.period)||0))].filter(Boolean).sort((a,b)=>a-b);
+  // ── 연도별 막대 그래프 (최근 5개년) ──
+  var thisYear = new Date().getFullYear();
+  var years=[...new Set(DATA.map(d=>parseInt(d.period)||0))].filter(y=>y>=thisYear-4&&y<=thisYear).sort((a,b)=>a-b);
+  if (!years.length) years = [thisYear-4,thisYear-3,thisYear-2,thisYear-1,thisYear];
   var yearTotals=years.map(y=>DATA.filter(d=>parseInt(d.period)===y).length);
   var yearAdopted=years.map(y=>DATA.filter(d=>parseInt(d.period)===y&&ADOPTED.has(d.award)).length);
 
