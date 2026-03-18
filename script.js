@@ -786,29 +786,36 @@ function renderStats2() {
 
   if (_chartYear) _chartYear.destroy();
   var ctxYear = document.getElementById('chartYear').getContext('2d');
-  var grad1 = ctxYear.createLinearGradient(0,0,0,300);
-  grad1.addColorStop(0,'#5fc1c7'); grad1.addColorStop(1,'#a2e3df');
-  var grad2 = ctxYear.createLinearGradient(0,0,0,300);
-  grad2.addColorStop(0,'#4a9ea8'); grad2.addColorStop(1,'#7ed4d4');
+  var barColors1 = ['#5FC1C7','#6DCAD0','#7BD3D9','#8EDCE1','#A2E5EA'];
+  var barColors2 = ['#4A9EA8','#58A9B3','#66B4BE','#74BFC9','#82CAD4'];
+  var bgTotal = years.map(function(_,i){ return barColors1[i % barColors1.length]; });
+  var bgAdopt = years.map(function(_,i){ return barColors2[i % barColors2.length]; });
   _chartYear = new Chart(ctxYear, {
     type: 'bar',
     data: {
       labels: years.map(y=>y+'년'),
       datasets: [
-        { label:'전체 제안', data:yearTotals,  backgroundColor:grad1, borderRadius:8, borderSkipped:false, barPercentage:0.5, categoryPercentage:0.6 },
-        { label:'채택 수상', data:yearAdopted, backgroundColor:grad2, borderRadius:8, borderSkipped:false, barPercentage:0.5, categoryPercentage:0.6 },
+        { label:'전체 제안', data:yearTotals,  backgroundColor:bgTotal, borderRadius:20, borderSkipped:false, barPercentage:0.4, categoryPercentage:0.55 },
+        { label:'채택 수상', data:yearAdopted, backgroundColor:bgAdopt, borderRadius:20, borderSkipped:false, barPercentage:0.4, categoryPercentage:0.55 },
       ]
     },
     options: {
       responsive:true,
-      plugins:{ legend:{position:'top', labels:{usePointStyle:true, pointStyle:'circle', padding:16, font:{size:12}}}, tooltip:{mode:'index'} },
-      scales:{ y:{beginAtZero:true, ticks:{stepSize:4}, grid:{color:'rgba(0,0,0,0.04)', drawBorder:false}, border:{display:false}}, x:{grid:{display:false}, border:{display:false}} }
+      plugins:{
+        legend:{position:'top', labels:{usePointStyle:true, pointStyle:'circle', padding:16, font:{size:12}}},
+        tooltip:{mode:'index', backgroundColor:'rgba(0,0,0,0.75)', cornerRadius:8, padding:10}
+      },
+      scales:{
+        y:{beginAtZero:true, ticks:{stepSize:4, font:{size:11}}, grid:{color:'rgba(0,0,0,0.04)', drawBorder:false}, border:{display:false}},
+        x:{grid:{display:false}, border:{display:false}, ticks:{font:{size:11, weight:'bold'}}}
+      },
+      animation:{duration:800, easing:'easeOutQuart'}
     }
   });
 
   // ── 심사결과 도넛 ──
   var awardCounts=AWARD_LABELS.map(a=>DATA.filter(d=>d.award===a).length);
-  var awardColors=['#f6c28b','#fce5a0','#a8c8f0','#a0ddb8','#c8b4e8','#d5d5d5'];
+  var awardColors=['#A6B6BA','#5FC1C7','#738488','#A2D7DD','#D0D8DA','#EFECE7'];
   if (_chartAward) _chartAward.destroy();
   _chartAward = new Chart(document.getElementById('chartAward'), {
     type: 'doughnut',
