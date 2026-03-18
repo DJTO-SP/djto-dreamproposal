@@ -785,18 +785,24 @@ function renderStats2() {
   var yearAdopted=years.map(y=>DATA.filter(d=>parseInt(d.period)===y&&ADOPTED.has(d.award)).length);
 
   if (_chartYear) _chartYear.destroy();
-  _chartYear = new Chart(document.getElementById('chartYear'), {
+  var ctxYear = document.getElementById('chartYear').getContext('2d');
+  var grad1 = ctxYear.createLinearGradient(0,0,0,300);
+  grad1.addColorStop(0,'#5fc1c7'); grad1.addColorStop(1,'#a2e3df');
+  var grad2 = ctxYear.createLinearGradient(0,0,0,300);
+  grad2.addColorStop(0,'#4a9ea8'); grad2.addColorStop(1,'#7ed4d4');
+  _chartYear = new Chart(ctxYear, {
     type: 'bar',
     data: {
       labels: years.map(y=>y+'년'),
       datasets: [
-        { label:'전체 제안', data:yearTotals,  backgroundColor:'rgba(100,180,220,0.7)', borderRadius:10, borderSkipped:false, barPercentage:0.6 },
-        { label:'채택 수상', data:yearAdopted, backgroundColor:'rgba(95,193,199,0.8)', borderRadius:10, borderSkipped:false, barPercentage:0.6 },
+        { label:'전체 제안', data:yearTotals,  backgroundColor:grad1, borderRadius:8, borderSkipped:false, barPercentage:0.5, categoryPercentage:0.6 },
+        { label:'채택 수상', data:yearAdopted, backgroundColor:grad2, borderRadius:8, borderSkipped:false, barPercentage:0.5, categoryPercentage:0.6 },
       ]
     },
     options: {
-      responsive:true, plugins:{ legend:{position:'top'}, tooltip:{mode:'index'} },
-      scales:{ y:{beginAtZero:true, ticks:{stepSize:1}, grid:{color:'rgba(0,0,0,0.05)'} }, x:{grid:{display:false}} }
+      responsive:true,
+      plugins:{ legend:{position:'top', labels:{usePointStyle:true, pointStyle:'circle', padding:16, font:{size:12}}}, tooltip:{mode:'index'} },
+      scales:{ y:{beginAtZero:true, ticks:{stepSize:4}, grid:{color:'rgba(0,0,0,0.04)', drawBorder:false}, border:{display:false}}, x:{grid:{display:false}, border:{display:false}} }
     }
   });
 
