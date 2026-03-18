@@ -795,14 +795,14 @@ function renderStats2() {
     data: {
       labels: years.map(y=>y+'년'),
       datasets: [
-        { label:'전체 제안', data:yearTotals,  backgroundColor:bgTotal, borderRadius:{topLeft:14,topRight:14,bottomLeft:0,bottomRight:0}, borderSkipped:false, barPercentage:0.7, categoryPercentage:0.7 },
-        { label:'채택 수상', data:yearAdopted, backgroundColor:bgAdopt, borderRadius:{topLeft:14,topRight:14,bottomLeft:0,bottomRight:0}, borderSkipped:false, barPercentage:0.7, categoryPercentage:0.7 },
+        { label:'전체 제안', data:yearTotals,  backgroundColor:bgTotal, borderRadius:{topLeft:30,topRight:30,bottomLeft:0,bottomRight:0}, borderSkipped:false, barPercentage:0.7, categoryPercentage:0.7 },
+        { label:'채택 수상', data:yearAdopted, backgroundColor:bgAdopt, borderRadius:{topLeft:30,topRight:30,bottomLeft:0,bottomRight:0}, borderSkipped:false, barPercentage:0.7, categoryPercentage:0.7 },
       ]
     },
     options: {
       responsive:true,
       plugins:{
-        legend:{position:'top', labels:{usePointStyle:true, pointStyle:'circle', padding:16, font:{size:12}}},
+        legend:{position:'top', labels:{usePointStyle:false, boxWidth:0, boxHeight:0, padding:16, font:{size:12}}},
         tooltip:{mode:'index', backgroundColor:'rgba(0,0,0,0.75)', cornerRadius:8, padding:10}
       },
       scales:{
