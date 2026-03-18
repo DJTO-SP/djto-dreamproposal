@@ -2,13 +2,13 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-    <script src="https://djto-sp.github.io/djto-innovation/portal-nav.js"></script>
+    <script src="https://djto-sp.github.io/djto-innovation/portal-nav.js" defer></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800;900&family=Exo+2:wght@700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700;800&family=Exo+2:wght@700&display=swap" rel="stylesheet">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>대전관광공사 혁신드림제안제도 통합관리대장</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" defer></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <link rel="stylesheet" href="style.css">
 </head>
@@ -17,9 +17,9 @@
 <div style="background:#fff; border-bottom:2px solid #e8edf5; overflow:hidden;">
   <div style="max-width:1160px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; padding:36px 32px;">
     <div onclick="switchTab('list', document.querySelector('.nav-btn'))" style="cursor:pointer;" title="홈으로">
-      <div style="font-size:26px; font-weight:900; color:#1a2035; letter-spacing:-1px; line-height:1; font-family:'Noto Sans KR','Malgun Gothic',sans-serif; white-space:nowrap;">대전관광공사 <span style="color:var(--blue);">혁신드림</span>제안제도 통합관리대장</div>
+      <h1 style="font-size:26px; font-weight:900; color:#1a2035; letter-spacing:-1px; line-height:1; font-family:'Noto Sans KR','Malgun Gothic',sans-serif; white-space:nowrap; margin:0;">대전관광공사 <span style="color:var(--blue);">혁신드림</span>제안제도 통합관리대장</h1>
     </div>
-    <img src="dream-banner.png" alt="꿈씨패밀리" style="height:80px; object-fit:contain; filter:drop-shadow(0 2px 8px rgba(0,0,0,.1));">
+    <img src="dream-banner.png" alt="꿈씨패밀리" width="200" height="80" style="height:80px; width:auto; object-fit:contain; filter:drop-shadow(0 2px 8px rgba(0,0,0,.1));">
   </div>
 </div>
 <header style="background:#1e3a6e; height:48px; position:sticky; top:0; z-index:100; box-shadow:0 3px 16px rgba(30,58,110,.35);">
@@ -32,7 +32,7 @@
       <button class="nav-btn" onclick="switchTab('stats',this)"><span class="nav-icon">📊</span> 통계</button>
     </nav>
     <div style="display:flex;align-items:center;gap:12px">
-      <span style="color:#a0b4d8;font-size:12px;font-weight:500">전략기획팀 이지민주임&nbsp;📞1148</span>
+      <span style="color:#c0d4f0;font-size:12px;font-weight:500">전략기획팀 이지민주임&nbsp;📞1148</span>
       <button class="admin-btn" onclick="loadFromSheet()" style="background:#4ecdc4;margin-right:6px">🔄 새로고침</button>
       <button class="admin-btn" id="googleBtn" onclick="googleLogin()" style="background:#fff;color:#444;border-color:#ddd">🔑 Google</button>
       <button class="admin-btn" id="adminBtn" onclick="toggleAdmin()">🔒 관리자</button>
@@ -45,6 +45,7 @@
   <div class="modal">
     <div class="modal-ttl">🔒 관리자 인증</div>
     <div class="modal-sub">관리자 비밀번호를 입력하세요</div>
+    <label for="pwInput" class="sr-only">비밀번호</label>
     <input class="modal-inp" id="pwInput" type="password" placeholder="비밀번호" onkeydown="if(event.key==='Enter')doLogin()">
     <div class="modal-btns">
       <button class="m-cancel" onclick="closePw()">취소</button>
@@ -153,11 +154,11 @@
       <div class="filter-bar">
         <div class="search-wrap">
           <span class="search-icon">🔍</span>
-          <input id="srch" type="text" placeholder="제목, 요약 검색…" oninput="renderTable()">
+          <input id="srch" type="text" placeholder="제목, 요약 검색…" oninput="renderTable()" aria-label="제목, 요약 검색">
         </div>
-        <select id="fCat"    onchange="renderTable()"><option value="">전체 분류</option></select>
-        <select id="fAward"  onchange="renderTable()"><option value="">전체 결과</option></select>
-        <select id="fPeriod" onchange="renderTable()"><option value="">전체 기간</option></select>
+        <select id="fCat" onchange="renderTable()" aria-label="분류 필터"><option value="">전체 분류</option></select>
+        <select id="fAward" onchange="renderTable()" aria-label="결과 필터"><option value="">전체 결과</option></select>
+        <select id="fPeriod" onchange="renderTable()" aria-label="기간 필터"><option value="">전체 기간</option></select>
         <span class="count-lbl" id="cntLbl"></span>
       </div>
       <div class="tbl-wrap">
@@ -204,18 +205,18 @@
       <!-- 연도별 제안 수 (상단) -->
       <div class="card" style="padding:24px;margin-bottom:18px">
         <div style="font-weight:800;font-size:15px;color:#1a2035;margin-bottom:18px">📅 연도별 제안 수</div>
-        <canvas id="chartYear" height="90"></canvas>
+        <canvas id="chartYear" width="800" height="90"></canvas>
       </div>
 
       <!-- 심사결과 도넛 + 채택률 (하단 나란히) -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px">
         <div class="card" style="padding:24px">
           <div style="font-weight:800;font-size:15px;color:#1a2035;margin-bottom:18px">🏅 심사결과 분포</div>
-          <canvas id="chartAward" height="200"></canvas>
+          <canvas id="chartAward" width="400" height="200"></canvas>
         </div>
         <div class="card" style="padding:24px">
           <div style="font-weight:800;font-size:15px;color:#1a2035;margin-bottom:18px">📈 연도별 채택률</div>
-          <canvas id="chartRate" height="200"></canvas>
+          <canvas id="chartRate" width="400" height="200"></canvas>
           <div id="adoptRateArea" style="text-align:center;margin-top:12px"></div>
           <div id="statsCards" class="stats" style="margin-top:16px"></div>
         </div>
