@@ -14,17 +14,17 @@
 </head>
 <body>
 
-<div class="dream-banner">
-  <div class="dream-banner-inner">
-    <div class="dream-banner-text">
-      <div class="dream-banner-title" onclick="switchTab('list', document.querySelector('.nav-btn'))" style="cursor:pointer" title="홈으로">대전관광공사 <span>혁신드림</span>제안제도 통합관리대장</div>
+<div style="background:#fff; border-bottom:2px solid #e8edf5; min-height:100px; overflow:hidden;">
+  <div style="max-width:1160px; margin:0 auto; display:flex; align-items:flex-end; justify-content:space-between; padding:50px 32px 14px 32px;">
+    <div onclick="switchTab('list', document.querySelector('.nav-btn'))" style="cursor:pointer;" title="홈으로">
+      <div style="font-size:26px; font-weight:900; color:#1a2035; letter-spacing:-1px; line-height:1; font-family:'Noto Sans KR','Malgun Gothic',sans-serif; white-space:nowrap;">대전관광공사 <span style="color:var(--blue);">혁신드림</span>제안제도 통합관리대장</div>
     </div>
-    <img class="dream-banner-img" src="dream-banner.png" alt="꿈씨패밀리">
+    <img src="dream-banner.png" alt="꿈씨패밀리" style="height:80px; object-fit:contain; filter:drop-shadow(0 2px 8px rgba(0,0,0,.1));">
   </div>
 </div>
-<header>
-  <div class="header-inner">
-    <nav>
+<header style="background:#1e3a6e; height:48px; position:sticky; top:0; z-index:100; box-shadow:0 3px 16px rgba(30,58,110,.35);">
+  <div style="max-width:1160px; margin:0 auto; height:100%; display:flex; align-items:center; justify-content:space-between; padding:0 20px;">
+    <nav style="display:flex; align-items:center; gap:2px;">
       <button class="nav-btn on" onclick="switchTab('list',this)"><span class="nav-icon">📋</span> 목록</button>
       <button class="nav-btn" onclick="switchTab('year',this)"><span class="nav-icon">📅</span> 연도별</button>
       <button class="nav-btn" onclick="switchTab('cat',this)"><span class="nav-icon">🗂️</span> 분류별</button>
