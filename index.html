@@ -344,7 +344,7 @@
         <div class="admin-nav">
           <button class="admin-nav-btn active" onclick="showMgPanel('mg-inbox',this)">📋 접수현황</button>
           <button class="admin-nav-btn" onclick="showMgPanel('mg-proposals',this)">📝 제안관리</button>
-          <button class="admin-nav-btn" onclick="showMgPanel('mg-codes',this)">🔑 코드관리</button>
+          <button class="admin-nav-btn" onclick="showMgPanel('mg-codes',this)">👥 검토·심사 위원</button>
         </div>
         <button class="btn-cancel" onclick="manageLogout()">로그아웃</button>
       </div>
@@ -363,6 +363,20 @@
             </select>
           </div>
           <div id="mgInboxBody"><p style="text-align:center;color:#aaa;padding:20px">불러오는 중...</p></div>
+          <!-- 접수 상세 분할화면 -->
+          <div class="split-wrap" id="inbox-split" style="display:none;margin-top:16px">
+            <div class="split-main">
+              <div class="card" style="padding:20px;background:#fafbfd">
+                <div id="inbox-detail-area"></div>
+              </div>
+            </div>
+            <div class="split-side">
+              <div class="card" style="padding:20px">
+                <h3 style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:12px">제안 정보</h3>
+                <div id="inbox-info-area"></div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
       <!-- 제안관리 -->
@@ -375,48 +389,47 @@
           <p style="color:#888;font-size:13px">기존 목록 탭의 관리자 모드와 동일합니다. 목록 탭에서 관리하세요.</p>
         </div>
       </div>
-      <!-- 코드관리 -->
+      <!-- 검토·심사 위원 명단 -->
       <div id="mg-codes" class="admin-panel">
         <div class="card" style="padding:20px 24px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
             <div class="section-title-bar" style="margin:0;padding:0;border:none">
-              <div class="section-title-icon">🔑</div>
-              <h2 class="section-title-text" style="font-size:17px">검토·심사 코드 관리</h2>
+              <div class="section-title-icon">👥</div>
+              <h2 class="section-title-text" style="font-size:17px">검토·심사 위원 명단</h2>
             </div>
-            <button class="btn-save" onclick="toggleCodeForm()" id="codeFormToggle">+ 코드 생성</button>
+            <button class="btn-save" onclick="toggleCodeForm()" id="codeFormToggle">+ 위원 추가</button>
           </div>
-          <!-- 코드 생성 폼 -->
+          <div class="info-box-blue" style="margin-bottom:16px">
+            위원을 추가하면 로그인 코드가 자동 생성됩니다. 코드를 해당 위원에게 전달하세요.
+          </div>
+          <!-- 위원 추가 폼 -->
           <div id="codeCreateForm" style="display:none;background:#f5f6f8;border-radius:10px;padding:16px;margin-bottom:16px">
             <div class="sf-row">
               <div class="sf-field">
-                <label>코드 유형 <span class="field-req">*</span></label>
-                <select id="cc-type"><option value="review">검토코드</option><option value="judge">심사코드</option></select>
+                <label>역할 <span class="field-req">*</span></label>
+                <select id="cc-type"><option value="review">검토위원 (담당부서)</option><option value="judge">심사위원</option></select>
               </div>
               <div class="sf-field">
                 <label>대상 연도</label>
                 <input id="cc-year" placeholder="예: 2025" value="2025">
               </div>
-              <div class="sf-field">
-                <label>코드 (자동생성 가능)</label>
-                <input id="cc-code" placeholder="비워두면 자동생성">
-              </div>
             </div>
             <div class="sf-row">
               <div class="sf-field">
-                <label>설명</label>
-                <input id="cc-label" placeholder="예: 2025년 상반기 검토용">
+                <label>이름 <span class="field-req">*</span></label>
+                <input id="cc-assignee" placeholder="홍길동">
               </div>
               <div class="sf-field">
-                <label>배정 대상</label>
-                <input id="cc-assignee" placeholder="예: 전략기획팀 홍길동">
+                <label>부서</label>
+                <input id="cc-label" placeholder="전략기획팀">
               </div>
             </div>
-            <div style="text-align:right">
+            <div style="text-align:right;margin-top:8px">
               <button class="btn-cancel" onclick="toggleCodeForm()">취소</button>
-              <button class="btn-save" onclick="createCode()">생성</button>
+              <button class="btn-save" onclick="createCode()">추가</button>
             </div>
           </div>
-          <!-- 코드 목록 -->
+          <!-- 위원 목록 -->
           <div id="mgCodesBody"><p style="text-align:center;color:#aaa;padding:20px">불러오는 중...</p></div>
         </div>
       </div>

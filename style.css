@@ -410,6 +410,12 @@ textarea.fi { resize:vertical; }
 .rv-item-done { color: var(--teal); }
 .rv-item-pending { color: #aaa; }
 
+/* ══ 접수현황 상세 ══ */
+.active-row td { background: #e8f0ff !important; }
+.info-item { display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid #f0f3f9; font-size: 13px; }
+.info-item:last-child { border-bottom: none; }
+.info-label { width: 80px; flex-shrink: 0; font-weight: 600; color: #64748b; }
+
 /* ══ 채점 드롭다운 행 ══ */
 .score-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
 .score-row-label { width: 110px; flex-shrink: 0; font-size: 13px; font-weight: 600; color: #3a4a6b; }

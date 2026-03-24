@@ -1267,11 +1267,15 @@ function renderMgInbox() {
     return d.award === filter || d.status === filter;
   });
 
-  if (!items.length) { body.innerHTML = '<p style="text-align:center;color:#aaa;padding:20px;font-size:13px">접수된 제안이 없습니다.</p>'; return; }
+  if (!items.length) {
+    body.innerHTML = '<p style="text-align:center;color:#aaa;padding:20px;font-size:13px">접수된 제안이 없습니다.</p>';
+    var split = document.getElementById('inbox-split'); if (split) split.style.display = 'none';
+    return;
+  }
   var html = '<table class="submit-list-table"><thead><tr><th>접수일</th><th>제목</th><th>제안자</th><th>부서</th><th>제안부문</th><th>상태</th></tr></thead><tbody>';
-  items.forEach(function(d) {
+  items.forEach(function(d, i) {
     var date = (d.period || d.submittedAt || '').toString().substring(0, 10);
-    html += '<tr onclick="openDetail(\'' + d.id + '\')" style="cursor:pointer">' +
+    html += '<tr onclick="openInboxDetail(\'' + d.id + '\',this)" style="cursor:pointer" class="inbox-row">' +
       '<td class="sl-date">' + date + '</td>' +
       '<td class="sl-title">' + esc(d.title) + '</td>' +
       '<td>' + esc(d.proposer || '') + '</td>' +
@@ -1282,6 +1286,32 @@ function renderMgInbox() {
   });
   html += '</tbody></table>';
   body.innerHTML = html;
+}
+
+function openInboxDetail(id, rowEl) {
+  var d = DATA.find(function(x) { return String(x.id) === String(id); });
+  if (!d) return;
+  // 행 활성화
+  document.querySelectorAll('.inbox-row').forEach(function(r) { r.classList.remove('active-row'); });
+  if (rowEl) rowEl.classList.add('active-row');
+  // 분할화면 표시
+  var split = document.getElementById('inbox-split');
+  split.style.display = 'flex';
+  // 좌측: 제안 상세
+  document.getElementById('inbox-detail-area').innerHTML =
+    '<div style="margin-bottom:10px">' + catBadge(d.category) + ' ' + awardBadge(d.award) + '</div>' +
+    '<h3 style="font-size:17px;font-weight:800;color:var(--navy);margin-bottom:12px">' + esc(d.title) + '</h3>' +
+    '<div style="font-size:13px;color:#555;line-height:1.8">' + fmtSummary(d.summary) + '</div>' +
+    (d.pdf ? '<div style="margin-top:12px"><a href="' + esc(d.driveUrl || d.pdf) + '" target="_blank" style="color:var(--blue);font-size:13px">📎 ' + esc(d.pdf) + '</a></div>' : '');
+  // 우측: 제안 정보
+  document.getElementById('inbox-info-area').innerHTML =
+    '<div class="info-item"><span class="info-label">제안자</span><span>' + esc(d.proposer || '-') + '</span></div>' +
+    '<div class="info-item"><span class="info-label">부서</span><span>' + esc(d.dept || '-') + '</span></div>' +
+    '<div class="info-item"><span class="info-label">제안부문</span><span>' + esc(d.category || '-') + '</span></div>' +
+    '<div class="info-item"><span class="info-label">접수일</span><span>' + esc(d.period || '-') + '</span></div>' +
+    '<div class="info-item"><span class="info-label">상태</span><span>' + (d.award || '-') + '</span></div>' +
+    (d.keywords ? '<div class="info-item"><span class="info-label">키워드</span><span>' + fmtKeywords(d.keywords) + '</span></div>' : '');
+  split.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 // 기존 함수 호환성 유지
@@ -1301,14 +1331,14 @@ function loadCodes() {
   body.innerHTML = '<p style="text-align:center;color:#aaa;padding:20px">불러오는 중...</p>';
   api({ action: 'getCodes', pw: ADMIN_PW }).then(function(codes) {
     if (!Array.isArray(codes) || !codes.length) { body.innerHTML = '<p style="text-align:center;color:#aaa;padding:20px">생성된 코드가 없습니다.</p>'; return; }
-    var html = '<table class="submit-list-table"><thead><tr><th>유형</th><th>코드</th><th>설명</th><th>대상연도</th><th>배정</th><th>생성일</th><th></th></tr></thead><tbody>';
+    var html = '<table class="submit-list-table"><thead><tr><th>역할</th><th>이름</th><th>부서</th><th>연도</th><th>로그인 코드</th><th></th></tr></thead><tbody>';
     codes.forEach(function(c) {
       var typeBadge = c.type === 'review'
-        ? '<span style="background:#e3f2fd;color:#1565c0;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700">검토</span>'
-        : '<span style="background:#fce4ec;color:#c62828;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700">심사</span>';
-      html += '<tr><td>' + typeBadge + '</td><td><code style="background:#f0f3f9;padding:2px 8px;border-radius:4px;font-size:13px;font-weight:600">' + esc(c.code) + '</code></td>' +
-        '<td>' + esc(c.label || '') + '</td><td>' + esc(c.targetYear || '') + '</td><td>' + esc(c.assignedTo || '') + '</td>' +
-        '<td class="sl-date">' + (c.createdAt || '').substring(0,10) + '</td>' +
+        ? '<span style="background:#e3f2fd;color:#1565c0;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700">검토위원</span>'
+        : '<span style="background:#fce4ec;color:#c62828;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700">심사위원</span>';
+      html += '<tr><td>' + typeBadge + '</td><td style="font-weight:600">' + esc(c.assignedTo || '-') + '</td>' +
+        '<td>' + esc(c.label || '-') + '</td><td>' + esc(c.targetYear || '') + '</td>' +
+        '<td><code style="background:#f0f3f9;padding:2px 8px;border-radius:4px;font-size:13px;font-weight:600;user-select:all">' + esc(c.code) + '</code></td>' +
         '<td><button class="btn-cancel" style="padding:3px 10px;font-size:11px" onclick="deleteCode(\'' + c.id + '\')">삭제</button></td></tr>';
     });
     html += '</tbody></table>';
@@ -1320,21 +1350,20 @@ function createCode() {
   if (!SCRIPT_URL) return alert('Apps Script 미연결');
   var type = document.getElementById('cc-type').value;
   var year = document.getElementById('cc-year').value.trim();
-  var code = document.getElementById('cc-code').value.trim();
-  var label = document.getElementById('cc-label').value.trim();
   var assignee = document.getElementById('cc-assignee').value.trim();
+  var label = document.getElementById('cc-label').value.trim();
+  if (!assignee) return alert('이름을 입력해주세요.');
   apiPost({
     action: 'manageCode', pw: ADMIN_PW, op: 'create',
-    type: type, targetYear: year, code: code, label: label, assignedTo: assignee
+    type: type, targetYear: year, code: '', label: label, assignedTo: assignee
   }).then(function(res) {
     if (res.ok) {
-      alert('✅ 코드 생성 완료: ' + res.code);
+      alert('✅ 위원 추가 완료!\n\n이름: ' + assignee + '\n로그인 코드: ' + res.code + '\n\n이 코드를 해당 위원에게 전달하세요.');
       toggleCodeForm();
-      document.getElementById('cc-code').value = '';
-      document.getElementById('cc-label').value = '';
       document.getElementById('cc-assignee').value = '';
+      document.getElementById('cc-label').value = '';
       loadCodes();
-    } else { alert('❌ 생성 실패: ' + (res.error || '')); }
+    } else { alert('❌ 추가 실패: ' + (res.error || '')); }
   });
 }
 
