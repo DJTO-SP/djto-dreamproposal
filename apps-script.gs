@@ -184,19 +184,77 @@ function getProposals() {
   const cache = CacheService.getScriptCache();
   const cached = cache.get('proposals');
   if (cached) return JSON.parse(cached);
-  const rows = sheetToObjects(S_PROPOSAL);
-  const pub = rows.map(r => ({
+
+  // 기존 Sheet1 데이터 읽기
+  const legacy = getLegacyData();
+  // 새 제안 시트 데이터 읽기
+  let newRows = [];
+  try { newRows = sheetToObjects(S_PROPOSAL); } catch(e) {}
+  const newPub = newRows.map(r => ({
     id: r.id, title: r.title, date: r.date, category: r.category,
+    proposer: '', dept: '',
     targetDept: r.targetDept, summary: r.summary, keywords: r.keywords,
     status: r.status, award: r.award, fileName: r.fileName,
-    driveUrl: r.driveUrl, submittedAt: r.submittedAt
+    driveUrl: r.driveUrl, submittedAt: r.submittedAt, source: 'new'
   }));
-  try { cache.put('proposals', JSON.stringify(pub), 300); } catch(e) {}
-  return pub;
+
+  const all = legacy.concat(newPub);
+  try { cache.put('proposals', JSON.stringify(all), 300); } catch(e) {}
+  return all;
 }
 
 function getProposalsAdmin() {
-  return sheetToObjects(S_PROPOSAL);
+  const legacy = getLegacyData(true);
+  let newRows = [];
+  try { newRows = sheetToObjects(S_PROPOSAL); } catch(e) {}
+  const newPub = newRows.map(r => ({
+    id: r.id, title: r.title, proposer: r.proposer, dept: r.dept,
+    date: r.date, category: r.category, targetDept: r.targetDept,
+    summary: r.summary, keywords: r.keywords, status: r.status,
+    award: r.award, fileName: r.fileName, driveUrl: r.driveUrl,
+    submittedAt: r.submittedAt, source: 'new'
+  }));
+  return legacy.concat(newPub);
+}
+
+// 기존 Sheet1 데이터를 통합 형식으로 변환
+function getLegacyData(includePrivate) {
+  try {
+    const s = ss().getSheetByName('Sheet1');
+    if (!s) return [];
+    const data = s.getDataRange().getValues();
+    if (data.length < 2) return [];
+    const headers = data[0].map(h => String(h).trim());
+    const colIdx = {};
+    headers.forEach((h, i) => { colIdx[h] = i; });
+    const get = (row, name) => {
+      const i = colIdx[name];
+      return i !== undefined && row[i] ? String(row[i]) : '';
+    };
+    return data.slice(1).filter(r => r[0] !== '').map((r, i) => {
+      const seq = get(r, '순번');
+      const year = seq.match(/^(\d{4})/)?.[1] || '';
+      return {
+        id: 'legacy_' + i,
+        title: get(r, '제목'),
+        proposer: includePrivate ? get(r, '제안자') : '',
+        dept: includePrivate ? get(r, '부서') : '',
+        date: year,
+        category: get(r, '분류'),
+        summary: get(r, '요약'),
+        keywords: get(r, '키워드') || get(r, '키워드 '),
+        status: '',
+        award: get(r, '심사결과') || '',
+        fileName: get(r, '첨부파일'),
+        driveUrl: '',
+        submittedAt: '',
+        source: 'legacy',
+        seq: seq
+      };
+    });
+  } catch(e) {
+    return [];
+  }
 }
 
 // ══════════════════════════════════════════

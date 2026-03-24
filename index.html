@@ -258,7 +258,7 @@
             </div>
           </div>
           <div class="info-box-blue">
-            💡 제목이나 제안사유를 입력하면 우측에서 유사한 이전 제안을 자동 검색합니다.
+            💡 제안 내용을 작성하여 접수하세요. 담당부서 검토 후 심사가 진행됩니다.
           </div>
 
           <div class="sf-row">
@@ -292,12 +292,12 @@
 
           <div class="sf-field full">
             <label>제목 <span class="field-req">*</span></label>
-            <input id="sf-title" placeholder="제안 제목을 입력하세요" oninput="debounceSimilar()">
+            <input id="sf-title" placeholder="제안 제목을 입력하세요">
           </div>
 
           <div class="sf-field full">
             <label>제안사유 (원인분석) <span class="field-req">*</span></label>
-            <textarea id="sf-reason" rows="5" placeholder="○ 현황 및 문제점을 작성하세요" oninput="debounceSimilar()"></textarea>
+            <textarea id="sf-reason" rows="5" placeholder="○ 현황 및 문제점을 작성하세요"></textarea>
           </div>
 
           <div class="sf-field full">
@@ -335,17 +335,6 @@
             <h3 style="font-size:18px;font-weight:800;color:var(--navy);margin-bottom:8px">제안이 접수되었습니다!</h3>
             <p style="font-size:14px;color:#888;line-height:1.7;margin-bottom:20px">담당부서 검토 후 심사가 진행됩니다.</p>
             <button class="btn-save" onclick="clearSubmitForm();document.getElementById('submit-done').style.display='none';document.querySelectorAll('#tab-submit .card > *:not(#submit-done)').forEach(function(e){e.style.display='';})">새로 제안하기</button>
-          </div>
-        </div>
-      </div>
-      <div class="submit-similar-area">
-        <div class="card similar-panel" id="similarPanel">
-          <div class="similar-header">
-            <span class="similar-icon">🔍</span>
-            <span>유사 제안 검색</span>
-          </div>
-          <div id="similarBody" class="similar-body">
-            <p class="similar-placeholder">제목이나 제안사유를 입력하면<br>유사한 이전 제안을 자동으로 검색합니다.</p>
           </div>
         </div>
       </div>
