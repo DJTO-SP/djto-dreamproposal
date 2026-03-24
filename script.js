@@ -269,7 +269,8 @@ function previewPdf(inputId) {
 function renderStats() {
   var total=DATA.length, adopted=DATA.filter(d=>ADOPTED.has(d.award)).length,
       reviewing=DATA.filter(d=>d.award==='심사중').length, top=DATA.filter(d=>d.award==='최우수').length;
-  document.getElementById('statsArea').innerHTML=[
+  var statsEl=document.getElementById('statsArea'); if(!statsEl)return;
+  statsEl.innerHTML=[
     {cls:'sc1',vcls:'sv1',icon:'📝',val:total+'건',   label:'전체 제안'},
     {cls:'sc2',vcls:'sv2',icon:'🏆',val:adopted+'건', label:'채택 (수상)'},
     {cls:'sc3',vcls:'sv3',icon:'🔍',val:reviewing+'건',label:'심사 중'},
@@ -282,7 +283,7 @@ function renderStats() {
 // ── 필터 ─────────────────────────────────────────────
 function populateFilters() {
   var periods=[...new Set(DATA.map(d=>d.period))].sort((a,b)=>periodSort(b)-periodSort(a));
-  var fp=document.getElementById('fPeriod'), sp=fp.value;
+  var fp=document.getElementById('fPeriod'); if(!fp)return; var sp=fp.value;
   fp.innerHTML='<option value="">전체 기간</option>';
   periods.forEach(p=>fp.innerHTML+='<option'+(sp===p?' selected':'')+'>'+p+'</option>');
   var fa=document.getElementById('fAward'), sa=fa.value;
@@ -1122,8 +1123,8 @@ function submitProposal() {
         if (res.ok) {
           alert('✅ 제안서가 접수되었습니다!\n제안번호: ' + res.id);
           clearSubmitForm();
-          loadFromSheet();
-          switchTab('list', document.querySelector('.nav-btn'));
+          try { switchTab('list', document.querySelector('.nav-btn')); } catch(e) {}
+          try { loadFromSheet(); } catch(e) {}
         } else {
           alert('❌ 접수 실패: ' + (res.error || '알 수 없는 오류'));
         }
