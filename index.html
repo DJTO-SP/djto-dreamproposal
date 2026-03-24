@@ -30,6 +30,9 @@
       <button class="nav-btn" onclick="switchTab('cat',this)"><span class="nav-icon">🗂️</span> 분류별</button>
       <button class="nav-btn" onclick="switchTab('adopted',this)"><span class="nav-icon">🏅</span> 채택제안</button>
       <button class="nav-btn" onclick="switchTab('stats',this)"><span class="nav-icon">📊</span> 통계</button>
+      <span style="width:1px;height:24px;background:#3a5a8e;margin:0 6px"></span>
+      <button class="nav-btn nav-accent" onclick="switchTab('submit',this)"><span class="nav-icon">✏️</span> 접수</button>
+      <button class="nav-btn" onclick="switchTab('review',this)"><span class="nav-icon">⚖️</span> 검토·심사</button>
     </nav>
     <div style="display:flex;align-items:center;gap:12px">
       <span style="color:#c0d4f0;font-size:12px;font-weight:500">전략기획팀 이지민주임&nbsp;📞1148</span>
@@ -223,6 +226,112 @@
       </div>
     </div>
   </div>
+
+  <!-- ===== 접수 탭 ===== -->
+  <div class="tab-content" id="tab-submit">
+    <div class="submit-wrap">
+      <div class="submit-form-area">
+        <div class="card" style="padding:28px 32px">
+          <h2 style="font-size:20px;font-weight:800;color:var(--navy);margin-bottom:4px">제 안 서</h2>
+          <p style="color:#888;font-size:13px;margin-bottom:20px">[별지 제1호 서식] 제안 내용을 작성하세요</p>
+          <div class="sf-row">
+            <div class="sf-field"><label>성명 <em>*</em></label><input id="sf-name" placeholder="홍길동"></div>
+            <div class="sf-field"><label>소속 <em>*</em></label>
+              <select id="sf-dept">
+                <option value="">선택</option>
+                <option>전략기획팀</option><option>관광사업팀</option><option>축제행사팀</option>
+                <option>센터마케팅팀</option><option>전시기획팀</option><option>홍보마케팅팀</option>
+                <option>시설운영팀</option><option>시민광장팀</option><option>총무회계팀</option>
+                <option>인사노무팀</option><option>안전감사팀</option><option value="_etc">기타(직접입력)</option>
+              </select>
+              <input id="sf-dept-etc" placeholder="부서 직접 입력" style="display:none;margin-top:6px">
+            </div>
+            <div class="sf-field"><label>제안일자</label><input id="sf-date" type="date"></div>
+          </div>
+          <div class="sf-row">
+            <div class="sf-field"><label>제안부문 <em>*</em></label>
+              <select id="sf-category">
+                <option value="">선택</option>
+                <option>관광아이디어발굴</option><option>조직혁신</option><option>사회적가치실현</option>
+              </select>
+            </div>
+            <div class="sf-field"><label>담당부서</label>
+              <select id="sf-target-dept">
+                <option value="">선택</option>
+                <option>전략기획팀</option><option>관광사업팀</option><option>축제행사팀</option>
+                <option>센터마케팅팀</option><option>전시기획팀</option><option>홍보마케팅팀</option>
+                <option>시설운영팀</option><option>시민광장팀</option><option>총무회계팀</option>
+                <option>인사노무팀</option><option>안전감사팀</option><option>전 부서</option>
+              </select>
+            </div>
+          </div>
+          <div class="sf-field full"><label>제목 <em>*</em></label><input id="sf-title" placeholder="제안 제목을 입력하세요" oninput="debounceSimilar()"></div>
+          <div class="sf-field full"><label>제안사유 (원인분석) <em>*</em></label><textarea id="sf-reason" rows="5" placeholder="○ 현황 및 문제점을 작성하세요" oninput="debounceSimilar()"></textarea></div>
+          <div class="sf-field full"><label>실시방법 (개선방향) <em>*</em></label><textarea id="sf-method" rows="5" placeholder="○ 구체적인 실시 방법을 작성하세요"></textarea></div>
+          <div class="sf-row">
+            <div class="sf-field"><label>기대효과 - 예산절감액</label><input id="sf-save" placeholder="예: 500만원"></div>
+            <div class="sf-field"><label>기대효과 - 수입증대액</label><input id="sf-revenue" placeholder="예: 1,000만원"></div>
+          </div>
+          <div class="sf-field full"><label>기대효과 - 개선효과등</label><textarea id="sf-effect" rows="3" placeholder="○ 기대되는 개선 효과를 작성하세요"></textarea></div>
+          <div class="sf-field full"><label>붙임자료</label><input id="sf-file" type="file" accept=".pdf,.hwp,.docx,.png,.jpg"></div>
+          <div style="text-align:right;margin-top:20px">
+            <button class="btn-cancel" onclick="clearSubmitForm()">초기화</button>
+            <button class="btn-save" onclick="submitProposal()">제안서 접수</button>
+          </div>
+        </div>
+      </div>
+      <div class="submit-similar-area">
+        <div class="card similar-panel" id="similarPanel">
+          <div class="similar-header">
+            <span class="similar-icon">🔍</span>
+            <span>유사 제안 검색</span>
+          </div>
+          <div id="similarBody" class="similar-body">
+            <p class="similar-placeholder">제목이나 제안사유를 입력하면<br>유사한 이전 제안을 자동으로 검색합니다.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 검토·심사 탭 ===== -->
+  <div class="tab-content" id="tab-review">
+    <div class="card" style="padding:32px;max-width:900px;margin:0 auto">
+      <!-- 코드 입력 화면 -->
+      <div id="rv-gate">
+        <div style="text-align:center;padding:40px 0">
+          <div style="font-size:48px;margin-bottom:16px">🔐</div>
+          <h2 style="font-size:20px;font-weight:800;color:var(--navy);margin-bottom:8px">검토·심사 코드 입력</h2>
+          <p style="color:#888;font-size:14px;margin-bottom:24px">부여받은 코드를 입력하세요</p>
+          <div style="display:flex;gap:8px;justify-content:center;max-width:400px;margin:0 auto">
+            <input id="rv-code" class="modal-inp" placeholder="예: review-2025-A1" style="flex:1;text-align:center;font-size:15px" onkeydown="if(event.key==='Enter')verifyCode()">
+            <button class="btn-save" onclick="verifyCode()">확인</button>
+          </div>
+          <p id="rv-error" style="color:var(--rose);font-size:13px;margin-top:10px;display:none"></p>
+          <div style="margin-top:32px;padding-top:20px;border-top:1px solid #eee">
+            <p style="color:#aaa;font-size:12px">검토코드: 담당부서 검토의견 입력 &nbsp;|&nbsp; 심사코드: 배점기준표 채점</p>
+          </div>
+        </div>
+      </div>
+      <!-- 검토 화면 -->
+      <div id="rv-review" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+          <h2 style="font-size:18px;font-weight:700;color:var(--navy)">📝 담당부서 검토</h2>
+          <button class="btn-cancel" onclick="exitReview()">나가기</button>
+        </div>
+        <div id="rv-review-list"></div>
+      </div>
+      <!-- 심사 화면 -->
+      <div id="rv-judge" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+          <h2 style="font-size:18px;font-weight:700;color:var(--navy)">⚖️ 제안 심사</h2>
+          <button class="btn-cancel" onclick="exitReview()">나가기</button>
+        </div>
+        <div id="rv-judge-list"></div>
+      </div>
+    </div>
+  </div>
+
 </main>
 
 <script src="script.js"></script>

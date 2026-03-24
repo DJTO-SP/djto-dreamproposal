@@ -134,6 +134,7 @@ function switchTab(name, btn) {
   if (name==='cat')     renderCat();
   if (name==='adopted') renderAdopted();
   if (name==='stats')   renderStats2();
+  if (name==='submit')  initSubmitTab();
 }
 
 // ── 관리자 ───────────────────────────────────────────
@@ -947,3 +948,293 @@ window.onload = function() {
   loadFromSheet();
   setTimeout(initGoogleAuth, 1000);
 };
+
+// ══════════════════════════════════════════════════════════
+// ██  접수 탭 + 유사 제안 경고  ██
+// ══════════════════════════════════════════════════════════
+
+var _similarTimer = null;
+var STOP_WORDS = '의,를,을,이,가,은,는,에,에서,으로,로,와,과,및,등,한,할,하는,하여,위한,통한,위해,통해,있는,되는,것,수,대한,관련,추진,운영,도입,제안,개선,실시,방안,활용,필요,시,후,중,내,대,더,또한,아울러,현재,기존,공사,대전,대전관광공사,직원,사업,행사,시민'.split(',');
+
+function extractKeywords(text) {
+  if (!text) return [];
+  var words = text.replace(/[○●■□▪▸\-\(\)\[\]\/,\.:;!?\d]/g, ' ')
+    .split(/\s+/)
+    .filter(function(w) { return w.length >= 2 && STOP_WORDS.indexOf(w) < 0; });
+  var unique = [];
+  words.forEach(function(w) { if (unique.indexOf(w) < 0) unique.push(w); });
+  return unique;
+}
+
+function findSimilar(title, reason) {
+  var inputKw = extractKeywords((title || '') + ' ' + (reason || ''));
+  if (inputKw.length < 2) return [];
+  var results = [];
+  DATA.forEach(function(d) {
+    var targetText = (d.title || '') + ' ' + (d.summary || '') + ' ' + (d.keywords || '');
+    var targetKw = extractKeywords(targetText);
+    var matched = 0;
+    inputKw.forEach(function(kw) {
+      for (var i = 0; i < targetKw.length; i++) {
+        if (targetKw[i].indexOf(kw) >= 0 || kw.indexOf(targetKw[i]) >= 0) { matched++; break; }
+      }
+    });
+    var score = inputKw.length > 0 ? matched / inputKw.length : 0;
+    if (matched >= 2 && score >= 0.3) {
+      results.push({ d: d, score: score, matched: matched });
+    }
+  });
+  results.sort(function(a, b) { return b.score - a.score; });
+  return results.slice(0, 10);
+}
+
+function debounceSimilar() {
+  clearTimeout(_similarTimer);
+  _similarTimer = setTimeout(function() {
+    var title = document.getElementById('sf-title').value;
+    var reason = document.getElementById('sf-reason').value;
+    renderSimilarWarning(findSimilar(title, reason));
+  }, 500);
+}
+
+function renderSimilarWarning(results) {
+  var body = document.getElementById('similarBody');
+  if (!results || results.length === 0) {
+    body.innerHTML = '<p class="similar-placeholder">유사한 이전 제안이 없습니다.<br>새로운 제안입니다! ✨</p>';
+    document.getElementById('similarPanel').classList.remove('has-warning');
+    return;
+  }
+  document.getElementById('similarPanel').classList.add('has-warning');
+  var html = '<div class="similar-warn">⚠️ 유사한 이전 제안 <b>' + results.length + '건</b> 발견</div>';
+  results.forEach(function(r) {
+    var d = r.d;
+    var year = (d.id || d.seq || '').toString().substring(0, 4);
+    var pct = Math.round(r.score * 100);
+    html += '<div class="similar-item" onclick="openDetail(\'' + d.id + '\')">' +
+      '<div class="similar-item-head">' +
+        '<span class="similar-score">' + pct + '%</span>' +
+        '<span class="similar-year">' + year + '</span>' +
+        awardBadge(d.award) +
+      '</div>' +
+      '<div class="similar-item-title">' + esc(d.title) + '</div>' +
+    '</div>';
+  });
+  body.innerHTML = html;
+}
+
+function initSubmitTab() {
+  var dateEl = document.getElementById('sf-date');
+  if (dateEl && !dateEl.value) {
+    dateEl.value = new Date().toISOString().split('T')[0];
+  }
+  var deptSel = document.getElementById('sf-dept');
+  var deptEtc = document.getElementById('sf-dept-etc');
+  deptSel.onchange = function() {
+    deptEtc.style.display = deptSel.value === '_etc' ? 'block' : 'none';
+  };
+}
+
+function clearSubmitForm() {
+  ['sf-name','sf-title','sf-reason','sf-method','sf-save','sf-revenue','sf-effect'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('sf-dept').selectedIndex = 0;
+  document.getElementById('sf-category').selectedIndex = 0;
+  document.getElementById('sf-target-dept').selectedIndex = 0;
+  document.getElementById('sf-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('sf-file').value = '';
+  document.getElementById('sf-dept-etc').style.display = 'none';
+  document.getElementById('similarBody').innerHTML = '<p class="similar-placeholder">제목이나 제안사유를 입력하면<br>유사한 이전 제안을 자동으로 검색합니다.</p>';
+  document.getElementById('similarPanel').classList.remove('has-warning');
+}
+
+function submitProposal() {
+  var name = document.getElementById('sf-name').value.trim();
+  var dept = document.getElementById('sf-dept').value === '_etc'
+    ? document.getElementById('sf-dept-etc').value.trim()
+    : document.getElementById('sf-dept').value;
+  var cat = document.getElementById('sf-category').value;
+  var title = document.getElementById('sf-title').value.trim();
+  var reason = document.getElementById('sf-reason').value.trim();
+  var method = document.getElementById('sf-method').value.trim();
+  if (!name) return alert('성명을 입력해주세요.');
+  if (!dept) return alert('소속을 선택해주세요.');
+  if (!cat) return alert('제안부문을 선택해주세요.');
+  if (!title) return alert('제목을 입력해주세요.');
+  if (!reason) return alert('제안사유를 입력해주세요.');
+  if (!method) return alert('실시방법을 입력해주세요.');
+  var effect = [
+    document.getElementById('sf-save').value ? '예산절감: ' + document.getElementById('sf-save').value : '',
+    document.getElementById('sf-revenue').value ? '수입증대: ' + document.getElementById('sf-revenue').value : '',
+    document.getElementById('sf-effect').value || ''
+  ].filter(Boolean).join(' / ');
+  var summary = '● ' + reason.split('\n').filter(Boolean).join('\n● ') +
+    '\n● ' + method.split('\n').filter(Boolean).join('\n● ');
+  if (effect) summary += '\n● 기대효과: ' + effect;
+  var now = new Date();
+  var yr = now.getFullYear().toString();
+  var half = now.getMonth() < 6 ? '상반기' : '하반기';
+  var d = {
+    id: 'sub_' + Date.now(),
+    title: title,
+    proposer: name,
+    dept: dept,
+    period: yr + ' ' + half,
+    category: cat,
+    award: '심사중',
+    summary: summary,
+    keywords: extractKeywords(title + ' ' + reason).slice(0, 5).map(function(k){return '#'+k;}).join(' '),
+    pdf: ''
+  };
+  if (!_gToken) {
+    alert('제안서가 접수 준비되었습니다.\n관리자에게 Google 로그인 후 저장을 요청하세요.\n\n[임시저장됨]');
+    DATA.push(d);
+    renderAll();
+    clearSubmitForm();
+    switchTab('list', document.querySelector('.nav-btn'));
+    return;
+  }
+  saveToSheet(d);
+  DATA.push(d);
+  renderAll();
+  clearSubmitForm();
+  alert('✅ 제안서가 접수되었습니다!\n제안번호: ' + d.id);
+  switchTab('list', document.querySelector('.nav-btn'));
+}
+
+// ══════════════════════════════════════════════════════════
+// ██  검토·심사 탭  ██
+// ══════════════════════════════════════════════════════════
+
+var _rvMode = null; // 'review' or 'judge'
+var _rvCode = '';
+
+var REVIEW_CODES = {
+  'review-2025': { type: 'review', label: '2025년 전체 검토', filter: function(d) { return (d.period||'').indexOf('2025') >= 0; } },
+  'review-test': { type: 'review', label: '테스트 검토', filter: function() { return true; } }
+};
+var JUDGE_CODES = {
+  'judge-2025': { type: 'judge', label: '2025년 전체 심사', filter: function(d) { return (d.period||'').indexOf('2025') >= 0; } },
+  'judge-test': { type: 'judge', label: '테스트 심사', filter: function() { return true; } }
+};
+
+var SCORE_ITEMS = [
+  { key: 'feasibility', name: '실시가능성', max: 20, options: [20,16,12,8,4], labels: ['매우크다','다소크다','보통','약간있다','없다'] },
+  { key: 'creativity', name: '창의성', max: 15, options: [15,12,9,6,3], labels: ['획기적착상','다소독창적','보통','일부모방','전부모방'] },
+  { key: 'effectiveness', name: '효과성', max: 15, options: [15,12,9,6,3], labels: ['5억이상','3억이상','1억이상','5천만원이상','5천만원미만'] },
+  { key: 'efficiency', name: '효율성', max: 15, options: [15,12,9,6,3], labels: ['매우크다','다소크다','보통','약간있다','없다'] },
+  { key: 'scope', name: '적용범위', max: 15, options: [15,12,9,6,3], labels: ['전부서','다수부서','일부부서','소속부서','단위업무'] },
+  { key: 'duration', name: '지속성', max: 10, options: [10,8,6,4,2], labels: ['10년이상','5년이상','3년이상','1년이상','1년미만'] },
+  { key: 'effort', name: '노력도/구체성', max: 10, options: [10,8,6,4,2], labels: ['매우크다','다소크다','보통','약간있다','없다'] }
+];
+
+function verifyCode() {
+  var code = document.getElementById('rv-code').value.trim().toLowerCase();
+  var errEl = document.getElementById('rv-error');
+  if (!code) { errEl.textContent = '코드를 입력하세요.'; errEl.style.display = 'block'; return; }
+  var cfg = REVIEW_CODES[code] || JUDGE_CODES[code];
+  if (!cfg) { errEl.textContent = '유효하지 않은 코드입니다.'; errEl.style.display = 'block'; return; }
+  errEl.style.display = 'none';
+  _rvCode = code;
+  _rvMode = cfg.type;
+  document.getElementById('rv-gate').style.display = 'none';
+  if (cfg.type === 'review') {
+    document.getElementById('rv-review').style.display = 'block';
+    renderReviewList(cfg);
+  } else {
+    document.getElementById('rv-judge').style.display = 'block';
+    renderJudgeList(cfg);
+  }
+}
+
+function exitReview() {
+  _rvMode = null;
+  _rvCode = '';
+  document.getElementById('rv-gate').style.display = 'block';
+  document.getElementById('rv-review').style.display = 'none';
+  document.getElementById('rv-judge').style.display = 'none';
+  document.getElementById('rv-code').value = '';
+}
+
+function renderReviewList(cfg) {
+  var items = DATA.filter(cfg.filter);
+  var el = document.getElementById('rv-review-list');
+  if (!items.length) { el.innerHTML = '<p style="text-align:center;color:#aaa;padding:40px">배정된 제안이 없습니다.</p>'; return; }
+  var html = '';
+  items.forEach(function(d) {
+    html += '<div class="rv-card">' +
+      '<div class="rv-card-head">' + catBadge(d.category) + ' <b>' + esc(d.title) + '</b></div>' +
+      '<div class="rv-card-summary">' + fmtSummary(d.summary) + '</div>' +
+      '<div class="rv-card-field">' +
+        '<label>검토의견</label>' +
+        '<textarea id="rv-opinion-' + d.id + '" rows="4" placeholder="○ 담당부서 검토의견을 입력하세요"></textarea>' +
+        '<button class="btn-save" onclick="saveReviewOpinion(\'' + d.id + '\')" style="margin-top:8px">저장</button>' +
+      '</div>' +
+    '</div>';
+  });
+  el.innerHTML = html;
+}
+
+function saveReviewOpinion(id) {
+  var val = document.getElementById('rv-opinion-' + id).value.trim();
+  if (!val) return alert('검토의견을 입력해주세요.');
+  alert('✅ 검토의견이 저장되었습니다.');
+}
+
+function renderJudgeList(cfg) {
+  var items = DATA.filter(cfg.filter);
+  var el = document.getElementById('rv-judge-list');
+  if (!items.length) { el.innerHTML = '<p style="text-align:center;color:#aaa;padding:40px">배정된 제안이 없습니다.</p>'; return; }
+  var html = '';
+  items.forEach(function(d, idx) {
+    html += '<div class="rv-card">' +
+      '<div class="rv-card-head">' + catBadge(d.category) + ' <b>' + esc(d.title) + '</b></div>' +
+      '<div class="rv-card-summary">' + fmtSummary(d.summary) + '</div>' +
+      '<table class="score-table"><thead><tr><th>심사항목</th><th>배점</th>';
+    SCORE_ITEMS[0].options.forEach(function() { html += '<th></th>'; });
+    html += '<th>득점</th></tr></thead><tbody>';
+    SCORE_ITEMS.forEach(function(item) {
+      html += '<tr><td class="score-label">' + item.name + '<br><span class="score-max">(' + item.max + '점)</span></td>';
+      html += '<td class="score-max-cell">' + item.max + '</td>';
+      item.options.forEach(function(val, vi) {
+        var rid = 'sc-' + idx + '-' + item.key + '-' + val;
+        html += '<td class="score-opt"><label>' +
+          '<input type="radio" name="sc-' + idx + '-' + item.key + '" value="' + val + '" onchange="calcJudgeTotal(' + idx + ')">' +
+          '<span class="score-val">' + val + '</span>' +
+          '<span class="score-desc">' + item.labels[vi] + '</span>' +
+        '</label></td>';
+      });
+      html += '<td class="score-got" id="sc-got-' + idx + '-' + item.key + '">-</td></tr>';
+    });
+    html += '<tr class="score-total-row"><td colspan="' + (SCORE_ITEMS[0].options.length + 2) + '" style="text-align:right;font-weight:700">합 계</td>' +
+      '<td class="score-got" id="sc-total-' + idx + '" style="font-size:18px;font-weight:800;color:var(--blue)">0</td></tr>';
+    html += '</tbody></table>' +
+      '<div style="text-align:right;margin-top:8px"><button class="btn-save" onclick="saveJudgeScore(' + idx + ')">채점 저장</button></div>' +
+    '</div>';
+  });
+  el.innerHTML = html;
+}
+
+function calcJudgeTotal(idx) {
+  var total = 0;
+  SCORE_ITEMS.forEach(function(item) {
+    var radios = document.getElementsByName('sc-' + idx + '-' + item.key);
+    var gotEl = document.getElementById('sc-got-' + idx + '-' + item.key);
+    for (var i = 0; i < radios.length; i++) {
+      if (radios[i].checked) {
+        var v = parseInt(radios[i].value);
+        gotEl.textContent = v;
+        total += v;
+        break;
+      }
+    }
+  });
+  document.getElementById('sc-total-' + idx).textContent = total;
+}
+
+function saveJudgeScore(idx) {
+  var total = parseInt(document.getElementById('sc-total-' + idx).textContent);
+  if (!total || total === 0) return alert('채점을 완료해주세요.');
+  alert('✅ 심사 점수가 저장되었습니다. (합계: ' + total + '점)');
+}
