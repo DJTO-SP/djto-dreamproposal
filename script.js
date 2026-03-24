@@ -1,6 +1,6 @@
 
 // ── Apps Script 백엔드 연동 ──────────────────────────────
-var SCRIPT_URL = '';  // ← Apps Script 배포 URL 입력
+var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzlut9oAF8AfKFJCnBmuW55RtMM_R9Pkn6_9f3Dw5egBpCyFdU9kPzxr-h9KeP1vwCN/exec';
 
 // 기존 Google Sheets 직접 연동 (SCRIPT_URL 미설정 시 폴백)
 var SHEET_ID = '1TzKHf4QxH8XqB05duVSXlSdM42_ThGJuy0C1Qewvywo';
