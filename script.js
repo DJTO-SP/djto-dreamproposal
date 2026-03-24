@@ -1318,7 +1318,7 @@ function openInboxDetail(id, rowEl) {
   var inboxFileUrl = d.driveUrl || '';
   var inboxFileName = d.pdf || '';
   if (inboxFileUrl && inboxFileUrl.indexOf('drive.google.com') >= 0) {
-    var inboxFileId = inboxFileUrl.match(/\/d\/([^\/]+)/);
+    var inboxFileId = inboxFileUrl.match(/\/d\/([^\/]+)/) || inboxFileUrl.match(/[?&]id=([^&]+)/);
     var inboxPreview = inboxFileId ? 'https://drive.google.com/file/d/' + inboxFileId[1] + '/preview' : inboxFileUrl;
     inboxPdfHtml = '<div style="margin-top:16px;border-top:1px solid #e8edf5;padding-top:12px">' +
       '<div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:8px">📎 ' + esc(inboxFileName) + '</div>' +
@@ -1566,7 +1566,7 @@ function selectReview(idx) {
     // Google Drive 미리보기
     var previewUrl = fileUrl.replace('/view', '/preview').replace('?usp=sharing', '');
     if (fileUrl.indexOf('drive.google.com') >= 0) {
-      var fileId = fileUrl.match(/\/d\/([^\/]+)/);
+      var fileId = fileUrl.match(/\/d\/([^\/]+)/) || fileUrl.match(/[?&]id=([^&]+)/);
       if (fileId) previewUrl = 'https://drive.google.com/file/d/' + fileId[1] + '/preview';
     }
     pdfHtml = '<div style="margin-top:16px;border-top:1px solid #e8edf5;padding-top:12px">' +

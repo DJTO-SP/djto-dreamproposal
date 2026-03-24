@@ -400,38 +400,11 @@
             <input type="file" id="code-xlsx-input" accept=".xlsx,.xls" style="display:none" onchange="uploadCodeExcel(this)">
           </div>
 
-          <!-- 개별 추가 버튼 -->
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-            <div style="font-weight:600;color:var(--navy);font-size:14px">위원 등록</div>
-            <button class="btn-save" onclick="toggleCodeForm()" id="codeFormToggle" style="padding:6px 14px;font-size:12px">+ 개별 추가</button>
-          </div>
-
-          <!-- 개별 추가 폼 -->
-          <div id="codeCreateForm" style="display:none;background:#f5f6f8;border-radius:10px;padding:16px;margin-bottom:16px">
-            <div class="sf-row">
-              <div class="sf-field">
-                <label>역할 <span class="field-req">*</span></label>
-                <select id="cc-type"><option value="review">검토위원</option><option value="judge">심사위원</option></select>
-              </div>
-              <div class="sf-field">
-                <label>이름 <span class="field-req">*</span></label>
-                <input id="cc-assignee" placeholder="홍길동">
-              </div>
-              <div class="sf-field">
-                <label>부서</label>
-                <input id="cc-label" placeholder="전략기획팀">
-              </div>
-            </div>
-            <div style="text-align:right;margin-top:8px">
-              <button class="btn-cancel" onclick="toggleCodeForm()">취소</button>
-              <button class="btn-save" onclick="createCode()">추가</button>
-            </div>
-          </div>
-
-          <div style="background:#f8fafc;border-radius:8px;padding:14px 16px;font-size:13px;color:#64748b;text-align:center">
+          <div style="background:#f8fafc;border-radius:8px;padding:14px 16px;font-size:13px;color:#64748b;text-align:center;margin-top:16px">
             📋 등록된 위원 목록은 <a href="https://docs.google.com/spreadsheets" target="_blank" style="color:var(--blue);font-weight:600">Google Sheets</a>에서 확인하세요.
           </div>
           <div id="mgCodesBody" style="display:none"></div>
+          <div id="codeCreateForm" style="display:none"></div>
         </div>
       </div>
     </div>
