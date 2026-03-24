@@ -1298,12 +1298,26 @@ function openInboxDetail(id, rowEl) {
   // 분할화면 표시
   var split = document.getElementById('inbox-split');
   split.style.display = 'flex';
-  // 좌측: 제안 상세
+  // 좌측: 제안 상세 + 첨부파일 미리보기
+  var inboxPdfHtml = '';
+  var inboxFileUrl = d.driveUrl || '';
+  var inboxFileName = d.pdf || '';
+  if (inboxFileUrl && inboxFileUrl.indexOf('drive.google.com') >= 0) {
+    var inboxFileId = inboxFileUrl.match(/\/d\/([^\/]+)/);
+    var inboxPreview = inboxFileId ? 'https://drive.google.com/file/d/' + inboxFileId[1] + '/preview' : inboxFileUrl;
+    inboxPdfHtml = '<div style="margin-top:16px;border-top:1px solid #e8edf5;padding-top:12px">' +
+      '<div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:8px">📎 ' + esc(inboxFileName) + '</div>' +
+      '<iframe src="' + inboxPreview + '" style="width:100%;height:500px;border:1px solid #e8edf5;border-radius:8px" allowfullscreen></iframe>' +
+      '<a href="' + esc(inboxFileUrl) + '" target="_blank" style="display:inline-block;margin-top:6px;color:var(--blue);font-size:12px">🔗 새 탭에서 열기</a>' +
+    '</div>';
+  } else if (inboxFileName) {
+    inboxPdfHtml = '<div style="margin-top:12px"><a href="' + esc(inboxFileUrl || '#') + '" target="_blank" style="color:var(--blue);font-size:13px">📎 ' + esc(inboxFileName) + '</a></div>';
+  }
   document.getElementById('inbox-detail-area').innerHTML =
     '<div style="margin-bottom:10px">' + catBadge(d.category) + ' ' + awardBadge(d.award) + '</div>' +
     '<h3 style="font-size:17px;font-weight:800;color:var(--navy);margin-bottom:12px">' + esc(d.title) + '</h3>' +
     '<div style="font-size:13px;color:#555;line-height:1.8">' + fmtSummary(d.summary) + '</div>' +
-    (d.pdf ? '<div style="margin-top:12px"><a href="' + esc(d.driveUrl || d.pdf) + '" target="_blank" style="color:var(--blue);font-size:13px">📎 ' + esc(d.pdf) + '</a></div>' : '');
+    inboxPdfHtml;
   // 우측: 제안 정보
   document.getElementById('inbox-info-area').innerHTML =
     '<div class="info-item"><span class="info-label">제안자</span><span>' + esc(d.proposer || '-') + '</span></div>' +
@@ -1509,15 +1523,19 @@ function renderReviewListFromServer(data) {
   var progEl = document.getElementById('rv-progress');
   if (progEl) progEl.textContent = done + '/' + _reviewProposals.length + '건 완료';
   if (!_reviewProposals.length) { el.innerHTML = '<p style="text-align:center;color:#aaa;padding:40px">배정된 제안이 없습니다.</p>'; return; }
-  var html = '<div style="display:flex;flex-wrap:wrap;gap:6px">';
+  var html = '<table class="submit-list-table"><thead><tr><th>제안부문</th><th>제목</th><th>상태</th></tr></thead><tbody>';
   _reviewProposals.forEach(function(p, i) {
     var isDone = p.existingReview;
-    html += '<div class="rv-list-item' + (_curReviewIdx === i ? ' active' : '') + '" onclick="selectReview(' + i + ')">' +
-      '<div class="rv-item-title">' + catBadge(p.category) + ' ' + esc(p.title) + '</div>' +
-      '<div class="rv-item-status ' + (isDone ? 'rv-item-done' : 'rv-item-pending') + '">' + (isDone ? '✅ 검토완료' : '⏳ 대기') + '</div>' +
-    '</div>';
+    var statusHtml = isDone
+      ? '<span style="background:#dcfce7;color:#15803d;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700">✅ 검토완료</span>'
+      : '<span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700">⏳ 대기</span>';
+    html += '<tr class="rv-table-row' + (_curReviewIdx === i ? ' active-row' : '') + '" onclick="selectReview(' + i + ')" style="cursor:pointer">' +
+      '<td>' + catBadge(p.category) + '</td>' +
+      '<td class="sl-title">' + esc(p.title) + '</td>' +
+      '<td>' + statusHtml + '</td>' +
+    '</tr>';
   });
-  html += '</div>';
+  html += '</tbody></table>';
   el.innerHTML = html;
 }
 
@@ -1525,19 +1543,38 @@ function selectReview(idx) {
   _curReviewIdx = idx;
   var p = _reviewProposals[idx];
   document.getElementById('rv-split').style.display = 'flex';
-  // 좌측: 제안 상세
+  // 좌측: 제안 상세 + 첨부파일 미리보기
+  var pdfHtml = '';
+  var fileUrl = p.driveUrl || p.fileUrl || '';
+  var fileName = p.pdf || p.fileName || '';
+  if (fileUrl) {
+    // Google Drive 미리보기
+    var previewUrl = fileUrl.replace('/view', '/preview').replace('?usp=sharing', '');
+    if (fileUrl.indexOf('drive.google.com') >= 0) {
+      var fileId = fileUrl.match(/\/d\/([^\/]+)/);
+      if (fileId) previewUrl = 'https://drive.google.com/file/d/' + fileId[1] + '/preview';
+    }
+    pdfHtml = '<div style="margin-top:16px;border-top:1px solid #e8edf5;padding-top:12px">' +
+      '<div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:8px">📎 첨부파일: ' + esc(fileName) + '</div>' +
+      '<iframe src="' + previewUrl + '" style="width:100%;height:500px;border:1px solid #e8edf5;border-radius:8px" allowfullscreen></iframe>' +
+      '<a href="' + esc(fileUrl) + '" target="_blank" style="display:inline-block;margin-top:6px;color:var(--blue);font-size:12px">🔗 새 탭에서 열기</a>' +
+    '</div>';
+  } else if (fileName) {
+    pdfHtml = '<div style="margin-top:12px"><span style="color:#94a3b8;font-size:13px">📎 ' + esc(fileName) + ' (미리보기 불가)</span></div>';
+  }
   document.getElementById('rv-detail-area').innerHTML =
     '<div style="margin-bottom:10px">' + catBadge(p.category) + '</div>' +
     '<h3 style="font-size:17px;font-weight:800;color:var(--navy);margin-bottom:12px">' + esc(p.title) + '</h3>' +
-    '<div style="font-size:13px;color:#555;line-height:1.8">' + fmtSummary(p.summary) + '</div>';
+    '<div style="font-size:13px;color:#555;line-height:1.8">' + fmtSummary(p.summary) + '</div>' +
+    pdfHtml;
   // 우측: 기존 검토의견 채우기
   var ex = p.existingReview;
   document.getElementById('rv-opinion').value = ex ? (ex.opinion || '') : '';
   document.getElementById('rv-reviewer').value = ex ? (ex.reviewer || '') : '';
   document.getElementById('rv-reviewer-dept').value = ex ? (ex.reviewDept || '') : '';
   // 목록 활성 표시 갱신
-  document.querySelectorAll('#rv-review-list .rv-list-item').forEach(function(el, i) {
-    el.classList.toggle('active', i === idx);
+  document.querySelectorAll('#rv-review-list .rv-table-row').forEach(function(el, i) {
+    el.classList.toggle('active-row', i === idx);
   });
   document.getElementById('rv-split').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
