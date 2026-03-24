@@ -1255,6 +1255,7 @@ function showMgPanel(id, btn) {
   document.getElementById(id).classList.add('active');
   if (btn) btn.classList.add('active');
   if (id === 'mg-inbox') renderMgInbox();
+  if (id === 'mg-codes') loadCodes();
 }
 
 function renderMgInbox() {
@@ -1286,6 +1287,64 @@ function renderMgInbox() {
 // 기존 함수 호환성 유지
 function verifyCode() { manageLogin(); }
 function exitReview() { manageLogout(); }
+
+// ── 코드 관리 ──
+function toggleCodeForm() {
+  var form = document.getElementById('codeCreateForm');
+  form.style.display = form.style.display === 'none' ? 'block' : 'none';
+}
+
+function loadCodes() {
+  var body = document.getElementById('mgCodesBody');
+  if (!body) return;
+  if (!SCRIPT_URL) { body.innerHTML = '<p style="text-align:center;color:#aaa;padding:20px">Apps Script 미연결</p>'; return; }
+  body.innerHTML = '<p style="text-align:center;color:#aaa;padding:20px">불러오는 중...</p>';
+  api({ action: 'getCodes', pw: ADMIN_PW }).then(function(codes) {
+    if (!Array.isArray(codes) || !codes.length) { body.innerHTML = '<p style="text-align:center;color:#aaa;padding:20px">생성된 코드가 없습니다.</p>'; return; }
+    var html = '<table class="submit-list-table"><thead><tr><th>유형</th><th>코드</th><th>설명</th><th>대상연도</th><th>배정</th><th>생성일</th><th></th></tr></thead><tbody>';
+    codes.forEach(function(c) {
+      var typeBadge = c.type === 'review'
+        ? '<span style="background:#e3f2fd;color:#1565c0;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700">검토</span>'
+        : '<span style="background:#fce4ec;color:#c62828;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700">심사</span>';
+      html += '<tr><td>' + typeBadge + '</td><td><code style="background:#f0f3f9;padding:2px 8px;border-radius:4px;font-size:13px;font-weight:600">' + esc(c.code) + '</code></td>' +
+        '<td>' + esc(c.label || '') + '</td><td>' + esc(c.targetYear || '') + '</td><td>' + esc(c.assignedTo || '') + '</td>' +
+        '<td class="sl-date">' + (c.createdAt || '').substring(0,10) + '</td>' +
+        '<td><button class="btn-cancel" style="padding:3px 10px;font-size:11px" onclick="deleteCode(\'' + c.id + '\')">삭제</button></td></tr>';
+    });
+    html += '</tbody></table>';
+    body.innerHTML = html;
+  }).catch(function() { body.innerHTML = '<p style="color:var(--rose);text-align:center;padding:20px">로드 실패</p>'; });
+}
+
+function createCode() {
+  if (!SCRIPT_URL) return alert('Apps Script 미연결');
+  var type = document.getElementById('cc-type').value;
+  var year = document.getElementById('cc-year').value.trim();
+  var code = document.getElementById('cc-code').value.trim();
+  var label = document.getElementById('cc-label').value.trim();
+  var assignee = document.getElementById('cc-assignee').value.trim();
+  apiPost({
+    action: 'manageCode', pw: ADMIN_PW, op: 'create',
+    type: type, targetYear: year, code: code, label: label, assignedTo: assignee
+  }).then(function(res) {
+    if (res.ok) {
+      alert('✅ 코드 생성 완료: ' + res.code);
+      toggleCodeForm();
+      document.getElementById('cc-code').value = '';
+      document.getElementById('cc-label').value = '';
+      document.getElementById('cc-assignee').value = '';
+      loadCodes();
+    } else { alert('❌ 생성 실패: ' + (res.error || '')); }
+  });
+}
+
+function deleteCode(id) {
+  if (!confirm('이 코드를 삭제하시겠습니까?')) return;
+  apiPost({ action: 'manageCode', pw: ADMIN_PW, op: 'delete', id: id }).then(function(res) {
+    if (res.ok) { alert('삭제되었습니다.'); loadCodes(); }
+    else alert('삭제 실패: ' + (res.error || ''));
+  });
+}
 
 function renderReviewList(cfg) {
   var items = DATA.filter(cfg.filter);
@@ -1328,55 +1387,172 @@ function saveReviewOpinion(id, title) {
   alert('✅ 검토의견이 저장되었습니다.');
 }
 
-// 서버 데이터 기반 검토 렌더링
+// ── 검토: 목록 + 분할화면 ──
+var _reviewProposals = [];
+var _curReviewIdx = -1;
+
 function renderReviewListFromServer(data) {
+  _reviewProposals = data.proposals || [];
   var el = document.getElementById('rv-review-list');
-  if (!data.proposals || !data.proposals.length) { el.innerHTML = '<p style="text-align:center;color:#aaa;padding:40px">배정된 제안이 없습니다.</p>'; return; }
-  var html = '<p style="margin-bottom:16px;color:var(--blue);font-weight:600">📋 ' + (data.label||'') + ' (' + data.proposals.length + '건)</p>';
-  data.proposals.forEach(function(p) {
-    var existing = p.existingReview;
-    html += '<div class="rv-card">' +
-      '<div class="rv-card-head">' + catBadge(p.category) + ' <b>' + esc(p.title) + '</b></div>' +
-      '<div class="rv-card-summary">' + fmtSummary(p.summary) + '</div>' +
-      '<div class="rv-card-field">' +
-        '<label>검토의견' + (existing ? ' <span style="color:var(--teal);font-size:11px">(기존 의견 있음)</span>' : '') + '</label>' +
-        '<textarea id="rv-opinion-' + p.id + '" rows="4" placeholder="○ 담당부서 검토의견을 입력하세요">' + (existing ? esc(existing.opinion||'') : '') + '</textarea>' +
-        '<button class="btn-save" onclick="saveReviewOpinion(\'' + p.id + '\',\'' + esc(p.title) + '\')" style="margin-top:8px">저장</button>' +
-      '</div></div>';
+  var done = _reviewProposals.filter(function(p) { return p.existingReview; }).length;
+  var progEl = document.getElementById('rv-progress');
+  if (progEl) progEl.textContent = done + '/' + _reviewProposals.length + '건 완료';
+  if (!_reviewProposals.length) { el.innerHTML = '<p style="text-align:center;color:#aaa;padding:40px">배정된 제안이 없습니다.</p>'; return; }
+  var html = '<div style="display:flex;flex-wrap:wrap;gap:6px">';
+  _reviewProposals.forEach(function(p, i) {
+    var isDone = p.existingReview;
+    html += '<div class="rv-list-item' + (_curReviewIdx === i ? ' active' : '') + '" onclick="selectReview(' + i + ')">' +
+      '<div class="rv-item-title">' + catBadge(p.category) + ' ' + esc(p.title) + '</div>' +
+      '<div class="rv-item-status ' + (isDone ? 'rv-item-done' : 'rv-item-pending') + '">' + (isDone ? '✅ 검토완료' : '⏳ 대기') + '</div>' +
+    '</div>';
   });
+  html += '</div>';
   el.innerHTML = html;
 }
 
-// 서버 데이터 기반 심사 렌더링
+function selectReview(idx) {
+  _curReviewIdx = idx;
+  var p = _reviewProposals[idx];
+  document.getElementById('rv-split').style.display = 'flex';
+  // 좌측: 제안 상세
+  document.getElementById('rv-detail-area').innerHTML =
+    '<div style="margin-bottom:10px">' + catBadge(p.category) + '</div>' +
+    '<h3 style="font-size:17px;font-weight:800;color:var(--navy);margin-bottom:12px">' + esc(p.title) + '</h3>' +
+    '<div style="font-size:13px;color:#555;line-height:1.8">' + fmtSummary(p.summary) + '</div>';
+  // 우측: 기존 검토의견 채우기
+  var ex = p.existingReview;
+  document.getElementById('rv-opinion').value = ex ? (ex.opinion || '') : '';
+  document.getElementById('rv-reviewer').value = ex ? (ex.reviewer || '') : '';
+  document.getElementById('rv-reviewer-dept').value = ex ? (ex.reviewDept || '') : '';
+  // 목록 활성 표시 갱신
+  document.querySelectorAll('#rv-review-list .rv-list-item').forEach(function(el, i) {
+    el.classList.toggle('active', i === idx);
+  });
+  document.getElementById('rv-split').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function saveReviewFromSplit() {
+  if (_curReviewIdx < 0) return;
+  var p = _reviewProposals[_curReviewIdx];
+  var opinion = document.getElementById('rv-opinion').value.trim();
+  var reviewer = document.getElementById('rv-reviewer').value.trim();
+  var reviewDept = document.getElementById('rv-reviewer-dept').value.trim();
+  if (!reviewer) return alert('검토자를 입력해주세요.');
+  if (!opinion) return alert('검토의견을 입력해주세요.');
+  if (SCRIPT_URL) {
+    apiPost({
+      action: 'saveReview', code: _rvCode,
+      proposalId: p.id, proposalTitle: p.title,
+      reviewer: reviewer, reviewDept: reviewDept, opinion: opinion
+    }).then(function(res) {
+      if (res.ok) {
+        alert('✅ 검토의견이 저장되었습니다.');
+        p.existingReview = { opinion: opinion, reviewer: reviewer, reviewDept: reviewDept };
+        renderReviewListFromServer({ proposals: _reviewProposals });
+        // 다음 미완료 제안으로 이동
+        var next = _reviewProposals.findIndex(function(pp, i) { return i > _curReviewIdx && !pp.existingReview; });
+        if (next >= 0) selectReview(next);
+      } else alert('❌ 저장 실패: ' + (res.error || ''));
+    });
+  }
+}
+
+// ── 심사: 목록 + 분할화면 ──
 var _judgeProposals = [];
+var _curJudgeIdx = -1;
+
 function renderJudgeListFromServer(data) {
   _judgeProposals = data.proposals || [];
   var el = document.getElementById('rv-judge-list');
+  var done = _judgeProposals.filter(function(p) { return p.existingScore; }).length;
+  var progEl = document.getElementById('jd-progress');
+  if (progEl) progEl.textContent = done + '/' + _judgeProposals.length + '건 완료';
   if (!_judgeProposals.length) { el.innerHTML = '<p style="text-align:center;color:#aaa;padding:40px">배정된 제안이 없습니다.</p>'; return; }
-  var html = '<p style="margin-bottom:16px;color:var(--blue);font-weight:600">⚖️ ' + (data.label||'') + ' (' + _judgeProposals.length + '건)</p>';
-  _judgeProposals.forEach(function(p, idx) {
-    var ex = p.existingScore;
-    html += '<div class="rv-card"><div class="rv-card-head">' + catBadge(p.category) + ' <b>' + esc(p.title) + '</b></div>' +
-      '<div class="rv-card-summary">' + fmtSummary(p.summary) + '</div>';
-    if (ex) html += '<div style="background:#e8f5e9;padding:8px 12px;border-radius:8px;margin-bottom:10px;font-size:13px;color:#2e7d32">✅ 기존 채점: <b>' + ex.total + '점</b> (수정 가능)</div>';
-    html += '<table class="score-table"><thead><tr><th>심사항목</th><th>배점</th>';
-    SCORE_ITEMS[0].options.forEach(function() { html += '<th></th>'; });
-    html += '<th>득점</th></tr></thead><tbody>';
-    SCORE_ITEMS.forEach(function(item) {
-      html += '<tr><td class="score-label">' + item.name + '<br><span class="score-max">(' + item.max + '점)</span></td>';
-      html += '<td class="score-max-cell">' + item.max + '</td>';
-      item.options.forEach(function(val, vi) {
-        var checked = ex && Number(ex[item.key]) === val ? ' checked' : '';
-        html += '<td class="score-opt"><label><input type="radio" name="sc-' + idx + '-' + item.key + '" value="' + val + '"' + checked + ' onchange="calcJudgeTotal(' + idx + ')"><span class="score-val">' + val + '</span><span class="score-desc">' + item.labels[vi] + '</span></label></td>';
-      });
-      var got = ex ? (Number(ex[item.key]) || '-') : '-';
-      html += '<td class="score-got" id="sc-got-' + idx + '-' + item.key + '">' + got + '</td></tr>';
-    });
-    var initTotal = ex ? Number(ex.total) : 0;
-    html += '<tr class="score-total-row"><td colspan="' + (SCORE_ITEMS[0].options.length + 2) + '" style="text-align:right;font-weight:700">합 계</td><td class="score-got" id="sc-total-' + idx + '" style="font-size:18px;font-weight:800;color:var(--blue)">' + initTotal + '</td></tr>';
-    html += '</tbody></table><div style="text-align:right;margin-top:8px"><button class="btn-save" onclick="saveJudgeScore(' + idx + ')">채점 저장</button></div></div>';
+  var html = '<div style="display:flex;flex-wrap:wrap;gap:6px">';
+  _judgeProposals.forEach(function(p, i) {
+    var isDone = p.existingScore;
+    html += '<div class="rv-list-item' + (_curJudgeIdx === i ? ' active' : '') + '" onclick="selectJudge(' + i + ')">' +
+      '<div class="rv-item-title">' + catBadge(p.category) + ' ' + esc(p.title) + '</div>' +
+      '<div class="rv-item-status ' + (isDone ? 'rv-item-done' : 'rv-item-pending') + '">' + (isDone ? '✅ ' + p.existingScore.total + '점' : '⏳ 대기') + '</div>' +
+    '</div>';
   });
+  html += '</div>';
   el.innerHTML = html;
+}
+
+function selectJudge(idx) {
+  _curJudgeIdx = idx;
+  var p = _judgeProposals[idx];
+  document.getElementById('jd-split').style.display = 'flex';
+  // 좌측: 제안 상세
+  document.getElementById('jd-detail-area').innerHTML =
+    '<div style="margin-bottom:10px">' + catBadge(p.category) + '</div>' +
+    '<h3 style="font-size:17px;font-weight:800;color:var(--navy);margin-bottom:12px">' + esc(p.title) + '</h3>' +
+    '<div style="font-size:13px;color:#555;line-height:1.8">' + fmtSummary(p.summary) + '</div>';
+  // 우측: 채점 폼
+  var ex = p.existingScore;
+  var html = '';
+  SCORE_ITEMS.forEach(function(item) {
+    html += '<div class="score-row"><div class="score-row-label">' + item.name + ' <span style="color:#aaa">(' + item.max + ')</span></div><select class="score-select" id="jds-' + item.key + '" onchange="calcSplitTotal()">';
+    html += '<option value="">선택</option>';
+    item.options.forEach(function(val, vi) {
+      var sel = ex && Number(ex[item.key]) === val ? ' selected' : '';
+      html += '<option value="' + val + '"' + sel + '>' + val + '점 - ' + item.labels[vi] + '</option>';
+    });
+    html += '</select></div>';
+  });
+  document.getElementById('jd-score-form').innerHTML = html;
+  document.getElementById('jd-judge-name').value = '';
+  calcSplitTotal();
+  // 목록 활성 표시
+  document.querySelectorAll('#rv-judge-list .rv-list-item').forEach(function(el, i) {
+    el.classList.toggle('active', i === idx);
+  });
+  document.getElementById('jd-split').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function calcSplitTotal() {
+  var total = 0;
+  SCORE_ITEMS.forEach(function(item) {
+    var v = parseInt(document.getElementById('jds-' + item.key).value) || 0;
+    total += v;
+  });
+  document.getElementById('jd-total-display').textContent = '합계: ' + total + '점';
+}
+
+function saveScoreFromSplit() {
+  if (_curJudgeIdx < 0) return;
+  var p = _judgeProposals[_curJudgeIdx];
+  var judgeName = document.getElementById('jd-judge-name').value.trim();
+  if (!judgeName) return alert('심사자를 입력해주세요.');
+  var scores = {};
+  var total = 0;
+  var allFilled = true;
+  SCORE_ITEMS.forEach(function(item) {
+    var v = parseInt(document.getElementById('jds-' + item.key).value) || 0;
+    if (!v) allFilled = false;
+    scores[item.key] = v;
+    total += v;
+  });
+  if (!allFilled) return alert('모든 항목을 채점해주세요.');
+  if (SCRIPT_URL) {
+    apiPost({
+      action: 'saveScore', code: _rvCode,
+      proposalId: p.id, proposalTitle: p.title,
+      feasibility: scores.feasibility, creativity: scores.creativity,
+      effectiveness: scores.effectiveness, efficiency: scores.efficiency,
+      scope: scores.scope, duration: scores.duration, effort: scores.effort
+    }).then(function(res) {
+      if (res.ok) {
+        alert('✅ 심사 점수가 저장되었습니다. (합계: ' + res.total + '점)');
+        p.existingScore = { total: res.total };
+        SCORE_ITEMS.forEach(function(item) { p.existingScore[item.key] = scores[item.key]; });
+        renderJudgeListFromServer({ proposals: _judgeProposals });
+        var next = _judgeProposals.findIndex(function(pp, i) { return i > _curJudgeIdx && !pp.existingScore; });
+        if (next >= 0) selectJudge(next);
+      } else alert('❌ 저장 실패: ' + (res.error || ''));
+    });
+  }
 }
 
 function renderJudgeList(cfg) {

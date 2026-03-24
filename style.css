@@ -398,6 +398,24 @@ textarea.fi { resize:vertical; }
 .admin-panel { display: none; }
 .admin-panel.active { display: block; }
 
+/* ══ 좌우 분할 레이아웃 (목록 아래) ══ */
+.split-wrap { display: flex; gap: 16px; align-items: flex-start; }
+.split-main { flex: 1; min-width: 0; }
+.split-side { width: 360px; flex-shrink: 0; }
+.rv-list-item { padding: 10px 12px; border: 1.5px solid #e8edf5; border-radius: 8px; margin-bottom: 6px; cursor: pointer; transition: all .15s; font-size: 13px; }
+.rv-list-item:hover { border-color: var(--blue); background: #f0f5ff; }
+.rv-list-item.active { border-color: var(--blue); background: #e8f0ff; }
+.rv-list-item .rv-item-title { font-weight: 600; color: var(--navy); margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rv-list-item .rv-item-status { font-size: 11px; }
+.rv-item-done { color: var(--teal); }
+.rv-item-pending { color: #aaa; }
+
+/* ══ 채점 드롭다운 행 ══ */
+.score-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.score-row-label { width: 110px; flex-shrink: 0; font-size: 13px; font-weight: 600; color: #3a4a6b; }
+.score-select { flex: 1; border: 1.5px solid #d5dbe8; border-radius: 8px; padding: 7px 10px; font-size: 13px; font-family: inherit; background: #fafbfd; }
+.score-select:focus { border-color: var(--blue); outline: none; }
+
 /* ══ 검토·심사 ══ */
 .rv-card { border: 1.5px solid #e8edf5; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
 .rv-card-head { font-size: 15px; margin-bottom: 10px; }

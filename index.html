@@ -162,7 +162,7 @@
         <span class="count-lbl" id="cntLbl"></span>
       </div>
       <div class="tbl-wrap">
-        <table><thead id="tblHead"></thead><tbody id="tblBody"></tbody></table>
+        <table><thead id="tblHead"></thead><tbody id="tblBody"><tr><td colspan="10" style="text-align:center;color:#aaa;padding:40px">불러오는 중...</td></tr></tbody></table>
       </div>
     </div>
   </div>
@@ -362,7 +362,7 @@
               <option value="접수완료">접수완료</option>
             </select>
           </div>
-          <div id="mgInboxBody"></div>
+          <div id="mgInboxBody"><p style="text-align:center;color:#aaa;padding:20px">불러오는 중...</p></div>
         </div>
       </div>
       <!-- 제안관리 -->
@@ -378,31 +378,110 @@
       <!-- 코드관리 -->
       <div id="mg-codes" class="admin-panel">
         <div class="card" style="padding:20px 24px">
-          <div class="section-title-bar" style="margin:0 0 14px;padding:0;border:none">
-            <div class="section-title-icon">🔑</div>
-            <h2 class="section-title-text" style="font-size:17px">검토·심사 코드 관리</h2>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+            <div class="section-title-bar" style="margin:0;padding:0;border:none">
+              <div class="section-title-icon">🔑</div>
+              <h2 class="section-title-text" style="font-size:17px">검토·심사 코드 관리</h2>
+            </div>
+            <button class="btn-save" onclick="toggleCodeForm()" id="codeFormToggle">+ 코드 생성</button>
           </div>
-          <div id="mgCodesBody"></div>
+          <!-- 코드 생성 폼 -->
+          <div id="codeCreateForm" style="display:none;background:#f5f6f8;border-radius:10px;padding:16px;margin-bottom:16px">
+            <div class="sf-row">
+              <div class="sf-field">
+                <label>코드 유형 <span class="field-req">*</span></label>
+                <select id="cc-type"><option value="review">검토코드</option><option value="judge">심사코드</option></select>
+              </div>
+              <div class="sf-field">
+                <label>대상 연도</label>
+                <input id="cc-year" placeholder="예: 2025" value="2025">
+              </div>
+              <div class="sf-field">
+                <label>코드 (자동생성 가능)</label>
+                <input id="cc-code" placeholder="비워두면 자동생성">
+              </div>
+            </div>
+            <div class="sf-row">
+              <div class="sf-field">
+                <label>설명</label>
+                <input id="cc-label" placeholder="예: 2025년 상반기 검토용">
+              </div>
+              <div class="sf-field">
+                <label>배정 대상</label>
+                <input id="cc-assignee" placeholder="예: 전략기획팀 홍길동">
+              </div>
+            </div>
+            <div style="text-align:right">
+              <button class="btn-cancel" onclick="toggleCodeForm()">취소</button>
+              <button class="btn-save" onclick="createCode()">생성</button>
+            </div>
+          </div>
+          <!-- 코드 목록 -->
+          <div id="mgCodesBody"><p style="text-align:center;color:#aaa;padding:20px">불러오는 중...</p></div>
         </div>
       </div>
     </div>
 
-    <!-- 검토 패널 -->
+    <!-- 검토 패널 (좌우 분할) -->
     <div id="mg-review" style="display:none">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
         <h2 style="font-size:18px;font-weight:700;color:var(--navy)">📝 담당부서 검토</h2>
-        <button class="btn-cancel" onclick="manageLogout()">로그아웃</button>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span id="rv-progress" style="font-size:13px;color:#888"></span>
+          <button class="btn-cancel" onclick="manageLogout()">로그아웃</button>
+        </div>
       </div>
-      <div id="rv-review-list"></div>
+      <!-- 제안 목록 (상단) -->
+      <div id="rv-review-list" style="margin-bottom:16px"></div>
+      <!-- 좌우 분할: 좌=제안상세, 우=검토입력 -->
+      <div class="split-wrap" id="rv-split" style="display:none">
+        <div class="split-main">
+          <div class="card" style="padding:20px">
+            <div id="rv-detail-area"></div>
+          </div>
+        </div>
+        <div class="split-side">
+          <div class="card" style="padding:20px;position:sticky;top:72px">
+            <h3 style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:14px">검토의견 작성</h3>
+            <div class="sf-field full"><label>검토자 <span class="field-req">*</span></label><input id="rv-reviewer" placeholder="홍길동"></div>
+            <div class="sf-field full"><label>검토부서 <span class="field-req">*</span></label><input id="rv-reviewer-dept" placeholder="전략기획팀"></div>
+            <div class="sf-field full"><label>검토의견 <span class="field-req">*</span></label><textarea id="rv-opinion" rows="6" placeholder="○ 검토의견을 입력하세요"></textarea></div>
+            <button class="btn-submit-full" onclick="saveReviewFromSplit()">작성 완료</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- 심사 패널 -->
     <div id="mg-judge" style="display:none">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
         <h2 style="font-size:18px;font-weight:700;color:var(--navy)">⚖️ 제안 심사</h2>
-        <button class="btn-cancel" onclick="manageLogout()">로그아웃</button>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span id="jd-progress" style="font-size:13px;color:#888"></span>
+          <button class="btn-cancel" onclick="manageLogout()">로그아웃</button>
+        </div>
       </div>
-      <div id="rv-judge-list"></div>
+      <!-- 제안 목록 (상단) -->
+      <div id="rv-judge-list" style="margin-bottom:16px"></div>
+      <!-- 좌우 분할: 좌=제안상세, 우=채점입력 -->
+      <div class="split-wrap" id="jd-split" style="display:none">
+        <div class="split-main">
+          <div class="card" style="padding:20px">
+            <div id="jd-detail-area"></div>
+          </div>
+        </div>
+        <div class="split-side">
+          <div class="card" style="padding:20px;position:sticky;top:72px">
+            <h3 style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:14px">배점기준표 채점</h3>
+            <div id="jd-score-form"></div>
+            <div class="sf-field full" style="margin-top:14px"><label>심사자 <span class="field-req">*</span></label><input id="jd-judge-name" placeholder="홍길동"></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px">
+              <span style="font-size:18px;font-weight:800;color:var(--blue)" id="jd-total-display">합계: 0점</span>
+              <button class="btn-submit-full" style="width:auto;padding:12px 28px" onclick="saveScoreFromSplit()">작성 완료</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
