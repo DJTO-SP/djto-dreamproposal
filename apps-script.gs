@@ -10,8 +10,8 @@
  *    - 배포 URL을 index.html의 SCRIPT_URL에 입력
  */
 
-const SHEET_ID        = '';  // ← Google Sheet ID 입력
-const DRIVE_FOLDER_ID = '';  // ← Google Drive 폴더 ID 입력
+const SHEET_ID        = '1TzKHf4QxH8XqB05duVSXlSdM42_ThGJuy0C1Qewvywo';
+const DRIVE_FOLDER_ID = '';  // ← Google Drive 폴더 ID 입력 (제안서 파일 업로드용)
 const ADMIN_PW        = 'alsk0118**';
 
 const S_PROPOSAL = '제안';
