@@ -410,6 +410,10 @@ textarea.fi { resize:vertical; }
 .rv-item-done { color: var(--teal); }
 .rv-item-pending { color: #aaa; }
 
+/* ══ 파일 드롭존 ══ */
+.file-drop:hover { border-color: var(--blue) !important; background: #f8faff !important; }
+.file-drop.drag-over { border-color: var(--blue) !important; background: #e8f0ff !important; }
+
 /* ══ 접수현황 상세 ══ */
 .active-row td { background: #e8f0ff !important; }
 .info-item { display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid #f0f3f9; font-size: 13px; }

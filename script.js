@@ -1328,11 +1328,24 @@ function toggleCodeForm() {
 function loadCodes() {
   var body = document.getElementById('mgCodesBody');
   if (!body) return;
-  if (!SCRIPT_URL) { body.innerHTML = '<p style="text-align:center;color:#aaa;padding:20px">Apps Script 미연결</p>'; return; }
+  var syncText = document.getElementById('code-sync-text');
+  var syncBox = document.getElementById('code-sync-box');
+  if (!SCRIPT_URL) {
+    body.innerHTML = '<p style="text-align:center;color:#aaa;padding:20px">Apps Script 미연결</p>';
+    if (syncText) syncText.textContent = '⚠️ Apps Script 미연결';
+    if (syncBox) { syncBox.style.background = '#fef2f2'; syncBox.style.borderColor = '#fca5a5'; syncBox.style.color = '#991b1b'; }
+    return;
+  }
   body.innerHTML = '<p style="text-align:center;color:#aaa;padding:20px">불러오는 중...</p>';
+  if (syncText) syncText.textContent = '불러오는 중...';
+  if (syncBox) { syncBox.style.background = '#fefce8'; syncBox.style.borderColor = '#fde047'; syncBox.style.color = '#854d0e'; }
   api({ action: 'getCodes', pw: ADMIN_PW }).then(function(res) {
     var codes = Array.isArray(res) ? res : (res && res.codes ? res.codes : []);
-    if (!codes.length) { body.innerHTML = '<p style="text-align:center;color:#aaa;padding:20px">등록된 위원이 없습니다. [+ 위원 추가] 버튼으로 추가하세요.</p>'; return; }
+    var countEl = document.getElementById('code-member-count');
+    if (countEl) countEl.textContent = '(' + codes.length + '명)';
+    if (syncText) syncText.textContent = '✅ 위원 명단 로드 완료 (' + codes.length + '명, Sheets 연동됨)';
+    if (syncBox) { syncBox.style.background = '#f0fdf4'; syncBox.style.borderColor = '#86efac'; syncBox.style.color = '#15803d'; }
+    if (!codes.length) { body.innerHTML = '<div style="text-align:center;padding:30px;color:#94a3b8;font-size:13px"><div style="font-size:32px;margin-bottom:8px">👥</div><div>등록된 위원이 없습니다.<br>Excel 파일을 업로드하거나 [+ 개별 추가] 버튼으로 추가하세요.</div></div>'; return; }
     var html = '<table class="submit-list-table"><thead><tr><th>역할</th><th>이름</th><th>부서</th><th>연도</th><th>로그인 코드</th><th></th></tr></thead><tbody>';
     codes.forEach(function(c) {
       var typeBadge = c.type === 'review'
@@ -1345,7 +1358,11 @@ function loadCodes() {
     });
     html += '</tbody></table>';
     body.innerHTML = html;
-  }).catch(function() { body.innerHTML = '<p style="color:var(--rose);text-align:center;padding:20px">로드 실패</p>'; });
+  }).catch(function() {
+    body.innerHTML = '<p style="color:var(--rose);text-align:center;padding:20px">로드 실패</p>';
+    if (syncText) syncText.textContent = '⚠️ Sheets 연결 실패';
+    if (syncBox) { syncBox.style.background = '#fef2f2'; syncBox.style.borderColor = '#fca5a5'; syncBox.style.color = '#991b1b'; }
+  });
 }
 
 function createCode() {
@@ -1370,10 +1387,73 @@ function createCode() {
 }
 
 function deleteCode(id) {
-  if (!confirm('이 코드를 삭제하시겠습니까?')) return;
+  if (!confirm('이 위원을 삭제하시겠습니까?')) return;
   apiPost({ action: 'manageCode', pw: ADMIN_PW, op: 'delete', id: id }).then(function(res) {
     if (res.ok) { alert('삭제되었습니다.'); loadCodes(); }
     else alert('삭제 실패: ' + (res.error || ''));
+  });
+}
+
+function uploadCodeExcel(input) {
+  var file = input.files[0]; if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+    var data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1 });
+    // 헤더 감지
+    var start = (data[0] && (String(data[0][0]).includes('역할') || String(data[0][0]).includes('유형'))) ? 1 : 0;
+    var parsed = [];
+    for (var i = start; i < data.length; i++) {
+      var r = data[i]; if (!r || !r[0]) continue;
+      var role = String(r[0] || '').trim();
+      var name = String(r[1] || '').trim();
+      var dept = String(r[2] || '').trim();
+      if (!name) continue;
+      var type = (role.indexOf('심사') >= 0) ? 'judge' : 'review';
+      parsed.push({ type: type, name: name, dept: dept });
+    }
+    if (!parsed.length) { alert('파일에서 데이터를 읽을 수 없습니다.\n형식: 역할 | 이름 | 부서'); return; }
+    if (!confirm(parsed.length + '명의 위원을 일괄 등록합니다.\n(기존 위원 목록에 추가됩니다)')) return;
+    document.getElementById('code-xlsx-label').textContent = '⏳ 등록 중... (0/' + parsed.length + ')';
+    var done = 0;
+    var results = [];
+    function next() {
+      if (done >= parsed.length) {
+        document.getElementById('code-xlsx-label').textContent = '✅ ' + file.name + ' (' + parsed.length + '명 등록 완료)';
+        var msg = '✅ ' + parsed.length + '명 등록 완료!\n\n';
+        results.forEach(function(r) { msg += r.type + ' | ' + r.name + ' | 코드: ' + r.code + '\n'; });
+        alert(msg);
+        loadCodes();
+        return;
+      }
+      var p = parsed[done];
+      apiPost({
+        action: 'manageCode', pw: ADMIN_PW, op: 'create',
+        type: p.type, targetYear: '2025', code: '', label: p.dept, assignedTo: p.name
+      }).then(function(res) {
+        results.push({ type: p.type === 'judge' ? '심사' : '검토', name: p.name, code: res.code || '?' });
+        done++;
+        document.getElementById('code-xlsx-label').textContent = '⏳ 등록 중... (' + done + '/' + parsed.length + ')';
+        next();
+      }).catch(function() { done++; next(); });
+    }
+    next();
+  };
+  reader.readAsArrayBuffer(file);
+  input.value = '';
+}
+
+function clearAllCodes() {
+  if (!confirm('⚠️ 등록된 모든 위원을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')) return;
+  api({ action: 'getCodes', pw: ADMIN_PW }).then(function(res) {
+    var codes = Array.isArray(res) ? res : (res && res.codes ? res.codes : []);
+    if (!codes.length) { alert('삭제할 위원이 없습니다.'); return; }
+    var done = 0;
+    function delNext() {
+      if (done >= codes.length) { alert('✅ 전체 초기화 완료'); loadCodes(); return; }
+      apiPost({ action: 'manageCode', pw: ADMIN_PW, op: 'delete', id: codes[done].id }).then(function() { done++; delNext(); }).catch(function() { done++; delNext(); });
+    }
+    delNext();
   });
 }
 

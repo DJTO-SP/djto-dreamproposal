@@ -8,6 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700;800&family=Exo+2:wght@700&display=swap" rel="stylesheet">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>대전관광공사 혁신드림제안제도 통합관리대장</title>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" defer></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <link rel="stylesheet" href="style.css">
@@ -392,29 +393,50 @@
       <!-- 검토·심사 위원 명단 -->
       <div id="mg-codes" class="admin-panel">
         <div class="card" style="padding:20px 24px">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-            <div class="section-title-bar" style="margin:0;padding:0;border:none">
-              <div class="section-title-icon">👥</div>
-              <h2 class="section-title-text" style="font-size:17px">검토·심사 위원 명단</h2>
+          <div style="font-weight:700;color:var(--navy);margin-bottom:6px;font-size:16px">👥 검토·심사 위원 명단</div>
+          <div style="font-size:13px;color:#64748b;margin-bottom:16px">위원을 등록하면 로그인 코드가 자동 생성됩니다. 코드를 해당 위원에게 전달하세요.</div>
+
+          <!-- Sheets 연동 상태 -->
+          <div id="code-sync-box" style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:14px 16px;margin-bottom:16px;font-size:13px;color:#15803d;display:flex;align-items:center;justify-content:space-between;gap:12px">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:18px">☁️</span>
+              <span id="code-sync-text">불러오는 중...</span>
             </div>
-            <button class="btn-save" onclick="toggleCodeForm()" id="codeFormToggle">+ 위원 추가</button>
+            <button class="btn-save" style="padding:6px 14px;font-size:12px" onclick="loadCodes()">🔄 새로고침</button>
           </div>
-          <div class="info-box-blue" style="margin-bottom:16px">
-            위원을 추가하면 로그인 코드가 자동 생성됩니다. 코드를 해당 위원에게 전달하세요.
+
+          <!-- Excel 업로드 -->
+          <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:14px 16px;margin-bottom:16px;font-size:13px;color:#0369a1">
+            <div style="font-weight:600;margin-bottom:6px">📋 Excel 파일로 위원 일괄 등록</div>
+            <div>첫 번째 행: <code style="background:#e0f2fe;padding:2px 6px;border-radius:4px">역할, 이름, 부서</code></div>
+            <div style="margin-top:4px">예시: <code style="background:#e0f2fe;padding:2px 6px;border-radius:4px">검토위원 | 홍길동 | 전략기획팀</code></div>
+            <div style="margin-top:4px">역할은 <b>검토위원</b> 또는 <b>심사위원</b>으로 입력</div>
           </div>
-          <!-- 위원 추가 폼 -->
+
+          <div style="margin-bottom:16px">
+            <label style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:6px;display:block">Excel 파일 업로드</label>
+            <div class="file-drop" id="code-drop-zone" onclick="document.getElementById('code-xlsx-input').click()" style="border:2px dashed #d5dbe8;border-radius:10px;padding:24px;text-align:center;cursor:pointer;color:#94a3b8;font-size:13px;transition:all .2s">
+              <span id="code-xlsx-label">클릭하거나 파일을 끌어다 놓으세요</span>
+            </div>
+            <input type="file" id="code-xlsx-input" accept=".xlsx,.xls" style="display:none" onchange="uploadCodeExcel(this)">
+          </div>
+
+          <!-- 개별 추가 버튼 -->
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <div style="font-weight:600;color:var(--navy);font-size:14px">등록된 위원 <span id="code-member-count" style="color:#1e3a8a"></span></div>
+            <div style="display:flex;gap:8px">
+              <button class="btn-save" onclick="toggleCodeForm()" id="codeFormToggle" style="padding:6px 14px;font-size:12px">+ 개별 추가</button>
+              <button class="btn-cancel" style="padding:6px 14px;font-size:12px;color:#dc2626;border-color:#fca5a5" onclick="clearAllCodes()">전체 초기화</button>
+            </div>
+          </div>
+
+          <!-- 개별 추가 폼 -->
           <div id="codeCreateForm" style="display:none;background:#f5f6f8;border-radius:10px;padding:16px;margin-bottom:16px">
             <div class="sf-row">
               <div class="sf-field">
                 <label>역할 <span class="field-req">*</span></label>
-                <select id="cc-type"><option value="review">검토위원 (담당부서)</option><option value="judge">심사위원</option></select>
+                <select id="cc-type"><option value="review">검토위원</option><option value="judge">심사위원</option></select>
               </div>
-              <div class="sf-field">
-                <label>대상 연도</label>
-                <input id="cc-year" placeholder="예: 2025" value="2025">
-              </div>
-            </div>
-            <div class="sf-row">
               <div class="sf-field">
                 <label>이름 <span class="field-req">*</span></label>
                 <input id="cc-assignee" placeholder="홍길동">
@@ -429,7 +451,8 @@
               <button class="btn-save" onclick="createCode()">추가</button>
             </div>
           </div>
-          <!-- 위원 목록 -->
+
+          <!-- 위원 목록 테이블 -->
           <div id="mgCodesBody"><p style="text-align:center;color:#aaa;padding:20px">불러오는 중...</p></div>
         </div>
       </div>
