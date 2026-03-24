@@ -32,12 +32,10 @@
       <button class="nav-btn" onclick="switchTab('stats',this)"><span class="nav-icon">📊</span> 통계</button>
       <span style="width:1px;height:24px;background:#3a5a8e;margin:0 6px"></span>
       <button class="nav-btn nav-accent" onclick="switchTab('submit',this)"><span class="nav-icon">✏️</span> 접수</button>
-      <button class="nav-btn" onclick="switchTab('review',this)"><span class="nav-icon">⚖️</span> 검토·심사</button>
+      <button class="nav-btn" onclick="switchTab('manage',this)"><span class="nav-icon">⚙️</span> 관리</button>
     </nav>
-    <div style="display:flex;align-items:center;gap:12px">
-      <button class="admin-btn" onclick="loadFromSheet()" style="background:#4ecdc4;margin-right:6px">🔄 새로고침</button>
-      <button class="admin-btn" id="googleBtn" onclick="googleLogin()" style="background:#fff;color:#444;border-color:#ddd">🔑 Google</button>
-      <button class="admin-btn" id="adminBtn" onclick="toggleAdmin()">🔒 관리자</button>
+    <div style="display:flex;align-items:center;gap:8px">
+      <button class="admin-btn" onclick="loadFromSheet()" style="background:#4ecdc4">🔄</button>
     </div>
   </div>
 </header>
@@ -228,25 +226,6 @@
 
   <!-- ===== 접수 탭 ===== -->
   <div class="tab-content" id="tab-submit">
-    <!-- 접수 현황 목록 -->
-    <div class="card" id="submitListCard" style="padding:20px 28px;margin-bottom:20px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-        <div class="section-title-bar" style="margin:0;padding:0;border:none">
-          <div class="section-title-icon">📋</div>
-          <div>
-            <h2 class="section-title-text" style="font-size:17px">접수 현황</h2>
-            <p class="section-title-sub">최근 접수된 제안 목록</p>
-          </div>
-        </div>
-        <select id="submitListFilter" onchange="renderSubmitList()" style="border:1.5px solid #d5dbe8;border-radius:8px;padding:6px 12px;font-size:13px;font-family:inherit">
-          <option value="all">전체</option>
-          <option value="심사중" selected>심사중</option>
-          <option value="접수완료">접수완료</option>
-        </select>
-      </div>
-      <div id="submitListBody" style="max-height:300px;overflow-y:auto"></div>
-    </div>
-
     <div class="submit-wrap">
       <div class="submit-form-area">
         <div class="card" style="padding:28px 32px">
@@ -341,41 +320,89 @@
     </div>
   </div>
 
-  <!-- ===== 검토·심사 탭 ===== -->
-  <div class="tab-content" id="tab-review">
-    <div class="card" style="padding:32px;max-width:900px;margin:0 auto">
-      <!-- 코드 입력 화면 -->
-      <div id="rv-gate">
-        <div style="text-align:center;padding:40px 0">
-          <div style="font-size:48px;margin-bottom:16px">🔐</div>
-          <h2 style="font-size:20px;font-weight:800;color:var(--navy);margin-bottom:8px">검토·심사 코드 입력</h2>
-          <p style="color:#888;font-size:14px;margin-bottom:24px">부여받은 코드를 입력하세요</p>
-          <div style="display:flex;gap:8px;justify-content:center;max-width:400px;margin:0 auto">
-            <input id="rv-code" class="modal-inp" placeholder="예: review-2025-A1" style="flex:1;text-align:center;font-size:15px" onkeydown="if(event.key==='Enter')verifyCode()">
-            <button class="btn-save" onclick="verifyCode()">확인</button>
+  <!-- ===== 관리 탭 ===== -->
+  <div class="tab-content" id="tab-manage">
+    <!-- 로그인 화면 -->
+    <div id="mg-lock" class="card" style="text-align:center;padding:40px 20px;max-width:420px;margin:0 auto">
+      <div style="font-size:40px;margin-bottom:14px">🔒</div>
+      <h2 style="font-size:20px;font-weight:800;color:var(--navy);margin-bottom:20px">관리자 / 검토·심사 로그인</h2>
+      <div style="display:flex;flex-direction:column;gap:10px;max-width:320px;margin:0 auto">
+        <input id="mg-input" class="modal-inp" placeholder="관리자 비밀번호 또는 검토·심사 코드" style="text-align:center;font-size:14px" onkeydown="if(event.key==='Enter')manageLogin()">
+        <button class="btn-submit-full" onclick="manageLogin()">로그인</button>
+      </div>
+      <p id="mg-error" style="color:var(--rose);font-size:13px;margin-top:10px;display:none"></p>
+      <div style="margin-top:24px;padding-top:16px;border-top:1px solid #eee;font-size:12px;color:#aaa">
+        <p>관리자: 비밀번호 입력 → 접수현황·제안관리·코드관리</p>
+        <p>검토자: 검토코드 입력 → 담당부서 검토의견 입력</p>
+        <p>심사위원: 심사코드 입력 → 배점기준표 채점</p>
+      </div>
+    </div>
+
+    <!-- 관리자 패널 -->
+    <div id="mg-admin" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <div class="admin-nav">
+          <button class="admin-nav-btn active" onclick="showMgPanel('mg-inbox',this)">📋 접수현황</button>
+          <button class="admin-nav-btn" onclick="showMgPanel('mg-proposals',this)">📝 제안관리</button>
+          <button class="admin-nav-btn" onclick="showMgPanel('mg-codes',this)">🔑 코드관리</button>
+        </div>
+        <button class="btn-cancel" onclick="manageLogout()">로그아웃</button>
+      </div>
+      <!-- 접수현황 -->
+      <div id="mg-inbox" class="admin-panel active">
+        <div class="card" style="padding:20px 24px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+            <div class="section-title-bar" style="margin:0;padding:0;border:none">
+              <div class="section-title-icon">📋</div>
+              <h2 class="section-title-text" style="font-size:17px">접수현황</h2>
+            </div>
+            <select id="mgInboxFilter" onchange="renderMgInbox()" style="border:1.5px solid #d5dbe8;border-radius:8px;padding:6px 12px;font-size:13px;font-family:inherit">
+              <option value="all">전체</option>
+              <option value="심사중" selected>심사중</option>
+              <option value="접수완료">접수완료</option>
+            </select>
           </div>
-          <p id="rv-error" style="color:var(--rose);font-size:13px;margin-top:10px;display:none"></p>
-          <div style="margin-top:32px;padding-top:20px;border-top:1px solid #eee">
-            <p style="color:#aaa;font-size:12px">검토코드: 담당부서 검토의견 입력 &nbsp;|&nbsp; 심사코드: 배점기준표 채점</p>
+          <div id="mgInboxBody"></div>
+        </div>
+      </div>
+      <!-- 제안관리 -->
+      <div id="mg-proposals" class="admin-panel">
+        <div class="card" style="padding:20px 24px">
+          <div class="section-title-bar" style="margin:0 0 14px;padding:0;border:none">
+            <div class="section-title-icon">📝</div>
+            <h2 class="section-title-text" style="font-size:17px">전체 제안 관리</h2>
           </div>
+          <p style="color:#888;font-size:13px">기존 목록 탭의 관리자 모드와 동일합니다. 목록 탭에서 관리하세요.</p>
         </div>
       </div>
-      <!-- 검토 화면 -->
-      <div id="rv-review" style="display:none">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-          <h2 style="font-size:18px;font-weight:700;color:var(--navy)">📝 담당부서 검토</h2>
-          <button class="btn-cancel" onclick="exitReview()">나가기</button>
+      <!-- 코드관리 -->
+      <div id="mg-codes" class="admin-panel">
+        <div class="card" style="padding:20px 24px">
+          <div class="section-title-bar" style="margin:0 0 14px;padding:0;border:none">
+            <div class="section-title-icon">🔑</div>
+            <h2 class="section-title-text" style="font-size:17px">검토·심사 코드 관리</h2>
+          </div>
+          <div id="mgCodesBody"></div>
         </div>
-        <div id="rv-review-list"></div>
       </div>
-      <!-- 심사 화면 -->
-      <div id="rv-judge" style="display:none">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-          <h2 style="font-size:18px;font-weight:700;color:var(--navy)">⚖️ 제안 심사</h2>
-          <button class="btn-cancel" onclick="exitReview()">나가기</button>
-        </div>
-        <div id="rv-judge-list"></div>
+    </div>
+
+    <!-- 검토 패널 -->
+    <div id="mg-review" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+        <h2 style="font-size:18px;font-weight:700;color:var(--navy)">📝 담당부서 검토</h2>
+        <button class="btn-cancel" onclick="manageLogout()">로그아웃</button>
       </div>
+      <div id="rv-review-list"></div>
+    </div>
+
+    <!-- 심사 패널 -->
+    <div id="mg-judge" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+        <h2 style="font-size:18px;font-weight:700;color:var(--navy)">⚖️ 제안 심사</h2>
+        <button class="btn-cancel" onclick="manageLogout()">로그아웃</button>
+      </div>
+      <div id="rv-judge-list"></div>
     </div>
   </div>
 

@@ -390,7 +390,15 @@ textarea.fi { resize:vertical; }
 .similar-year { font-size: 12px; color: #888; }
 .similar-item-title { font-size: 13px; font-weight: 600; color: #2a3550; }
 
-/* ══ 검토·심사 탭 ══ */
+/* ══ 관리 탭 ══ */
+.admin-nav { display: flex; flex-wrap: wrap; gap: 6px; }
+.admin-nav-btn { border: 1.5px solid #d5dbe8; background: #fff; color: #64748b; font-family: inherit; font-size: 13px; font-weight: 700; padding: 8px 18px; border-radius: 8px; cursor: pointer; transition: all .18s; }
+.admin-nav-btn:hover { border-color: var(--blue); color: var(--blue); }
+.admin-nav-btn.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+.admin-panel { display: none; }
+.admin-panel.active { display: block; }
+
+/* ══ 검토·심사 ══ */
 .rv-card { border: 1.5px solid #e8edf5; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
 .rv-card-head { font-size: 15px; margin-bottom: 10px; }
 .rv-card-summary { font-size: 13px; color: #666; line-height: 1.7; margin-bottom: 14px; max-height: 100px; overflow: auto; }

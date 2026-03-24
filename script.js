@@ -1182,27 +1182,38 @@ var SCORE_ITEMS = [
   { key: 'effort', name: '노력도/구체성', max: 10, options: [10,8,6,4,2], labels: ['매우크다','다소크다','보통','약간있다','없다'] }
 ];
 
-function verifyCode() {
-  var code = document.getElementById('rv-code').value.trim().toLowerCase();
-  var errEl = document.getElementById('rv-error');
-  if (!code) { errEl.textContent = '코드를 입력하세요.'; errEl.style.display = 'block'; return; }
+// ── 관리 탭 통합 로그인 ──
+function manageLogin() {
+  var input = document.getElementById('mg-input').value.trim();
+  var errEl = document.getElementById('mg-error');
+  if (!input) { errEl.textContent = '비밀번호 또는 코드를 입력하세요.'; errEl.style.display = 'block'; return; }
+  errEl.style.display = 'none';
 
-  // Apps Script 모드: 서버에서 코드 검증
+  // 관리자 비밀번호 체크
+  if (input === ADMIN_PW) {
+    isAdmin = true;
+    document.getElementById('mg-lock').style.display = 'none';
+    document.getElementById('mg-admin').style.display = 'block';
+    loadFromSheet(); // 관리자 모드로 다시 로드
+    renderMgInbox();
+    return;
+  }
+
+  // 서버 코드 검증
   if (SCRIPT_URL) {
-    errEl.style.display = 'none';
-    api({ action: 'verifyCode', code: code }).then(function(res) {
-      if (!res.ok) { errEl.textContent = res.error || '유효하지 않은 코드입니다.'; errEl.style.display = 'block'; return; }
-      _rvCode = code;
+    api({ action: 'verifyCode', code: input }).then(function(res) {
+      if (!res.ok) { errEl.textContent = res.error || '유효하지 않은 코드 또는 비밀번호입니다.'; errEl.style.display = 'block'; return; }
+      _rvCode = input;
       _rvMode = res.type;
-      document.getElementById('rv-gate').style.display = 'none';
+      document.getElementById('mg-lock').style.display = 'none';
       if (res.type === 'review') {
-        document.getElementById('rv-review').style.display = 'block';
-        api({ action: 'getReviewsByCode', code: code }).then(function(data) {
+        document.getElementById('mg-review').style.display = 'block';
+        api({ action: 'getReviewsByCode', code: input }).then(function(data) {
           if (data.ok) renderReviewListFromServer(data);
         });
       } else {
-        document.getElementById('rv-judge').style.display = 'block';
-        api({ action: 'getScoresByCode', code: code }).then(function(data) {
+        document.getElementById('mg-judge').style.display = 'block';
+        api({ action: 'getScoresByCode', code: input }).then(function(data) {
           if (data.ok) renderJudgeListFromServer(data);
         });
       }
@@ -1211,29 +1222,70 @@ function verifyCode() {
   }
 
   // 폴백: 로컬 코드 검증
-  var cfg = REVIEW_CODES[code] || JUDGE_CODES[code];
-  if (!cfg) { errEl.textContent = '유효하지 않은 코드입니다.'; errEl.style.display = 'block'; return; }
-  errEl.style.display = 'none';
-  _rvCode = code;
+  var cfg = REVIEW_CODES[input.toLowerCase()] || JUDGE_CODES[input.toLowerCase()];
+  if (!cfg) { errEl.textContent = '유효하지 않은 코드 또는 비밀번호입니다.'; errEl.style.display = 'block'; return; }
+  _rvCode = input;
   _rvMode = cfg.type;
-  document.getElementById('rv-gate').style.display = 'none';
+  document.getElementById('mg-lock').style.display = 'none';
   if (cfg.type === 'review') {
-    document.getElementById('rv-review').style.display = 'block';
+    document.getElementById('mg-review').style.display = 'block';
     renderReviewList(cfg);
   } else {
-    document.getElementById('rv-judge').style.display = 'block';
+    document.getElementById('mg-judge').style.display = 'block';
     renderJudgeList(cfg);
   }
 }
 
-function exitReview() {
+function manageLogout() {
   _rvMode = null;
   _rvCode = '';
-  document.getElementById('rv-gate').style.display = 'block';
-  document.getElementById('rv-review').style.display = 'none';
-  document.getElementById('rv-judge').style.display = 'none';
-  document.getElementById('rv-code').value = '';
+  isAdmin = false;
+  document.getElementById('mg-lock').style.display = 'block';
+  document.getElementById('mg-admin').style.display = 'none';
+  document.getElementById('mg-review').style.display = 'none';
+  document.getElementById('mg-judge').style.display = 'none';
+  document.getElementById('mg-input').value = '';
+  document.getElementById('mg-error').style.display = 'none';
+  loadFromSheet(); // 비관리자 모드로 다시 로드
 }
+
+function showMgPanel(id, btn) {
+  document.querySelectorAll('#mg-admin .admin-panel').forEach(function(el) { el.classList.remove('active'); });
+  document.querySelectorAll('#mg-admin .admin-nav-btn').forEach(function(el) { el.classList.remove('active'); });
+  document.getElementById(id).classList.add('active');
+  if (btn) btn.classList.add('active');
+  if (id === 'mg-inbox') renderMgInbox();
+}
+
+function renderMgInbox() {
+  var body = document.getElementById('mgInboxBody');
+  if (!body) return;
+  var filter = (document.getElementById('mgInboxFilter') || {}).value || 'all';
+  var items = DATA.filter(function(d) {
+    if (filter === 'all') return d.award === '심사중' || d.award === '접수완료' || d.status === '접수완료';
+    return d.award === filter || d.status === filter;
+  });
+
+  if (!items.length) { body.innerHTML = '<p style="text-align:center;color:#aaa;padding:20px;font-size:13px">접수된 제안이 없습니다.</p>'; return; }
+  var html = '<table class="submit-list-table"><thead><tr><th>접수일</th><th>제목</th><th>제안자</th><th>부서</th><th>제안부문</th><th>상태</th></tr></thead><tbody>';
+  items.forEach(function(d) {
+    var date = (d.period || d.submittedAt || '').toString().substring(0, 10);
+    html += '<tr onclick="openDetail(\'' + d.id + '\')" style="cursor:pointer">' +
+      '<td class="sl-date">' + date + '</td>' +
+      '<td class="sl-title">' + esc(d.title) + '</td>' +
+      '<td>' + esc(d.proposer || '') + '</td>' +
+      '<td>' + esc(d.dept || '') + '</td>' +
+      '<td>' + catBadge(d.category) + '</td>' +
+      '<td>' + awardBadge(d.award) + '</td>' +
+    '</tr>';
+  });
+  html += '</tbody></table>';
+  body.innerHTML = html;
+}
+
+// 기존 함수 호환성 유지
+function verifyCode() { manageLogin(); }
+function exitReview() { manageLogout(); }
 
 function renderReviewList(cfg) {
   var items = DATA.filter(cfg.filter);
