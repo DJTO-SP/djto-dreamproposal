@@ -1009,66 +1009,7 @@ function extractKeywords(text) {
   return unique;
 }
 
-function findSimilar(title, reason) {
-  var inputKw = extractKeywords((title || '') + ' ' + (reason || ''));
-  if (inputKw.length < 2) return [];
-  var results = [];
-  DATA.forEach(function(d) {
-    var targetText = (d.title || '') + ' ' + (d.summary || '') + ' ' + (d.keywords || '');
-    var targetKw = extractKeywords(targetText);
-    var matched = 0;
-    inputKw.forEach(function(kw) {
-      for (var i = 0; i < targetKw.length; i++) {
-        if (targetKw[i].indexOf(kw) >= 0 || kw.indexOf(targetKw[i]) >= 0) { matched++; break; }
-      }
-    });
-    var score = inputKw.length > 0 ? matched / inputKw.length : 0;
-    if (matched >= 2 && score >= 0.3) {
-      results.push({ d: d, score: score, matched: matched });
-    }
-  });
-  results.sort(function(a, b) { return b.score - a.score; });
-  return results.slice(0, 10);
-}
-
-function debounceSimilar() {
-  clearTimeout(_similarTimer);
-  _similarTimer = setTimeout(function() {
-    var title = (document.getElementById('sf-title').value || '').trim();
-    var reason = (document.getElementById('sf-reason').value || '').trim();
-    if (!title && !reason) {
-      document.getElementById('similarBody').innerHTML = '<p class="similar-placeholder">제목이나 제안사유를 입력하면<br>유사한 이전 제안을 자동으로 검색합니다.</p>';
-      document.getElementById('similarPanel').classList.remove('has-warning');
-      return;
-    }
-    renderSimilarWarning(findSimilar(title, reason));
-  }, 500);
-}
-
-function renderSimilarWarning(results) {
-  var body = document.getElementById('similarBody');
-  if (!results || results.length === 0) {
-    body.innerHTML = '<p class="similar-placeholder">유사한 이전 제안이 없습니다.<br>새로운 제안입니다! ✨</p>';
-    document.getElementById('similarPanel').classList.remove('has-warning');
-    return;
-  }
-  document.getElementById('similarPanel').classList.add('has-warning');
-  var html = '<div class="similar-warn">⚠️ 유사한 이전 제안 <b>' + results.length + '건</b> 발견</div>';
-  results.forEach(function(r) {
-    var d = r.d;
-    var year = (d.id || d.seq || '').toString().substring(0, 4);
-    var pct = Math.round(r.score * 100);
-    html += '<div class="similar-item" onclick="openDetail(\'' + d.id + '\')">' +
-      '<div class="similar-item-head">' +
-        '<span class="similar-score">' + pct + '%</span>' +
-        '<span class="similar-year">' + year + '</span>' +
-        awardBadge(d.award) +
-      '</div>' +
-      '<div class="similar-item-title">' + esc(d.title) + '</div>' +
-    '</div>';
-  });
-  body.innerHTML = html;
-}
+// (유사검색 기능 삭제됨)
 
 function initSubmitTab() {
   var dateEl = document.getElementById('sf-date');
@@ -1127,8 +1068,6 @@ function clearSubmitForm() {
   document.getElementById('sf-file').value = '';
   var picked = document.getElementById('sf-picked');
   if (picked) picked.textContent = '';
-  document.getElementById('similarBody').innerHTML = '<p class="similar-placeholder">제목이나 제안사유를 입력하면<br>유사한 이전 제안을 자동으로 검색합니다.</p>';
-  document.getElementById('similarPanel').classList.remove('has-warning');
 }
 
 function submitProposal() {
