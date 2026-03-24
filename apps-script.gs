@@ -149,7 +149,7 @@ function saveToDrive(base64Data, fileName, mimeType, subFolder) {
   const blob = Utilities.newBlob(decoded, mimeType, fileName);
   const file = folder.createFile(blob);
   file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-  return { fileId: file.getId(), driveUrl: 'https://drive.google.com/uc?export=download&id=' + file.getId() };
+  return { fileId: file.getId(), driveUrl: 'https://drive.google.com/file/d/' + file.getId() + '/view' };
 }
 
 function initSheet(name, headers) {
