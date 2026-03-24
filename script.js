@@ -126,6 +126,18 @@ function catBadge(c)  { return '<span class="badge '+(CAT_CLASS[c]||'b-기타')+
 function awardBadge(a){ return '<span class="abadge a-'+a+'"><span class="adot"></span>'+a+'</span>'; }
 function esc(s)       { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
+// 로딩 오버레이
+function showLoadingOverlay(msg) {
+  var el = document.getElementById('loading-overlay');
+  if (el) { el.style.display = 'flex'; }
+  var txt = document.getElementById('loading-text');
+  if (txt && msg) txt.textContent = msg;
+}
+function hideLoadingOverlay() {
+  var el = document.getElementById('loading-overlay');
+  if (el) el.style.display = 'none';
+}
+
 // 요약 텍스트를 ● 기준으로 줄바꿈 HTML로 변환
 function fmtSummary(s) {
   if (!s) return '';
@@ -1077,12 +1089,14 @@ function submitProposal() {
   var title = document.getElementById('sf-title').value.trim();
   var reason = document.getElementById('sf-reason').value.trim();
   var method = document.getElementById('sf-method').value.trim();
+  var fileInput = document.getElementById('sf-file');
+  var file = fileInput && fileInput.files && fileInput.files[0];
   if (!name) return alert('성명을 입력해주세요.');
-  if (!dept) return alert('소속을 선택해주세요.');
+  if (!dept) return alert('소속을 입력해주세요.');
   if (!cat) return alert('제안부문을 선택해주세요.');
   if (!title) return alert('제목을 입력해주세요.');
-  if (!reason) return alert('제안사유를 입력해주세요.');
-  if (!method) return alert('실시방법을 입력해주세요.');
+  if (!file) return alert('제안서 PDF 파일을 첨부해주세요.');
+  if (file && !file.name.toLowerCase().endsWith('.pdf')) return alert('PDF 파일만 접수 가능합니다.');
   var effect = [
     document.getElementById('sf-save').value ? '예산절감: ' + document.getElementById('sf-save').value : '',
     document.getElementById('sf-revenue').value ? '수입증대: ' + document.getElementById('sf-revenue').value : '',
@@ -1097,13 +1111,12 @@ function submitProposal() {
   var keywords = extractKeywords(title + ' ' + reason).slice(0, 5).map(function(k){return '#'+k;}).join(' ');
   var dateVal = document.getElementById('sf-date').value || yr + '-01-01';
   var targetDept = document.getElementById('sf-target-dept').value || '';
-  var fileInput = document.getElementById('sf-file');
-  var file = fileInput && fileInput.files && fileInput.files[0];
 
   // Apps Script 모드
   if (SCRIPT_URL) {
-    var btn = document.querySelector('#tab-submit .btn-save');
+    var btn = document.querySelector('#tab-submit .btn-submit-full');
     if (btn) { btn.disabled = true; btn.textContent = '접수 중...'; }
+    showLoadingOverlay('제안서 접수 중...');
 
     var doSubmit = function(fileData, fileName, fileType, fileSize) {
       apiPost({
@@ -1118,6 +1131,7 @@ function submitProposal() {
         fileData: fileData || '', fileName: fileName || '',
         fileType: fileType || '', fileSize: fileSize || 0
       }).then(function(res) {
+        hideLoadingOverlay();
         if (btn) { btn.disabled = false; btn.textContent = '제안서 접수'; }
         if (res.ok) {
           alert('✅ 제안서가 접수되었습니다!\n제안번호: ' + res.id);
@@ -1128,6 +1142,7 @@ function submitProposal() {
           alert('❌ 접수 실패: ' + (res.error || '알 수 없는 오류'));
         }
       }).catch(function(e) {
+        hideLoadingOverlay();
         if (btn) { btn.disabled = false; btn.textContent = '제안서 접수'; }
         alert('❌ 서버 오류: ' + e.message);
       });

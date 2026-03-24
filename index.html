@@ -238,7 +238,7 @@
             </div>
           </div>
           <div class="info-box-blue">
-            💡 제안 내용을 작성하여 접수하세요. 담당부서 검토 후 심사가 진행됩니다.
+            💡 제안서(PDF)를 첨부하여 접수하세요. 담당부서 검토 후 심사가 진행됩니다.
           </div>
 
           <div class="sf-row">
@@ -276,36 +276,24 @@
           </div>
 
           <div class="sf-field full">
-            <label>제안사유 (원인분석) <span class="field-req">*</span></label>
-            <textarea id="sf-reason" rows="5" placeholder="○ 현황 및 문제점을 작성하세요"></textarea>
+            <label>제안 요약</label>
+            <textarea id="sf-reason" rows="3" placeholder="제안 내용을 간략히 요약하세요 (선택사항)"></textarea>
+            <input id="sf-method" type="hidden" value="-">
           </div>
+
+          <input id="sf-save" type="hidden"><input id="sf-revenue" type="hidden"><input id="sf-effect" type="hidden">
 
           <div class="sf-field full">
-            <label>실시방법 (개선방향) <span class="field-req">*</span></label>
-            <textarea id="sf-method" rows="5" placeholder="○ 구체적인 실시 방법을 작성하세요"></textarea>
-          </div>
-
-          <div class="sf-row">
-            <div class="sf-field"><label>기대효과 - 예산절감액</label><input id="sf-save" placeholder="예: 500만원"></div>
-            <div class="sf-field"><label>기대효과 - 수입증대액</label><input id="sf-revenue" placeholder="예: 1,000만원"></div>
-          </div>
-
-          <div class="sf-field full">
-            <label>기대효과 - 개선효과등</label>
-            <textarea id="sf-effect" rows="3" placeholder="○ 기대되는 개선 효과를 작성하세요"></textarea>
-          </div>
-
-          <div class="sf-field full">
-            <label>붙임자료</label>
+            <label>제안서 파일 (PDF) <span class="field-req">*</span></label>
             <div class="file-drop-zone" id="sf-drop" onclick="document.getElementById('sf-file').click()"
                  ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')"
                  ondrop="event.preventDefault();this.classList.remove('dragover');if(event.dataTransfer.files[0]){document.getElementById('sf-file').files=event.dataTransfer.files;showPickedFile();}">
-              <div style="font-size:28px;margin-bottom:8px">📎</div>
-              <p>클릭하거나 파일을 드래그하세요</p>
-              <div class="file-limit">PDF, HWP, DOCX, PNG, JPG (최대 20MB)</div>
+              <div style="font-size:28px;margin-bottom:8px">📄</div>
+              <p>PDF 제안서를 클릭하거나 드래그하세요</p>
+              <div class="file-limit">PDF 파일만 가능 (최대 20MB)</div>
               <div class="picked-file" id="sf-picked"></div>
             </div>
-            <input type="file" id="sf-file" accept=".pdf,.hwp,.hwpx,.docx,.png,.jpg" style="display:none" onchange="showPickedFile()">
+            <input type="file" id="sf-file" accept=".pdf" style="display:none" onchange="showPickedFile()">
           </div>
 
           <button class="btn-submit-full" onclick="submitProposal()">제안서 접수</button>
@@ -423,11 +411,8 @@
 
           <!-- 개별 추가 버튼 -->
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-            <div style="font-weight:600;color:var(--navy);font-size:14px">등록된 위원 <span id="code-member-count" style="color:#1e3a8a"></span></div>
-            <div style="display:flex;gap:8px">
-              <button class="btn-save" onclick="toggleCodeForm()" id="codeFormToggle" style="padding:6px 14px;font-size:12px">+ 개별 추가</button>
-              <button class="btn-cancel" style="padding:6px 14px;font-size:12px;color:#dc2626;border-color:#fca5a5" onclick="clearAllCodes()">전체 초기화</button>
-            </div>
+            <div style="font-weight:600;color:var(--navy);font-size:14px">위원 등록</div>
+            <button class="btn-save" onclick="toggleCodeForm()" id="codeFormToggle" style="padding:6px 14px;font-size:12px">+ 개별 추가</button>
           </div>
 
           <!-- 개별 추가 폼 -->
@@ -452,8 +437,10 @@
             </div>
           </div>
 
-          <!-- 위원 목록 테이블 -->
-          <div id="mgCodesBody"><p style="text-align:center;color:#aaa;padding:20px">불러오는 중...</p></div>
+          <div style="background:#f8fafc;border-radius:8px;padding:14px 16px;font-size:13px;color:#64748b;text-align:center">
+            📋 등록된 위원 목록은 <a href="https://docs.google.com/spreadsheets" target="_blank" style="color:var(--blue);font-weight:600">Google Sheets</a>에서 확인하세요.
+          </div>
+          <div id="mgCodesBody" style="display:none"></div>
         </div>
       </div>
     </div>
@@ -522,6 +509,14 @@
   </div>
 
 </main>
+
+<!-- 로딩 오버레이 -->
+<div id="loading-overlay" style="display:none;position:fixed;inset:0;background:rgba(255,255,255,0.85);z-index:9999;display:none;align-items:center;justify-content:center;flex-direction:column">
+  <div style="width:48px;height:48px;border:4px solid #e8edf5;border-top-color:var(--blue);border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:16px"></div>
+  <div id="loading-text" style="font-size:15px;font-weight:600;color:var(--navy)">제안서 접수 중...</div>
+  <div style="font-size:13px;color:#94a3b8;margin-top:6px">잠시만 기다려주세요</div>
+</div>
+<style>@keyframes spin { to { transform: rotate(360deg); } }</style>
 
 <script src="script.js"></script>
 </html>
