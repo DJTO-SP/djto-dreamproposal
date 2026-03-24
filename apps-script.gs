@@ -198,7 +198,11 @@ function getProposals() {
     driveUrl: r.driveUrl, submittedAt: r.submittedAt, source: 'new'
   }));
 
-  const all = legacy.concat(newPub);
+  // 심사중인 제안은 공개 목록에서 제외
+  const all = legacy.concat(newPub).filter(r => {
+    const aw = (r.award || '').trim();
+    return aw !== '심사중' && aw !== '접수완료';
+  });
   try { cache.put('proposals', JSON.stringify(all), 300); } catch(e) {}
   return all;
 }

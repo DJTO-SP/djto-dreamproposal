@@ -46,9 +46,14 @@ function loadFromSheet() {
           keywords: r.keywords || '',
           pdf: r.fileName || '',
           driveUrl: r.driveUrl || '',
-          seq: r.id || ''
+          seq: r.id || '',
+          source: r.source || ''
         };
       });
+      // 비관리자: 심사중 제안 숨기기 (서버에서도 필터링하지만 이중 보호)
+      if (!isAdmin) {
+        DATA = DATA.filter(function(d) { return d.award !== '심사중' && d.award !== '접수완료'; });
+      }
       renderAll();
       showToast('서버에서 ' + DATA.length + '건 불러왔습니다', 'ok');
     }).catch(function(e) { showToast('서버 연결 실패: ' + e.message, 'err'); });
