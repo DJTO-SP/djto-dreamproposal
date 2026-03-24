@@ -360,16 +360,16 @@ function renderTable() {
     var catCell, awardCell;
     if (isAdmin) {
       var catOpts=['관광아이디어발굴','조직혁신','사회적가치실현','기타'].map(v=>'<option'+(d.category===v?' selected':'')+'>'+v+'</option>').join('');
-      catCell='<td onclick="event.stopPropagation()"><select class="inline-sel" onchange="quickEdit('+d.id+',\'category\',this.value)">'+catOpts+'</select></td>';
+      catCell='<td onclick="event.stopPropagation()"><select class="inline-sel" onchange="quickEdit(\''+d.id+'\',\'category\',this.value)">'+catOpts+'</select></td>';
       var awdOpts=AWARD_LABELS.map(v=>'<option'+(d.award===v?' selected':'')+'>'+v+'</option>').join('');
-      awardCell='<td onclick="event.stopPropagation()"><select class="inline-sel" onchange="quickEdit('+d.id+',\'award\',this.value)">'+awdOpts+'</select></td>';
+      awardCell='<td onclick="event.stopPropagation()"><select class="inline-sel" onchange="quickEdit(\''+d.id+'\',\'award\',this.value)">'+awdOpts+'</select></td>';
     } else {
       catCell='<td>'+catBadge(d.category)+'</td>';
       awardCell='<td>'+awardBadge(d.award)+'</td>';
     }
-    var rowClick = isAdmin ? 'openEdit('+d.id+')' : '_fromTab=\'list\';openDetail('+d.id+')';
+    var rowClick = isAdmin ? 'openEdit(\''+d.id+'\')' : '_fromTab=\'list\';openDetail(\''+d.id+'\')';
     return '<tr onclick="'+rowClick+'">'
-      +(isAdmin?'<td onclick="event.stopPropagation()"><input type="checkbox" onchange="toggleCheck('+d.id+',this)"></td>':'')
+      +(isAdmin?'<td onclick="event.stopPropagation()"><input type="checkbox" onchange="toggleCheck(\''+d.id+'\',this)"></td>':'')
       +'<td class="num">'+String(i+1).padStart(2,'0')+'</td>'
       +titleCell(d)
       +(isAdmin?'<td style="font-size:13px;color:#445">'+esc(d.proposer)+'</td><td style="font-size:12px;color:#667">'+esc(d.dept)+'</td>':'')
@@ -530,10 +530,10 @@ function openDetail(id) {
   var idx=list.findIndex(x=>String(x.id)===String(id));
   var prev=list[idx-1], next=list[idx+1];
   var navHtml='<div class="detail-nav">'
-    +'<button class="det-nav-btn" '+(prev?'onclick="openDetailFrom('+prev.id+',\''+_fromTab+'\')"':'disabled')+'>'
+    +'<button class="det-nav-btn" '+(prev?'onclick="openDetailFrom(\''+prev.id+'\',\''+_fromTab+'\')"':'disabled')+'>'
     +'◀ <span class="det-nav-title">'+(prev?esc(prev.title):'처음입니다')+'</span></button>'
     +'<span class="det-nav-pos">'+(idx+1)+' / '+list.length+'</span>'
-    +'<button class="det-nav-btn" '+(next?'onclick="openDetailFrom('+next.id+',\''+_fromTab+'\')"':'disabled')+'>'
+    +'<button class="det-nav-btn" '+(next?'onclick="openDetailFrom(\''+next.id+'\',\''+_fromTab+'\')"':'disabled')+'>'
     +'<span class="det-nav-title">'+(next?esc(next.title):'마지막입니다')+'</span> ▶</button>'
     +'</div>';
   document.getElementById('detailBody').innerHTML=
@@ -608,7 +608,7 @@ function showYearPanel(yr, yearGroups) {
   var inner=yearGroups[yr].map(p=>{
     var list=DATA.filter(d=>d.period===p);
     var sub=p.includes('상반기')?'🌱 상반기':p.includes('하반기')?'🍂 하반기':'';
-    var rows=list.map((d,i)=>'<tr onclick="openDetailFrom('+d.id+',\'year\')">'
+    var rows=list.map((d,i)=>'<tr onclick="openDetailFrom(\''+d.id+'\',\'year\')">'
       +'<td class="num">'+String(i+1).padStart(2,'0')+'</td>'+titleCell(d)
       +'<td>'+catBadge(d.category)+'</td><td>'+awardBadge(d.award)+'</td>'
       +'<td style="text-align:center">'+(d.pdf?(['png','jpg','jpeg'].includes(d.pdf.split('.').pop().toLowerCase())?'🖼️':'📄'):'')+'</td></tr>').join('');
@@ -650,7 +650,7 @@ function selectCat(cat) {
 function showCatPanel(cat) {
   var list=DATA.filter(d=>d.category===cat); if(!list.length) return;
   var adopted=list.filter(d=>ADOPTED.has(d.award)).length, rate=Math.round(adopted/list.length*100), c=CAT_COLOR[cat];
-  var rows=list.map((d,i)=>'<tr onclick="openDetailFrom('+d.id+',\'cat\')">'
+  var rows=list.map((d,i)=>'<tr onclick="openDetailFrom(\''+d.id+'\',\'cat\')">'
     +'<td class="num">'+String(i+1).padStart(2,'0')+'</td>'+titleCell(d)
     +'<td>'+periodBadge(d.period)+'</td><td>'+awardBadge(d.award)+'</td>'
     +'<td style="text-align:center">'+(d.pdf?(['png','jpg','jpeg'].includes(d.pdf.split('.').pop().toLowerCase())?'🖼️':'📄'):'')+'</td></tr>').join('');
@@ -693,7 +693,7 @@ function renderAdoptedHero() {
   var awardColors = {'최우수':'#4a9ea8','우수':'#5fc1c7','장려':'#7ed4d4','특별상':'#a2e3df'};
   var items = yearList.map(function(d, i) {
     var c = awardColors[d.award] || '#888';
-    return '<div class="hero-item" style="animation-delay:'+(i*0.08)+'s" onclick="openDetailFrom('+d.id+',\'adopted\')">'
+    return '<div class="hero-item" style="animation-delay:'+(i*0.08)+'s" onclick="openDetailFrom(\''+d.id+'\',\'adopted\')">'
       +'<span class="hero-item-award" style="background:'+c+'">'+d.award+'</span>'
       +'<span class="hero-item-title">'+esc(d.title)+'</span>'
       +'</div>';
@@ -734,7 +734,7 @@ function showAdoptedPanel(key) {
   var g=GRADES.find(x=>x.key===key);
   var list=DATA.filter(d=>d.award===key);
   list.sort((a,b)=>periodSort(b.period)-periodSort(a.period));
-  var rows=list.map((d,i)=>'<tr onclick="openDetailFrom('+d.id+',\'adopted\')">'    +'<td class="num">'+String(i+1).padStart(2,'0')+'</td>'+titleCell(d)    +'<td>'+catBadge(d.category)+'</td><td>'+periodBadge(d.period)+'</td>'    +'<td style="text-align:center">'+(d.pdf?(['png','jpg','jpeg'].includes(d.pdf.split('.').pop().toLowerCase())?'🖼️':'📄'):'')+'</td></tr>').join('');
+  var rows=list.map((d,i)=>'<tr onclick="openDetailFrom(\''+d.id+'\',\'adopted\')">'    +'<td class="num">'+String(i+1).padStart(2,'0')+'</td>'+titleCell(d)    +'<td>'+catBadge(d.category)+'</td><td>'+periodBadge(d.period)+'</td>'    +'<td style="text-align:center">'+(d.pdf?(['png','jpg','jpeg'].includes(d.pdf.split('.').pop().toLowerCase())?'🖼️':'📄'):'')+'</td></tr>').join('');
   var years=[...new Set(list.map(d=>parseInt(d.period)))].sort((a,b)=>b-a);
   var yearRange=years.length>1?years[years.length-1]+'~'+years[0]+'년':years[0]+'년';
   document.getElementById('adoptedArea').innerHTML=
