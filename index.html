@@ -228,6 +228,25 @@
 
   <!-- ===== 접수 탭 ===== -->
   <div class="tab-content" id="tab-submit">
+    <!-- 접수 현황 목록 -->
+    <div class="card" id="submitListCard" style="padding:20px 28px;margin-bottom:20px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div class="section-title-bar" style="margin:0;padding:0;border:none">
+          <div class="section-title-icon">📋</div>
+          <div>
+            <h2 class="section-title-text" style="font-size:17px">접수 현황</h2>
+            <p class="section-title-sub">최근 접수된 제안 목록</p>
+          </div>
+        </div>
+        <select id="submitListFilter" onchange="renderSubmitList()" style="border:1.5px solid #d5dbe8;border-radius:8px;padding:6px 12px;font-size:13px;font-family:inherit">
+          <option value="all">전체</option>
+          <option value="심사중" selected>심사중</option>
+          <option value="접수완료">접수완료</option>
+        </select>
+      </div>
+      <div id="submitListBody" style="max-height:300px;overflow-y:auto"></div>
+    </div>
+
     <div class="submit-wrap">
       <div class="submit-form-area">
         <div class="card" style="padding:28px 32px">

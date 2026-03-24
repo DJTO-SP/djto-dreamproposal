@@ -350,6 +350,14 @@ textarea.fi { resize:vertical; }
 .btn-submit-full:hover { filter: brightness(1.08); }
 .btn-submit-full:disabled { opacity: .5; cursor: not-allowed; }
 
+/* ══ 접수 현황 테이블 ══ */
+.submit-list-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.submit-list-table th { background: #f0f3f9; color: var(--navy); font-weight: 700; padding: 9px 12px; text-align: left; border-bottom: 2px solid #d5dbe8; white-space: nowrap; }
+.submit-list-table td { padding: 9px 12px; border-bottom: 1px solid #eee; }
+.submit-list-table tr:hover td { background: #f8fafc; }
+.sl-date { color: #888; font-size: 12px; white-space: nowrap; }
+.sl-title { font-weight: 600; color: var(--navy); }
+
 /* ══ 접수 폼 ══ */
 .submit-wrap { display: flex; gap: 24px; align-items: flex-start; }
 .submit-form-area { flex: 1; min-width: 0; }

@@ -1070,6 +1070,34 @@ function initSubmitTab() {
   if (dateEl && !dateEl.value) {
     dateEl.value = new Date().toISOString().split('T')[0];
   }
+  renderSubmitList();
+}
+
+function renderSubmitList() {
+  var body = document.getElementById('submitListBody');
+  if (!body) return;
+  var filter = (document.getElementById('submitListFilter') || {}).value || 'all';
+  var items = DATA.filter(function(d) {
+    if (filter === 'all') return d.award === '심사중' || d.status === '접수완료';
+    return d.award === filter || d.status === filter;
+  }).sort(function(a, b) { return (b.submittedAt || b.id || '').toString().localeCompare((a.submittedAt || a.id || '').toString()); });
+
+  if (!items.length) {
+    body.innerHTML = '<p style="text-align:center;color:#aaa;padding:20px;font-size:13px">접수된 제안이 없습니다.</p>';
+    return;
+  }
+  var html = '<table class="submit-list-table"><thead><tr><th>접수일</th><th>제목</th><th>제안부문</th><th>상태</th></tr></thead><tbody>';
+  items.forEach(function(d) {
+    var date = (d.period || d.submittedAt || '').toString().substring(0, 10);
+    html += '<tr onclick="openDetail(\'' + d.id + '\')" style="cursor:pointer">' +
+      '<td class="sl-date">' + date + '</td>' +
+      '<td class="sl-title">' + esc(d.title) + '</td>' +
+      '<td>' + catBadge(d.category) + '</td>' +
+      '<td>' + awardBadge(d.award) + '</td>' +
+    '</tr>';
+  });
+  html += '</tbody></table>';
+  body.innerHTML = html;
 }
 
 function showPickedFile() {
