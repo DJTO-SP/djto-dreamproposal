@@ -1,6 +1,6 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
-body { font-family: 'Malgun Gothic', '맑은 고딕', 'Apple SD Gothic Neo', sans-serif; background: #f0f3f8; color: #1a2035; min-height: 100vh; }
+body { font-family: 'Noto Sans KR', 'Malgun Gothic', sans-serif; background: #f0f3f8; color: #1a2035; min-height: 100vh; }
 :root { --navy:#1e3a6e; --blue:#2c6fbd; --sky:#4a9fd4; --teal:#2a9d8f; --amber:#e9a825; --rose:#d64f6e; --lgray:#e8edf5; }
 
 /* 배너 */
