@@ -31,7 +31,7 @@ function loadFromSheet() {
   // Apps Script 모드
   if (SCRIPT_URL) {
     var params = isAdmin ? { action: 'getProposalsAdmin', pw: ADMIN_PW } : { action: 'getProposals' };
-    api(params).then(function(rows) {
+    return api(params).then(function(rows) {
       if (rows.error) { showToast('데이터 불러오기 실패: ' + rows.error, 'err'); return; }
       DATA = (Array.isArray(rows) ? rows : []).map(function(r, i) {
         return {
@@ -57,10 +57,9 @@ function loadFromSheet() {
       renderAll();
       showToast('서버에서 ' + DATA.length + '건 불러왔습니다', 'ok');
     }).catch(function(e) { showToast('서버 연결 실패: ' + e.message, 'err'); });
-    return;
   }
   // 기존 Google Sheets 직접 연동 (폴백)
-  fetch(SHEET_URL)
+  return fetch(SHEET_URL)
     .then(function(r){ return r.text(); })
     .then(function(text) {
       var start = text.indexOf('{');
@@ -1194,8 +1193,10 @@ function manageLogin() {
     isAdmin = true;
     document.getElementById('mg-lock').style.display = 'none';
     document.getElementById('mg-admin').style.display = 'block';
-    loadFromSheet(); // 관리자 모드로 다시 로드
-    renderMgInbox();
+    // 접수현황 탭 활성화
+    showMgPanel('mg-inbox', document.querySelector('.admin-nav-btn'));
+    // 관리자 모드로 다시 로드 후 접수현황 렌더
+    loadFromSheet().then(function() { renderMgInbox(); });
     return;
   }
 
@@ -1329,8 +1330,9 @@ function loadCodes() {
   if (!body) return;
   if (!SCRIPT_URL) { body.innerHTML = '<p style="text-align:center;color:#aaa;padding:20px">Apps Script 미연결</p>'; return; }
   body.innerHTML = '<p style="text-align:center;color:#aaa;padding:20px">불러오는 중...</p>';
-  api({ action: 'getCodes', pw: ADMIN_PW }).then(function(codes) {
-    if (!Array.isArray(codes) || !codes.length) { body.innerHTML = '<p style="text-align:center;color:#aaa;padding:20px">생성된 코드가 없습니다.</p>'; return; }
+  api({ action: 'getCodes', pw: ADMIN_PW }).then(function(res) {
+    var codes = Array.isArray(res) ? res : (res && res.codes ? res.codes : []);
+    if (!codes.length) { body.innerHTML = '<p style="text-align:center;color:#aaa;padding:20px">등록된 위원이 없습니다. [+ 위원 추가] 버튼으로 추가하세요.</p>'; return; }
     var html = '<table class="submit-list-table"><thead><tr><th>역할</th><th>이름</th><th>부서</th><th>연도</th><th>로그인 코드</th><th></th></tr></thead><tbody>';
     codes.forEach(function(c) {
       var typeBadge = c.type === 'review'
