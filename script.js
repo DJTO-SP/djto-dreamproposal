@@ -991,8 +991,13 @@ function findSimilar(title, reason) {
 function debounceSimilar() {
   clearTimeout(_similarTimer);
   _similarTimer = setTimeout(function() {
-    var title = document.getElementById('sf-title').value;
-    var reason = document.getElementById('sf-reason').value;
+    var title = (document.getElementById('sf-title').value || '').trim();
+    var reason = (document.getElementById('sf-reason').value || '').trim();
+    if (!title && !reason) {
+      document.getElementById('similarBody').innerHTML = '<p class="similar-placeholder">제목이나 제안사유를 입력하면<br>유사한 이전 제안을 자동으로 검색합니다.</p>';
+      document.getElementById('similarPanel').classList.remove('has-warning');
+      return;
+    }
     renderSimilarWarning(findSimilar(title, reason));
   }, 500);
 }
@@ -1087,19 +1092,15 @@ function submitProposal() {
     keywords: extractKeywords(title + ' ' + reason).slice(0, 5).map(function(k){return '#'+k;}).join(' '),
     pdf: ''
   };
-  if (!_gToken) {
-    alert('제안서가 접수 준비되었습니다.\n관리자에게 Google 로그인 후 저장을 요청하세요.\n\n[임시저장됨]');
-    DATA.push(d);
-    renderAll();
-    clearSubmitForm();
-    switchTab('list', document.querySelector('.nav-btn'));
-    return;
-  }
-  saveToSheet(d);
   DATA.push(d);
+  if (_gToken) {
+    saveToSheet(d);
+    alert('✅ 제안서가 접수되었습니다!\n(Google Sheet에 저장 완료)');
+  } else {
+    alert('✅ 제안서가 접수되었습니다!\n\n※ 현재 목록에 추가되었습니다.\n   Google Sheet 반영은 관리자가 처리합니다.');
+  }
   renderAll();
   clearSubmitForm();
-  alert('✅ 제안서가 접수되었습니다!\n제안번호: ' + d.id);
   switchTab('list', document.querySelector('.nav-btn'));
 }
 
