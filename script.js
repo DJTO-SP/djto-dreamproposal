@@ -1070,33 +1070,37 @@ function initSubmitTab() {
   if (dateEl && !dateEl.value) {
     dateEl.value = new Date().toISOString().split('T')[0];
   }
-  var deptSel = document.getElementById('sf-dept');
-  var deptEtc = document.getElementById('sf-dept-etc');
-  deptSel.onchange = function() {
-    deptEtc.style.display = deptSel.value === '_etc' ? 'block' : 'none';
-  };
+}
+
+function showPickedFile() {
+  var fileInput = document.getElementById('sf-file');
+  var picked = document.getElementById('sf-picked');
+  if (fileInput && fileInput.files && fileInput.files[0]) {
+    var f = fileInput.files[0];
+    var size = f.size < 1024*1024 ? Math.round(f.size/1024) + 'KB' : (f.size/(1024*1024)).toFixed(1) + 'MB';
+    picked.textContent = '📄 ' + f.name + ' (' + size + ')';
+  } else if (picked) {
+    picked.textContent = '';
+  }
 }
 
 function clearSubmitForm() {
-  ['sf-name','sf-title','sf-reason','sf-method','sf-save','sf-revenue','sf-effect'].forEach(function(id) {
+  ['sf-name','sf-dept','sf-title','sf-reason','sf-method','sf-save','sf-revenue','sf-effect','sf-target-dept'].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.value = '';
   });
-  document.getElementById('sf-dept').selectedIndex = 0;
   document.getElementById('sf-category').selectedIndex = 0;
-  document.getElementById('sf-target-dept').selectedIndex = 0;
   document.getElementById('sf-date').value = new Date().toISOString().split('T')[0];
   document.getElementById('sf-file').value = '';
-  document.getElementById('sf-dept-etc').style.display = 'none';
+  var picked = document.getElementById('sf-picked');
+  if (picked) picked.textContent = '';
   document.getElementById('similarBody').innerHTML = '<p class="similar-placeholder">제목이나 제안사유를 입력하면<br>유사한 이전 제안을 자동으로 검색합니다.</p>';
   document.getElementById('similarPanel').classList.remove('has-warning');
 }
 
 function submitProposal() {
   var name = document.getElementById('sf-name').value.trim();
-  var dept = document.getElementById('sf-dept').value === '_etc'
-    ? document.getElementById('sf-dept-etc').value.trim()
-    : document.getElementById('sf-dept').value;
+  var dept = document.getElementById('sf-dept').value.trim();
   var cat = document.getElementById('sf-category').value;
   var title = document.getElementById('sf-title').value.trim();
   var reason = document.getElementById('sf-reason').value.trim();

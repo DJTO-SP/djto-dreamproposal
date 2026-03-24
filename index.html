@@ -35,7 +35,6 @@
       <button class="nav-btn" onclick="switchTab('review',this)"><span class="nav-icon">⚖️</span> 검토·심사</button>
     </nav>
     <div style="display:flex;align-items:center;gap:12px">
-      <span style="color:#c0d4f0;font-size:12px;font-weight:500">전략기획팀 이지민주임&nbsp;📞1148</span>
       <button class="admin-btn" onclick="loadFromSheet()" style="background:#4ecdc4;margin-right:6px">🔄 새로고침</button>
       <button class="admin-btn" id="googleBtn" onclick="googleLogin()" style="background:#fff;color:#444;border-color:#ddd">🔑 Google</button>
       <button class="admin-btn" id="adminBtn" onclick="toggleAdmin()">🔒 관리자</button>
@@ -232,51 +231,91 @@
     <div class="submit-wrap">
       <div class="submit-form-area">
         <div class="card" style="padding:28px 32px">
-          <h2 style="font-size:20px;font-weight:800;color:var(--navy);margin-bottom:4px">제 안 서</h2>
-          <p style="color:#888;font-size:13px;margin-bottom:20px">[별지 제1호 서식] 제안 내용을 작성하세요</p>
-          <div class="sf-row">
-            <div class="sf-field"><label>성명 <em>*</em></label><input id="sf-name" placeholder="홍길동"></div>
-            <div class="sf-field"><label>소속 <em>*</em></label>
-              <select id="sf-dept">
-                <option value="">선택</option>
-                <option>전략기획팀</option><option>관광사업팀</option><option>축제행사팀</option>
-                <option>센터마케팅팀</option><option>전시기획팀</option><option>홍보마케팅팀</option>
-                <option>시설운영팀</option><option>시민광장팀</option><option>총무회계팀</option>
-                <option>인사노무팀</option><option>안전감사팀</option><option value="_etc">기타(직접입력)</option>
-              </select>
-              <input id="sf-dept-etc" placeholder="부서 직접 입력" style="display:none;margin-top:6px">
+          <div class="section-title-bar">
+            <div class="section-title-icon">📝</div>
+            <div>
+              <h2 class="section-title-text">제 안 서</h2>
+              <p class="section-title-sub">[별지 제1호 서식] 제안 내용을 작성하세요</p>
             </div>
-            <div class="sf-field"><label>제안일자</label><input id="sf-date" type="date"></div>
           </div>
+          <div class="info-box-blue">
+            💡 제목이나 제안사유를 입력하면 우측에서 유사한 이전 제안을 자동 검색합니다.
+          </div>
+
           <div class="sf-row">
-            <div class="sf-field"><label>제안부문 <em>*</em></label>
+            <div class="sf-field">
+              <label>성명 <span class="field-req">*</span></label>
+              <input id="sf-name" placeholder="홍길동">
+            </div>
+            <div class="sf-field">
+              <label>소속 <span class="field-req">*</span></label>
+              <input id="sf-dept" placeholder="전략기획팀">
+            </div>
+            <div class="sf-field">
+              <label>제안일자</label>
+              <input id="sf-date" type="date">
+            </div>
+          </div>
+
+          <div class="sf-row">
+            <div class="sf-field">
+              <label>제안부문 <span class="field-req">*</span></label>
               <select id="sf-category">
                 <option value="">선택</option>
                 <option>관광아이디어발굴</option><option>조직혁신</option><option>사회적가치실현</option>
               </select>
             </div>
-            <div class="sf-field"><label>담당부서</label>
-              <select id="sf-target-dept">
-                <option value="">선택</option>
-                <option>전략기획팀</option><option>관광사업팀</option><option>축제행사팀</option>
-                <option>센터마케팅팀</option><option>전시기획팀</option><option>홍보마케팅팀</option>
-                <option>시설운영팀</option><option>시민광장팀</option><option>총무회계팀</option>
-                <option>인사노무팀</option><option>안전감사팀</option><option>전 부서</option>
-              </select>
+            <div class="sf-field">
+              <label>담당부서</label>
+              <input id="sf-target-dept" placeholder="전략기획팀">
             </div>
           </div>
-          <div class="sf-field full"><label>제목 <em>*</em></label><input id="sf-title" placeholder="제안 제목을 입력하세요" oninput="debounceSimilar()"></div>
-          <div class="sf-field full"><label>제안사유 (원인분석) <em>*</em></label><textarea id="sf-reason" rows="5" placeholder="○ 현황 및 문제점을 작성하세요" oninput="debounceSimilar()"></textarea></div>
-          <div class="sf-field full"><label>실시방법 (개선방향) <em>*</em></label><textarea id="sf-method" rows="5" placeholder="○ 구체적인 실시 방법을 작성하세요"></textarea></div>
+
+          <div class="sf-field full">
+            <label>제목 <span class="field-req">*</span></label>
+            <input id="sf-title" placeholder="제안 제목을 입력하세요" oninput="debounceSimilar()">
+          </div>
+
+          <div class="sf-field full">
+            <label>제안사유 (원인분석) <span class="field-req">*</span></label>
+            <textarea id="sf-reason" rows="5" placeholder="○ 현황 및 문제점을 작성하세요" oninput="debounceSimilar()"></textarea>
+          </div>
+
+          <div class="sf-field full">
+            <label>실시방법 (개선방향) <span class="field-req">*</span></label>
+            <textarea id="sf-method" rows="5" placeholder="○ 구체적인 실시 방법을 작성하세요"></textarea>
+          </div>
+
           <div class="sf-row">
             <div class="sf-field"><label>기대효과 - 예산절감액</label><input id="sf-save" placeholder="예: 500만원"></div>
             <div class="sf-field"><label>기대효과 - 수입증대액</label><input id="sf-revenue" placeholder="예: 1,000만원"></div>
           </div>
-          <div class="sf-field full"><label>기대효과 - 개선효과등</label><textarea id="sf-effect" rows="3" placeholder="○ 기대되는 개선 효과를 작성하세요"></textarea></div>
-          <div class="sf-field full"><label>붙임자료</label><input id="sf-file" type="file" accept=".pdf,.hwp,.docx,.png,.jpg"></div>
-          <div style="text-align:right;margin-top:20px">
-            <button class="btn-cancel" onclick="clearSubmitForm()">초기화</button>
-            <button class="btn-save" onclick="submitProposal()">제안서 접수</button>
+
+          <div class="sf-field full">
+            <label>기대효과 - 개선효과등</label>
+            <textarea id="sf-effect" rows="3" placeholder="○ 기대되는 개선 효과를 작성하세요"></textarea>
+          </div>
+
+          <div class="sf-field full">
+            <label>붙임자료</label>
+            <div class="file-drop-zone" id="sf-drop" onclick="document.getElementById('sf-file').click()"
+                 ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')"
+                 ondrop="event.preventDefault();this.classList.remove('dragover');if(event.dataTransfer.files[0]){document.getElementById('sf-file').files=event.dataTransfer.files;showPickedFile();}">
+              <div style="font-size:28px;margin-bottom:8px">📎</div>
+              <p>클릭하거나 파일을 드래그하세요</p>
+              <div class="file-limit">PDF, HWP, DOCX, PNG, JPG (최대 20MB)</div>
+              <div class="picked-file" id="sf-picked"></div>
+            </div>
+            <input type="file" id="sf-file" accept=".pdf,.hwp,.hwpx,.docx,.png,.jpg" style="display:none" onchange="showPickedFile()">
+          </div>
+
+          <button class="btn-submit-full" onclick="submitProposal()">제안서 접수</button>
+
+          <div id="submit-done" style="display:none;text-align:center;padding:30px 0;">
+            <div style="font-size:48px;margin-bottom:14px">🎉</div>
+            <h3 style="font-size:18px;font-weight:800;color:var(--navy);margin-bottom:8px">제안이 접수되었습니다!</h3>
+            <p style="font-size:14px;color:#888;line-height:1.7;margin-bottom:20px">담당부서 검토 후 심사가 진행됩니다.</p>
+            <button class="btn-save" onclick="clearSubmitForm();document.getElementById('submit-done').style.display='none';document.querySelectorAll('#tab-submit .card > *:not(#submit-done)').forEach(function(e){e.style.display='';})">새로 제안하기</button>
           </div>
         </div>
       </div>
