@@ -11,7 +11,7 @@
  */
 
 const SHEET_ID        = '1TzKHf4QxH8XqB05duVSXlSdM42_ThGJuy0C1Qewvywo';
-const DRIVE_FOLDER_ID = '';  // ← Google Drive 폴더 ID 입력 (제안서 파일 업로드용)
+const DRIVE_FOLDER_ID = '1BRJcpuVzIX-f0EOiYM0sAD7b8SZI9kSy';
 const ADMIN_PW        = 'alsk0118**';
 
 const S_PROPOSAL = '제안';
