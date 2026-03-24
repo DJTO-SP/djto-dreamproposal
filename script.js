@@ -308,7 +308,7 @@ function bulkChangeAward(val) {
   if (!val) return;
   if (!_gToken) { showToast('🔑 Google 로그인 후 변경 가능합니다','err'); document.getElementById('bulkSel').value=''; return; }
   _checkedIds.forEach(id=>{
-    var idx=DATA.findIndex(x=>x.id===id); if(idx===-1) return;
+    var idx=DATA.findIndex(x=>String(x.id)===String(id)); if(idx===-1) return;
     DATA[idx].award=val;
     saveToSheet(DATA[idx]);
   });
@@ -468,7 +468,7 @@ function saveToSheet(d, oldSeq) {
 // ── 빠른 편집 ────────────────────────────────────────
 function quickEdit(id, field, val) {
   if (!_gToken) { showToast('🔑 Google 로그인 후 수정 가능합니다','err'); return; }
-  var idx=DATA.findIndex(x=>x.id===id); if(idx===-1) return;
+  var idx=DATA.findIndex(x=>String(x.id)===String(id)); if(idx===-1) return;
   DATA[idx][field]=val;
   showToast('저장됐습니다!','ok');
   saveToSheet(DATA[idx]);
@@ -481,7 +481,7 @@ function getDetailList() {
   return getFiltered();
 }
 function openDetail(id) {
-  var d=DATA.find(x=>x.id===id); if(!d) return;
+  var d=DATA.find(x=>String(x.id)===String(id)); if(!d) return;
   // 브라우저 히스토리에 상태 추가
   history.pushState({detail: id}, '', '#detail-'+id);
   _curId=id;
@@ -527,7 +527,7 @@ function openDetail(id) {
   else if (_fromTab === 'cat') list = DATA.filter(d=>d.category===(_curCat||''));
   else if (_fromTab === 'adopted') list = DATA.filter(d=>ADOPTED.has(d.award));
   else list = getFiltered();
-  var idx=list.findIndex(x=>x.id===id);
+  var idx=list.findIndex(x=>String(x.id)===String(id));
   var prev=list[idx-1], next=list[idx+1];
   var navHtml='<div class="detail-nav">'
     +'<button class="det-nav-btn" '+(prev?'onclick="openDetailFrom('+prev.id+',\''+_fromTab+'\')"':'disabled')+'>'
@@ -744,7 +744,7 @@ function showAdoptedPanel(key) {
 
 // ── 수정 ─────────────────────────────────────────────
 function openEdit(id) {
-  var d=DATA.find(x=>x.id===id); if(!d) return;
+  var d=DATA.find(x=>String(x.id)===String(id)); if(!d) return;
   _editId=id;
   document.getElementById('e_title').value   =d.title   ||'';
   document.getElementById('e_proposer').value=d.proposer||'';
@@ -766,7 +766,7 @@ function saveEdit() {
   var proposer=document.getElementById('e_proposer').value.trim();
   var summary=document.getElementById('e_summary').value.trim();
   if (!title||!summary) { showToast('제목, 요약은 필수입니다','err'); return; }
-  var idx=DATA.findIndex(x=>x.id===_editId); if(idx===-1) return;
+  var idx=DATA.findIndex(x=>String(x.id)===String(_editId)); if(idx===-1) return;
   var newPeriod = document.getElementById('e_period').value;
   var oldSeq = DATA[idx].seq || '';
   var newSeq = newPeriod && oldSeq ? oldSeq.replace(/^\d{4}/, newPeriod) : oldSeq;
@@ -788,7 +788,7 @@ function saveEdit() {
 function deleteItem() {
   if (!_gToken) { showToast('🔑 Google 로그인 후 삭제 가능합니다','err'); return; }
   if (!confirm('이 제안을 삭제하시겠습니까?')) return;
-  var d = DATA.find(x=>x.id===_editId);
+  var d = DATA.find(x=>String(x.id)===String(_editId));
   DATA=DATA.filter(x=>x.id!==_editId);
   if (d) deleteFromSheet(d.seq);
   closeEdit(); closeDetail(); showToast('삭제되었습니다','ok'); renderAll();
