@@ -869,7 +869,7 @@ function renderStats2() {
   });
 
   // ── 심사결과 도넛 (심사중 제외) ──
-  var donutLabels=AWARD_LABELS.filter(a=>a!=='심사중');
+  var donutLabels=AWARD_LABELS.filter(a=>a!=='심사중'&&a!=='미채택');
   var donutCounts=donutLabels.map(a=>DATA.filter(d=>d.award===a).length);
   var donutColors=['#5FC1C7','#738488','#A2D7DD','#D0D8DA','#EFECE7'];
   if (_chartAward) _chartAward.destroy();
