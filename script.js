@@ -941,7 +941,7 @@ function renderStats2() {
       responsive:true,
       plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: ctx=>ctx.parsed.y+'%' } } },
       scales:{
-        y:{ beginAtZero:true, max:100, ticks:{ callback:v=>v+'%' }, grid:{color:'rgba(0,0,0,0.05)'} },
+        y:{ beginAtZero:true, max:Math.max(Math.max.apply(null,yearRates)*2,30), ticks:{ callback:v=>v+'%', stepSize:10 }, grid:{color:'rgba(0,0,0,0.05)'} },
         x:{ grid:{display:false} }
       }
     }
