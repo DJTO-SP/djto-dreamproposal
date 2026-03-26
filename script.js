@@ -54,9 +54,10 @@ function loadFromSheet() {
       if (!isAdmin) {
         DATA = DATA.filter(function(d) { return d.award !== '심사중' && d.award !== '접수완료'; });
       }
+      DATA_LOADED = true;
       renderAll();
       showToast('서버에서 ' + DATA.length + '건 불러왔습니다', 'ok');
-    }).catch(function(e) { showToast('서버 연결 실패: ' + e.message, 'err'); });
+    }).catch(function(e) { DATA_LOADED = true; showToast('서버 연결 실패: ' + e.message, 'err'); });
   }
   // 기존 Google Sheets 직접 연동 (폴백)
   return fetch(SHEET_URL)
@@ -85,6 +86,7 @@ function loadFromSheet() {
           keywords: kw, pdf: get(r, '첨부파일'), seq: seq
         };
       });
+      DATA_LOADED = true;
       renderAll();
       showToast('시트에서 ' + DATA.length + '건 불러왔습니다', 'ok');
     })
@@ -98,6 +100,7 @@ var ADMIN_PW = "alsk0118**";
 
 // ★ 데이터 (시트에서 자동 로드) ★
 var DATA = [];
+var DATA_LOADED = false;
 
 var isAdmin = false;
 var sortCol = "period", sortDir = -1;
@@ -364,7 +367,8 @@ function renderTable() {
     return '<th onclick="doSort(\''+c.key+'\')" style="width:'+c.w+'">'+c.label+arr+'</th>';
   }).join('')+'</tr>';
   if (!list.length) {
-    document.getElementById('tblBody').innerHTML='<tr><td colspan="'+cols.length+'" class="empty">검색 결과가 없습니다.</td></tr>';
+    var msg = DATA_LOADED ? '검색 결과가 없습니다.' : '자료를 불러오는 중입니다...';
+    document.getElementById('tblBody').innerHTML='<tr><td colspan="'+cols.length+'" class="empty">'+msg+'</td></tr>';
     return;
   }
   document.getElementById('tblBody').innerHTML=list.map((d,i)=>{
