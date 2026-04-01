@@ -167,26 +167,11 @@ function titleCell(d) {
   return '<td><div class="tip-wrap"><div class="title-main">'+esc(d.title)+'</div>'+summaryHtml+'</div></td>';
 }
 
-// ── 유사도 검사 ─────────────────────────────────────
-function trigram(s) {
-  s = (s||'').replace(/\s+/g,'').toLowerCase();
-  if (s.length < 3) return new Set([s]);
-  var set = new Set();
-  for (var i = 0; i <= s.length - 3; i++) set.add(s.substring(i, i+3));
-  return set;
-}
-function similarity(a, b) {
-  var sa = trigram(a), sb = trigram(b);
-  if (!sa.size || !sb.size) return 0;
-  var inter = 0;
-  sa.forEach(function(t) { if (sb.has(t)) inter++; });
-  return inter / Math.max(sa.size, sb.size);
-}
+// ── 유사 제안 검사 (키워드 매칭) ─────────────────────
 function checkSimilar() {
   var title = (document.getElementById('sf-title').value||'').trim();
   var warnEl = document.getElementById('sf-similar-warn');
-  if (!title || title.length < 4) { warnEl.style.display = 'none'; return; }
-  // DATA가 아직 로드되지 않았으면 직접 API 호출하여 비교
+  if (!title || title.length < 2) { warnEl.style.display = 'none'; return; }
   if (!DATA.length) {
     api({action:'getProposals'}).then(function(rows) {
       if (!Array.isArray(rows)) return;
@@ -198,19 +183,33 @@ function checkSimilar() {
     });
     return;
   }
-  var found = [];
+  var inputKw = extractKeywords(title);
+  if (!inputKw.length) { warnEl.style.display = 'none'; return; }
+  var scored = [];
   DATA.forEach(function(d) {
-    var sim = similarity(title, d.title);
-    if (sim >= 0.6) found.push({ title: d.title, period: d.period, sim: Math.round(sim*100) });
+    var dKw = extractKeywords(d.title);
+    if (!dKw.length) return;
+    var match = 0;
+    inputKw.forEach(function(w) {
+      for (var i = 0; i < dKw.length; i++) {
+        if (dKw[i].indexOf(w) >= 0 || w.indexOf(dKw[i]) >= 0) { match++; break; }
+      }
+    });
+    if (match > 0) scored.push({ title: d.title, period: d.period, category: d.category, match: match, total: inputKw.length });
   });
-  if (!found.length) { warnEl.style.display = 'none'; return; }
-  found.sort(function(a,b) { return b.sim - a.sim; });
+  scored.sort(function(a,b) { return b.match - a.match; });
+  var top3 = scored.slice(0, 3);
+  if (!top3.length) { warnEl.style.display = 'none'; return; }
   warnEl.style.display = 'block';
-  warnEl.innerHTML = '⚠️ <strong>유사한 제안이 있습니다</strong><br>'
-    + found.map(function(f) {
-      return '· <strong>' + esc(f.title) + '</strong> (' + (f.period||'') + ') — 유사도 ' + f.sim + '%';
+  warnEl.innerHTML = '🔍 <strong>관련도 높은 기존 제안</strong><br>'
+    + top3.map(function(f) {
+      return '· <strong>' + esc(f.title) + '</strong> <span style="color:#64748b;font-size:12px">(' + (f.period||'') + ' · 키워드 ' + f.match + '/' + f.total + '개 일치)</span>';
     }).join('<br>')
-    + '<br><span style="font-size:12px;color:#92400e">중복 제안이 아닌지 확인해주세요. 제출은 가능합니다.</span>';
+    + '<br><span style="font-size:12px;color:#64748b">중복 제안이 아닌지 확인해주세요.</span>';
+  warnEl.style.background = '#eff6ff';
+  warnEl.style.borderColor = '#bfdbfe';
+  warnEl.style.borderLeftColor = '#2c6fbd';
+  warnEl.style.color = '#1e3a8a';
 }
 
 // ── 탭 ───────────────────────────────────────────────
