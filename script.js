@@ -176,7 +176,7 @@ function switchTab(name, btn) {
   document.getElementById('tab-'+name).classList.add('on');
   if (btn) btn.classList.add('on');
   else {
-    var tabMap = {list:0, year:1, cat:2, adopted:3};
+    var tabMap = {list:0, year:1, cat:2, adopted:3, tracking:4};
     var idx = tabMap[name];
     if (idx !== undefined) document.querySelectorAll('.nav-btn')[idx].classList.add('on');
   }
@@ -186,12 +186,13 @@ function switchTab(name, btn) {
   document.getElementById('statsArea').style.display='none';
   _curId=null;
   _fromTab='list';
-  if (name==='list')    renderAll();
-  if (name==='year')    renderYear();
-  if (name==='cat')     renderCat();
-  if (name==='adopted') renderAdopted();
-  if (name==='stats')   renderStats2();
-  if (name==='submit')  initSubmitTab();
+  if (name==='list')     renderAll();
+  if (name==='year')     renderYear();
+  if (name==='cat')      renderCat();
+  if (name==='adopted')  renderAdopted();
+  if (name==='tracking') renderTracking();
+  if (name==='stats')    renderStats2();
+  if (name==='submit')   initSubmitTab();
 }
 
 // ── 관리자 ───────────────────────────────────────────
@@ -1276,6 +1277,7 @@ function showMgPanel(id, btn) {
   if (btn) btn.classList.add('active');
   if (id === 'mg-inbox') renderMgInbox();
   if (id === 'mg-codes') loadCodes();
+  if (id === 'mg-tracking') { loadTracking().then(function() { initMgTracking(); }); }
 }
 
 function renderMgInbox() {
@@ -1771,6 +1773,268 @@ function calcJudgeTotal(idx) {
     }
   });
   document.getElementById('sc-total-' + idx).textContent = total;
+}
+
+// ── 추진현황 탭 ─────────────────────────────────────────
+var TRACK_DATA = [];
+var _trackFilter = '전체';
+var TRACK_STATUS = [
+  {key:'협의중',   color:'#e9a825', icon:'💬'},
+  {key:'추진중',   color:'#2a9d8f', icon:'🚀'},
+  {key:'완료',     color:'#27ae60', icon:'✅'},
+  {key:'보류',     color:'#95a5a6', icon:'⏸️'},
+];
+
+function loadTracking() {
+  if (!SCRIPT_URL) return Promise.resolve();
+  return api({action:'getTracking'}).then(function(rows) {
+    TRACK_DATA = Array.isArray(rows) ? rows : [];
+  }).catch(function() { TRACK_DATA = []; });
+}
+
+function renderTracking() {
+  loadTracking().then(function() { renderTrackingView(); });
+}
+
+function renderTrackingView() {
+  var adoptedList = DATA.filter(function(d) { return ADOPTED.has(d.award); });
+  // 각 제안의 최신 상태 계산
+  var proposalStatus = {};
+  TRACK_DATA.forEach(function(t) {
+    if (!proposalStatus[t.proposalId] || t.createdAt > proposalStatus[t.proposalId].createdAt) {
+      proposalStatus[t.proposalId] = t;
+    }
+  });
+
+  // 요약 카드
+  var counts = {};
+  TRACK_STATUS.forEach(function(s) { counts[s.key] = 0; });
+  var noTracking = 0;
+  adoptedList.forEach(function(d) {
+    var ps = proposalStatus[d.id];
+    if (ps && counts[ps.status] !== undefined) counts[ps.status]++;
+    else noTracking++;
+  });
+
+  var summaryHtml = '<div class="tracking-summary">';
+  TRACK_STATUS.forEach(function(s) {
+    summaryHtml += '<div class="tracking-summary-card" style="border-left:4px solid ' + s.color + '">'
+      + '<div class="tracking-summary-icon">' + s.icon + '</div>'
+      + '<div class="tracking-summary-num">' + counts[s.key] + '</div>'
+      + '<div class="tracking-summary-label">' + s.key + '</div>'
+      + '</div>';
+  });
+  if (noTracking > 0) {
+    summaryHtml += '<div class="tracking-summary-card" style="border-left:4px solid #ddd">'
+      + '<div class="tracking-summary-icon">📋</div>'
+      + '<div class="tracking-summary-num">' + noTracking + '</div>'
+      + '<div class="tracking-summary-label">미등록</div>'
+      + '</div>';
+  }
+  summaryHtml += '</div>';
+  document.getElementById('trackingSummary').innerHTML = summaryHtml;
+
+  // 필터 네비게이션
+  var filters = ['전체'].concat(TRACK_STATUS.map(function(s) { return s.key; }));
+  var navHtml = filters.map(function(f) {
+    return '<button class="sub-nav-btn' + (_trackFilter === f ? ' on' : '') + '" onclick="filterTracking(\'' + f + '\')">'
+      + (f === '전체' ? '📋 ' : (TRACK_STATUS.find(function(s){return s.key===f;})||{}).icon + ' ')
+      + f + '</button>';
+  }).join('');
+  document.getElementById('trackingNav').innerHTML = navHtml;
+
+  // 카드 목록
+  var filtered = adoptedList.filter(function(d) {
+    if (_trackFilter === '전체') return true;
+    var ps = proposalStatus[d.id];
+    if (!ps) return _trackFilter === '미등록';
+    return ps.status === _trackFilter;
+  });
+
+  if (!filtered.length) {
+    document.getElementById('trackingArea').innerHTML = '<div class="empty">해당 상태의 제안이 없습니다.</div>';
+    return;
+  }
+
+  var cardsHtml = '';
+  filtered.forEach(function(d) {
+    var ps = proposalStatus[d.id];
+    var st = ps ? TRACK_STATUS.find(function(s){return s.key===ps.status;}) : null;
+    var statusHtml = st
+      ? '<span class="tracking-status-badge" style="background:' + st.color + '">' + st.icon + ' ' + st.key + '</span>'
+      : '<span class="tracking-status-badge" style="background:#ccc">📋 미등록</span>';
+    var deptHtml = ps && ps.dept ? '<span class="tracking-dept">' + esc(ps.dept) + '</span>' : '';
+
+    // 타임라인: 해당 제안의 모든 이력
+    var history = TRACK_DATA.filter(function(t) { return t.proposalId === d.id; });
+    history.sort(function(a, b) { return (b.date || b.createdAt || '').localeCompare(a.date || a.createdAt || ''); });
+
+    var timelineHtml = '';
+    if (history.length) {
+      var showAll = history.length <= 3;
+      var visibleItems = showAll ? history : history.slice(0, 3);
+      timelineHtml = '<div class="timeline">';
+      visibleItems.forEach(function(h) {
+        var hst = TRACK_STATUS.find(function(s){return s.key===h.status;}) || {color:'#ccc',icon:'●'};
+        timelineHtml += '<div class="timeline-item">'
+          + '<div class="timeline-dot" style="background:' + hst.color + '"></div>'
+          + '<div class="timeline-content">'
+          + '<div class="timeline-date">' + esc(h.date || '') + ' <span class="timeline-writer">' + esc(h.writer || '') + (h.dept ? ' · ' + esc(h.dept) : '') + '</span></div>'
+          + '<div class="timeline-text">' + esc(h.content || '') + '</div>'
+          + '</div></div>';
+      });
+      timelineHtml += '</div>';
+      if (!showAll) {
+        timelineHtml += '<button class="timeline-more" onclick="toggleTimeline(\'' + d.id + '\',this)">+ ' + (history.length - 3) + '건 더보기</button>';
+        timelineHtml += '<div class="timeline timeline-hidden" id="tl-more-' + d.id + '">';
+        history.slice(3).forEach(function(h) {
+          var hst2 = TRACK_STATUS.find(function(s){return s.key===h.status;}) || {color:'#ccc',icon:'●'};
+          timelineHtml += '<div class="timeline-item">'
+            + '<div class="timeline-dot" style="background:' + hst2.color + '"></div>'
+            + '<div class="timeline-content">'
+            + '<div class="timeline-date">' + esc(h.date || '') + ' <span class="timeline-writer">' + esc(h.writer || '') + (h.dept ? ' · ' + esc(h.dept) : '') + '</span></div>'
+            + '<div class="timeline-text">' + esc(h.content || '') + '</div>'
+            + '</div></div>';
+        });
+        timelineHtml += '</div>';
+      }
+    } else {
+      timelineHtml = '<div style="color:#aaa;font-size:13px;padding:8px 0">아직 등록된 이력이 없습니다.</div>';
+    }
+
+    cardsHtml += '<div class="tracking-card">'
+      + '<div class="tracking-card-hdr">'
+      + '<div class="tracking-card-award">' + awardBadge(d.award) + '</div>'
+      + '<div class="tracking-card-title">' + esc(d.title) + '</div>'
+      + '<div class="tracking-card-meta">' + statusHtml + deptHtml + '</div>'
+      + '</div>'
+      + '<div class="tracking-card-body">'
+      + timelineHtml
+      + '</div></div>';
+  });
+  document.getElementById('trackingArea').innerHTML = cardsHtml;
+}
+
+function filterTracking(key) {
+  _trackFilter = key;
+  document.querySelectorAll('#trackingNav .sub-nav-btn').forEach(function(btn, i) {
+    var filters = ['전체'].concat(TRACK_STATUS.map(function(s){return s.key;}));
+    btn.classList.toggle('on', filters[i] === key);
+  });
+  renderTrackingView();
+}
+
+function toggleTimeline(proposalId, btn) {
+  var el = document.getElementById('tl-more-' + proposalId);
+  if (!el) return;
+  var hidden = el.classList.contains('timeline-hidden');
+  el.classList.toggle('timeline-hidden');
+  btn.textContent = hidden ? '접기' : btn.textContent;
+  if (hidden) btn.style.display = 'none';
+}
+
+// ── 추진현황 관리 (관리자) ──
+function initMgTracking() {
+  var sel = document.getElementById('tk-proposal');
+  if (!sel) return;
+  var adoptedList = DATA.filter(function(d) { return ADOPTED.has(d.award); });
+  sel.innerHTML = '<option value="">제안을 선택하세요</option>';
+  adoptedList.forEach(function(d) {
+    sel.innerHTML += '<option value="' + d.id + '">' + d.award + ' | ' + esc(d.title) + '</option>';
+  });
+  document.getElementById('tk-form').style.display = 'none';
+  document.getElementById('tk-existing').innerHTML = '';
+  // 오늘 날짜 기본값
+  var today = new Date().toISOString().split('T')[0];
+  var dateEl = document.getElementById('tk-date');
+  if (dateEl) dateEl.value = today;
+}
+
+function onTrackingProposalSelect() {
+  var proposalId = document.getElementById('tk-proposal').value;
+  if (!proposalId) {
+    document.getElementById('tk-form').style.display = 'none';
+    document.getElementById('tk-existing').innerHTML = '';
+    return;
+  }
+  document.getElementById('tk-form').style.display = 'block';
+  // 기존 이력 표시
+  var history = TRACK_DATA.filter(function(t) { return t.proposalId === proposalId; });
+  history.sort(function(a, b) { return (b.date || b.createdAt || '').localeCompare(a.date || a.createdAt || ''); });
+  if (!history.length) {
+    document.getElementById('tk-existing').innerHTML = '<div style="color:#aaa;font-size:13px;padding:8px 0">이 제안에 등록된 이력이 없습니다.</div>';
+    return;
+  }
+  var html = '<div style="font-weight:700;color:var(--navy);font-size:14px;margin-bottom:8px">기존 이력</div><div class="timeline">';
+  history.forEach(function(h) {
+    var hst = TRACK_STATUS.find(function(s){return s.key===h.status;}) || {color:'#ccc'};
+    html += '<div class="timeline-item">'
+      + '<div class="timeline-dot" style="background:' + hst.color + '"></div>'
+      + '<div class="timeline-content">'
+      + '<div class="timeline-date">' + esc(h.date || '') + ' <span class="timeline-writer">' + esc(h.writer || '') + (h.dept ? ' · ' + esc(h.dept) : '') + '</span>'
+      + (isAdmin ? ' <button style="border:none;background:none;color:var(--rose);cursor:pointer;font-size:11px" onclick="deleteTrackingEntry(\'' + h.id + '\')">삭제</button>' : '')
+      + '</div>'
+      + '<div class="timeline-text">' + esc(h.content || '') + '</div>'
+      + '</div></div>';
+  });
+  html += '</div>';
+  document.getElementById('tk-existing').innerHTML = html;
+}
+
+function saveTrackingEntry() {
+  var proposalId = document.getElementById('tk-proposal').value;
+  if (!proposalId) return showToast('제안을 선택하세요', 'err');
+  var content = document.getElementById('tk-content').value.trim();
+  if (!content) return showToast('협의 내용을 입력하세요', 'err');
+  apiPost({
+    action: 'saveTracking', pw: ADMIN_PW,
+    proposalId: proposalId,
+    status: document.getElementById('tk-status').value,
+    dept: document.getElementById('tk-dept').value.trim(),
+    date: document.getElementById('tk-date').value,
+    content: content,
+    writer: document.getElementById('tk-writer').value.trim()
+  }).then(function(res) {
+    if (res.ok) {
+      showToast('추진현황이 저장되었습니다', 'ok');
+      document.getElementById('tk-content').value = '';
+      loadTracking().then(function() { onTrackingProposalSelect(); });
+    } else showToast('저장 실패: ' + (res.error || ''), 'err');
+  }).catch(function() { showToast('서버 오류', 'err'); });
+}
+
+function deleteTrackingEntry(id) {
+  if (!confirm('이 이력을 삭제하시겠습니까?')) return;
+  apiPost({ action: 'deleteTracking', pw: ADMIN_PW, id: id }).then(function(res) {
+    if (res.ok) {
+      showToast('삭제되었습니다', 'ok');
+      loadTracking().then(function() { onTrackingProposalSelect(); });
+    } else showToast('삭제 실패', 'err');
+  });
+}
+
+// 검토자 패널에서 추진현황 저장
+function saveTrackingFromReview() {
+  if (_curReviewIdx < 0) return;
+  var p = _reviewProposals[_curReviewIdx];
+  var content = document.getElementById('rv-tk-content').value.trim();
+  if (!content) return alert('협의 내용을 입력하세요.');
+  var reviewer = document.getElementById('rv-reviewer').value.trim();
+  var reviewDept = document.getElementById('rv-reviewer-dept').value.trim();
+  apiPost({
+    action: 'saveTracking', code: _rvCode,
+    proposalId: p.id,
+    status: document.getElementById('rv-tk-status').value,
+    dept: reviewDept,
+    date: document.getElementById('rv-tk-date').value,
+    content: content,
+    writer: reviewer
+  }).then(function(res) {
+    if (res.ok) {
+      alert('추진현황이 저장되었습니다.');
+      document.getElementById('rv-tk-content').value = '';
+    } else alert('저장 실패: ' + (res.error || ''));
+  }).catch(function() { alert('서버 오류'); });
 }
 
 function saveJudgeScore(idx) {

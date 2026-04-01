@@ -18,6 +18,7 @@ const S_PROPOSAL = '제안';
 const S_REVIEW   = '검토';
 const S_SCORE    = '심사';
 const S_CODE     = '코드관리';
+const S_TRACKING = '추진현황';
 
 // ══════════════════════════════════════════
 // GET 라우터
@@ -35,6 +36,7 @@ function doGet(e) {
       case 'getStats':          result = getStats(); break;
       case 'getCodes':          result = checkAdmin(p.pw) ? getCodes() : {error:'권한 없음'}; break;
       case 'getScoreSummary':   result = checkAdmin(p.pw) ? getScoreSummary(p.proposalId) : {error:'권한 없음'}; break;
+      case 'getTracking':       result = getTracking(); break;
       default:                  result = {error: 'Unknown action'};
     }
   } catch(err) {
@@ -59,6 +61,8 @@ function doPost(e) {
       case 'manageCode':      result = checkAdmin(d.pw) ? manageCode(d) : {error:'권한 없음'}; break;
       case 'updateAward':     result = checkAdmin(d.pw) ? updateAward(d) : {error:'권한 없음'}; break;
       case 'bulkUpdateAward': result = checkAdmin(d.pw) ? bulkUpdateAward(d) : {error:'권한 없음'}; break;
+      case 'saveTracking':    result = saveTracking(d); break;
+      case 'deleteTracking':  result = checkAdmin(d.pw) ? deleteTracking(d.id) : {error:'권한 없음'}; break;
       default:                result = {error: 'Unknown action'};
     }
   } catch(err) {
@@ -175,6 +179,7 @@ function setupAllSheets() {
   initSheet(S_REVIEW, ['id','proposalId','proposalTitle','reviewer','reviewDept','opinion','code','submittedAt']);
   initSheet(S_SCORE, ['id','proposalId','proposalTitle','judgeCode','feasibility','creativity','effectiveness','efficiency','scope','duration','effort','total','submittedAt']);
   initSheet(S_CODE, ['id','type','code','label','targetYear','assignedTo','createdAt']);
+  initSheet(S_TRACKING, ['id','proposalId','status','dept','date','content','writer','createdAt']);
 }
 
 // ══════════════════════════════════════════
@@ -512,6 +517,43 @@ function getScoreSummary(proposalId) {
       submittedAt: s.submittedAt
     }))
   };
+}
+
+// ══════════════════════════════════════════
+// 추진현황
+// ══════════════════════════════════════════
+function getTracking() {
+  try { return sheetToObjects(S_TRACKING); } catch(e) { return []; }
+}
+
+function saveTracking(d) {
+  // 관리자 비밀번호 또는 검토코드로 인증
+  var authorized = false;
+  if (d.pw && checkAdmin(d.pw)) authorized = true;
+  if (d.code) {
+    var v = verifyCode(d.code);
+    if (v.ok && v.type === 'review') authorized = true;
+  }
+  if (!authorized) return { error: '권한 없음' };
+
+  initSheet(S_TRACKING, ['id','proposalId','status','dept','date','content','writer','createdAt']);
+  var id = uid();
+  saveToSheet(S_TRACKING, {
+    id: id,
+    proposalId: d.proposalId || '',
+    status: d.status || '협의중',
+    dept: d.dept || '',
+    date: d.date || '',
+    content: d.content || '',
+    writer: d.writer || '',
+    createdAt: now()
+  });
+  return { ok: true, id: id };
+}
+
+function deleteTracking(id) {
+  deleteRowById(S_TRACKING, id);
+  return { ok: true };
 }
 
 // ══════════════════════════════════════════
