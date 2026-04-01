@@ -757,10 +757,10 @@ function showCatPanel(cat) {
 // ── 채택제안 ─────────────────────────────────────────
 var _curGrade = null;
 var GRADES = [
-  {key:'최우수', bg:'#4a9ea8', icon:'🥇'},
-  {key:'우수',   bg:'#5fc1c7', icon:'🥈'},
-  {key:'장려',   bg:'#7ed4d4', icon:'🥉'},
-  {key:'특별상', bg:'#a2e3df', icon:'🌟'},
+  {key:'최우수', bg:'#204473', icon:'🥇'},
+  {key:'우수',   bg:'#566D8C', icon:'🥈'},
+  {key:'장려',   bg:'#6BA5C2', icon:'🥉'},
+  {key:'특별상', bg:'#A3AFBF', icon:'🌟'},
 ];
 function renderAdoptedHero() {
   var heroEl = document.getElementById('adoptedHero');
@@ -777,7 +777,7 @@ function renderAdoptedHero() {
       +'</div>';
     return;
   }
-  var awardColors = {'최우수':'#4a9ea8','우수':'#5fc1c7','장려':'#7ed4d4','특별상':'#a2e3df'};
+  var awardColors = {'최우수':'#204473','우수':'#566D8C','장려':'#6BA5C2','특별상':'#A3AFBF'};
   var items = yearList.map(function(d, i) {
     var c = awardColors[d.award] || '#888';
     return '<div class="hero-item" style="animation-delay:'+(i*0.08)+'s" onclick="openDetailFrom(\''+d.id+'\',\'adopted\')">'
