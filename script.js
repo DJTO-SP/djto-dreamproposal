@@ -108,7 +108,7 @@ var _curId  = null;
 var _editId = null;
 var ADOPTED = new Set(['최우수','우수','장려','특별상']);
 
-var CAT_COLOR = {"관광아이디어발굴":"#566D8C","조직혁신":"#6BA5C2","사회적가치실현":"#b07800","기타":"#6b7280"};
+var CAT_COLOR = {"관광아이디어발굴":"#204473","조직혁신":"#566D8C","사회적가치실현":"#6BA5C2","기타":"#A3AFBF"};
 var CAT_ICON  = {"관광아이디어발굴":"🗺️","조직혁신":"🔄","사회적가치실현":"🤝","기타":"📌"};
 var CAT_CLASS = {"관광아이디어발굴":"b-관광아이디어발굴","조직혁신":"b-조직혁신","사회적가치실현":"b-사회적가치실현","기타":"b-기타"};
 var AWARD_LABELS = ["심사중","최우수","우수","장려","특별상","미채택"];
@@ -917,8 +917,8 @@ function renderStats2() {
 
   if (_chartYear) _chartYear.destroy();
   var ctxYear = document.getElementById('chartYear').getContext('2d');
-  var barColors1 = ['#5FC1C7','#6DCAD0','#7BD3D9','#8EDCE1','#A2E5EA'];
-  var barColors2 = ['#4A9EA8','#58A9B3','#66B4BE','#74BFC9','#82CAD4'];
+  var barColors1 = ['#6BA5C2','#7BB2CC','#8BBFD6','#9BCCE0','#A3AFBF'];
+  var barColors2 = ['#204473','#3A5A87','#566D8C','#6B8099','#8094A8'];
   var bgTotal = years.map(function(_,i){ return barColors1[i % barColors1.length]; });
   var bgAdopt = years.map(function(_,i){ return barColors2[i % barColors2.length]; });
   _chartYear = new Chart(ctxYear, {
@@ -947,7 +947,7 @@ function renderStats2() {
   // ── 심사결과 도넛 (심사중 제외) ──
   var donutLabels=AWARD_LABELS.filter(a=>a!=='심사중'&&a!=='미채택');
   var donutCounts=donutLabels.map(a=>DATA.filter(d=>d.award===a).length);
-  var donutColors=['#5FC1C7','#738488','#A2D7DD','#D0D8DA','#EFECE7'];
+  var donutColors=['#204473','#566D8C','#6BA5C2','#A3AFBF','#D4E1EF'];
   if (_chartAward) _chartAward.destroy();
   _chartAward = new Chart(document.getElementById('chartAward'), {
     type: 'doughnut',
@@ -1004,7 +1004,7 @@ function renderStats2() {
         label:'채택률 (%)',
         data: yearRates,
         borderColor:'#6BA5C2',
-        backgroundColor:'rgba(42,157,143,0.12)',
+        backgroundColor:'rgba(107,165,194,0.15)',
         borderWidth:3,
         pointBackgroundColor:'#6BA5C2',
         pointRadius:6,

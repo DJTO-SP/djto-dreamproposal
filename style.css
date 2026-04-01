@@ -65,8 +65,8 @@ tbody tr:hover td { background:#eef3ff; }
 
 /* 배지 */
 .badge { padding:3px 10px; border-radius:20px; font-weight:600; font-size:12px; display:inline-block; white-space:nowrap; }
-.b-관광아이디어발굴{background:#e8f4ff;color:#566D8C;} .b-조직혁신{background:#e6f8f5;color:#A3AFBF;}
-.b-사회적가치실현{background:#fff4e0;color:#b07800;} .b-기타{background:#f0f0f5;color:#6b7280;}
+.b-관광아이디어발굴{background:#D4E1EF;color:#204473;} .b-조직혁신{background:#e0eaf3;color:#566D8C;}
+.b-사회적가치실현{background:#e0f0f7;color:#3d7a96;} .b-기타{background:#eef1f5;color:#A3AFBF;}
 .abadge { padding:4px 11px; border-radius:20px; font-weight:700; font-size:12px; display:inline-flex; align-items:center; gap:4px; white-space:nowrap; }
 .adot { width:6px; height:6px; border-radius:50%; display:inline-block; }
 .a-최우수{background:#fff8dc;color:#7a5000;} .a-최우수 .adot{background:#f0c000;}
