@@ -23,7 +23,7 @@
     <img src="dream-banner.png" alt="꿈씨패밀리" width="200" height="80" style="height:80px; width:auto; object-fit:contain; filter:drop-shadow(0 2px 8px rgba(0,0,0,.1));">
   </div>
 </div>
-<header style="background:#1e3a6e; height:48px; position:sticky; top:0; z-index:100; box-shadow:0 3px 16px rgba(30,58,110,.35);">
+<header style="background:#204473; height:48px; position:sticky; top:0; z-index:100; box-shadow:0 3px 16px rgba(30,58,110,.35);">
   <div style="max-width:1160px; margin:0 auto; height:100%; display:flex; align-items:center; justify-content:space-between; padding:0 20px;">
     <nav style="display:flex; align-items:center; gap:2px;">
       <button class="nav-btn on" onclick="switchTab('list',this)"><span class="nav-icon">📋</span> 목록</button>
@@ -136,7 +136,7 @@
 <div class="toast" id="toast"></div>
 
 <!-- 일괄변경 바 -->
-<div id="bulkBar" style="display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e3a6e;color:#fff;padding:12px 20px;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,.3);align-items:center;gap:12px;z-index:500;font-size:13px;font-weight:600">
+<div id="bulkBar" style="display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#204473;color:#fff;padding:12px 20px;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,.3);align-items:center;gap:12px;z-index:500;font-size:13px;font-weight:600">
   <span id="bulkCount"></span>
   <span style="color:#a0b4d8">심사결과를</span>
   <select id="bulkSel" style="padding:6px 10px;border-radius:7px;border:none;font-size:13px;font-family:inherit;cursor:pointer" onchange="bulkChangeAward(this.value)">
@@ -293,7 +293,7 @@
           <div class="sf-field full">
             <label>제목 <span class="field-req">*</span></label>
             <input id="sf-title" placeholder="제안 제목을 입력하세요" onblur="checkSimilar()">
-            <div id="sf-similar-warn" style="display:none;margin-top:8px;background:#eff6ff;border:1px solid #bfdbfe;border-left:4px solid #2c6fbd;border-radius:8px;padding:10px 14px;font-size:13px;color:#1e3a8a;line-height:1.6"></div>
+            <div id="sf-similar-warn" style="display:none;margin-top:8px;background:#eff6ff;border:1px solid #bfdbfe;border-left:4px solid #566D8C;border-radius:8px;padding:10px 14px;font-size:13px;color:#1e3a8a;line-height:1.6"></div>
           </div>
 
           <div class="sf-field full">
@@ -307,7 +307,7 @@
           <div class="sf-field full">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
               <label style="margin-bottom:0">제안서 파일 (PDF) <span class="field-req">*</span></label>
-              <a href="붙임4. 혁신드림제안 제안 서식.hwp" download style="font-size:12px;font-weight:600;color:#2c6fbd;text-decoration:none;background:#eef3ff;padding:4px 12px;border-radius:6px;border:1px solid #bfdbfe">📥 제안서 서식(HWP) 다운로드</a>
+              <a href="붙임4. 혁신드림제안 제안 서식.hwp" download style="font-size:12px;font-weight:600;color:#566D8C;text-decoration:none;background:#eef3ff;padding:4px 12px;border-radius:6px;border:1px solid #bfdbfe">📥 제안서 서식(HWP) 다운로드</a>
             </div>
             <div class="file-drop-zone" id="sf-drop" onclick="document.getElementById('sf-file').click()"
                  ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')"

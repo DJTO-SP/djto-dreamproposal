@@ -108,7 +108,7 @@ var _curId  = null;
 var _editId = null;
 var ADOPTED = new Set(['최우수','우수','장려','특별상']);
 
-var CAT_COLOR = {"관광아이디어발굴":"#2c6fbd","조직혁신":"#2a9d8f","사회적가치실현":"#b07800","기타":"#6b7280"};
+var CAT_COLOR = {"관광아이디어발굴":"#566D8C","조직혁신":"#6BA5C2","사회적가치실현":"#b07800","기타":"#6b7280"};
 var CAT_ICON  = {"관광아이디어발굴":"🗺️","조직혁신":"🔄","사회적가치실현":"🤝","기타":"📌"};
 var CAT_CLASS = {"관광아이디어발굴":"b-관광아이디어발굴","조직혁신":"b-조직혁신","사회적가치실현":"b-사회적가치실현","기타":"b-기타"};
 var AWARD_LABELS = ["심사중","최우수","우수","장려","특별상","미채택"];
@@ -224,7 +224,7 @@ function checkSimilar() {
     + '<br><span style="font-size:12px;color:#64748b">중복 제안이 아닌지 확인해주세요.</span>';
   warnEl.style.background = '#eff6ff';
   warnEl.style.borderColor = '#bfdbfe';
-  warnEl.style.borderLeftColor = '#2c6fbd';
+  warnEl.style.borderLeftColor = '#566D8C';
   warnEl.style.color = '#1e3a8a';
 }
 
@@ -484,7 +484,7 @@ function initGoogleAuth() {
       _gToken = resp.access_token;
       document.getElementById('googleBtn').textContent = '✅ Google';
       document.getElementById('googleBtn').style.background = '#e6f8f5';
-      document.getElementById('googleBtn').style.color = '#2a9d8f';
+      document.getElementById('googleBtn').style.color = '#6BA5C2';
       showToast('Google 연결됐습니다!', 'ok');
     }
   });
@@ -1003,10 +1003,10 @@ function renderStats2() {
       datasets:[{
         label:'채택률 (%)',
         data: yearRates,
-        borderColor:'#2a9d8f',
+        borderColor:'#6BA5C2',
         backgroundColor:'rgba(42,157,143,0.12)',
         borderWidth:3,
-        pointBackgroundColor:'#2a9d8f',
+        pointBackgroundColor:'#6BA5C2',
         pointRadius:6,
         pointHoverRadius:8,
         fill:true,
@@ -1855,7 +1855,7 @@ var TRACK_DATA = [];
 var _trackFilter = '전체';
 var TRACK_STATUS = [
   {key:'협의중',   color:'#e9a825', icon:'💬'},
-  {key:'추진중',   color:'#2a9d8f', icon:'🚀'},
+  {key:'추진중',   color:'#6BA5C2', icon:'🚀'},
   {key:'완료',     color:'#27ae60', icon:'✅'},
   {key:'보류',     color:'#95a5a6', icon:'⏸️'},
 ];

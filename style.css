@@ -1,7 +1,7 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 body { font-family: 'Noto Sans KR', 'Malgun Gothic', sans-serif; background: #f0f3f8; color: #1a2035; min-height: 100vh; }
-:root { --navy:#1e3a6e; --blue:#2c6fbd; --sky:#4a9fd4; --teal:#2a9d8f; --amber:#e9a825; --rose:#d64f6e; --lgray:#e8edf5; }
+:root { --navy:#204473; --blue:#566D8C; --sky:#6BA5C2; --teal:#A3AFBF; --amber:#e9a825; --rose:#d64f6e; --lgray:#D4E1EF; }
 
 /* 배너 */
 .dream-banner { background:#fff; border-bottom:2px solid #e8edf5; }
@@ -10,7 +10,7 @@ body { font-family: 'Noto Sans KR', 'Malgun Gothic', sans-serif; background: #f0
 .dream-banner-title span { color:var(--blue); }
 .dream-banner-img { height:80px; object-fit:contain; filter:drop-shadow(0 2px 8px rgba(0,0,0,.1)); }
 
-header { background:#1e3a6e; height:48px; position:sticky; top:0; z-index:100; box-shadow:0 3px 16px rgba(30,58,110,.35); }
+header { background:#204473; height:48px; position:sticky; top:0; z-index:100; box-shadow:0 3px 16px rgba(30,58,110,.35); }
 .header-inner { max-width:1160px; margin:0 auto; height:100%; display:flex; align-items:center; justify-content:space-between; padding:0 20px; }
 .logo { display:flex; align-items:center; gap:11px; }
 .logo-icon { width:34px; height:34px; border-radius:10px; background:linear-gradient(135deg,var(--sky),var(--teal)); display:flex; align-items:center; justify-content:center; font-size:18px; }
@@ -65,7 +65,7 @@ tbody tr:hover td { background:#eef3ff; }
 
 /* 배지 */
 .badge { padding:3px 10px; border-radius:20px; font-weight:600; font-size:12px; display:inline-block; white-space:nowrap; }
-.b-관광아이디어발굴{background:#e8f4ff;color:#2c6fbd;} .b-조직혁신{background:#e6f8f5;color:#2a9d8f;}
+.b-관광아이디어발굴{background:#e8f4ff;color:#566D8C;} .b-조직혁신{background:#e6f8f5;color:#A3AFBF;}
 .b-사회적가치실현{background:#fff4e0;color:#b07800;} .b-기타{background:#f0f0f5;color:#6b7280;}
 .abadge { padding:4px 11px; border-radius:20px; font-weight:700; font-size:12px; display:inline-flex; align-items:center; gap:4px; white-space:nowrap; }
 .adot { width:6px; height:6px; border-radius:50%; display:inline-block; }
@@ -76,7 +76,7 @@ tbody tr:hover td { background:#eef3ff; }
 .a-미채택{background:#f5f5f5;color:#888;}    .a-미채택 .adot{background:#bbb;}
 .a-심사중{background:#fff4e0;color:#9a5f00;} .a-심사중 .adot{background:#f39c12;}
 .period-badge { display:inline-block; padding:2px 9px; border-radius:6px; font-size:12px; font-weight:600; }
-.p-상반기{background:#e8f4ff;color:#2c6fbd;} .p-하반기{background:#fff0f5;color:#c03060;} .p-연간{background:#f0f0f5;color:#556;}
+.p-상반기{background:#e8f4ff;color:#566D8C;} .p-하반기{background:#fff0f5;color:#c03060;} .p-연간{background:#f0f0f5;color:#556;}
 
 .empty { padding:52px; text-align:center; color:#bbb; font-size:14px; }
 .tab-content { display:none; } .tab-content.on { display:block; }
