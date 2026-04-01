@@ -198,6 +198,14 @@ function checkSimilar() {
     if (match > 0) scored.push({ title: d.title, period: d.period, category: d.category, match: match, total: inputKw.length });
   });
   scored.sort(function(a,b) { return b.match - a.match; });
+  // 제목 중복 제거
+  var seen = {};
+  scored = scored.filter(function(s) {
+    var key = s.title.toLowerCase().replace(/\s+/g,'');
+    if (seen[key]) return false;
+    seen[key] = true;
+    return true;
+  });
   var top3 = scored.slice(0, 3);
   if (!top3.length) { warnEl.style.display = 'none'; return; }
   warnEl.style.display = 'block';
@@ -1073,7 +1081,7 @@ var STOP_WORDS = '의,를,을,이,가,은,는,에,에서,으로,로,와,과,및,
 
 function extractKeywords(text) {
   if (!text) return [];
-  var words = text.replace(/[○●■□▪▸\-\(\)\[\]\/,\.:;!?\d]/g, ' ')
+  var words = text.toLowerCase().replace(/[○●■□▪▸\-\(\)\[\]\/,\.:;!?\d]/g, ' ')
     .split(/\s+/)
     .filter(function(w) { return w.length >= 2 && STOP_WORDS.indexOf(w) < 0; });
   var unique = [];
