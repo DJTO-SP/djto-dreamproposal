@@ -201,7 +201,7 @@ function checkSimilar() {
   // 제목 중복 제거
   var seen = {};
   scored = scored.filter(function(s) {
-    var key = s.title.toLowerCase().replace(/\s+/g,'');
+    var key = s.title.toLowerCase().replace(/[\s\-\_\.\,\(\)\[\]\/·:;!?·「」『』""'']/g,'');
     if (seen[key]) return false;
     seen[key] = true;
     return true;
