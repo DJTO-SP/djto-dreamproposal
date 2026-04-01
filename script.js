@@ -1868,6 +1868,9 @@ function loadTracking() {
 }
 
 function renderTracking() {
+  document.getElementById('trackingSummary').innerHTML = '';
+  document.getElementById('trackingNav').innerHTML = '';
+  document.getElementById('trackingArea').innerHTML = '<div class="empty" style="padding:40px"><div style="font-size:32px;margin-bottom:8px">⏳</div>추진현황을 불러오는 중...</div>';
   loadTracking().then(function() { renderTrackingView(); });
 }
 
