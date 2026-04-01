@@ -186,12 +186,18 @@ function checkSimilar() {
   var title = (document.getElementById('sf-title').value||'').trim();
   var warnEl = document.getElementById('sf-similar-warn');
   if (!title || title.length < 4) { warnEl.style.display = 'none'; return; }
+  // DATA가 아직 로드되지 않았으면 로드 후 재검사
+  if (!DATA.length && !DATA_LOADED) {
+    loadFromSheet().then(function() { checkSimilar(); });
+    return;
+  }
   var found = [];
   DATA.forEach(function(d) {
     var sim = similarity(title, d.title);
-    if (sim >= 0.8) found.push({ title: d.title, period: d.period, sim: Math.round(sim*100) });
+    if (sim >= 0.6) found.push({ title: d.title, period: d.period, sim: Math.round(sim*100) });
   });
   if (!found.length) { warnEl.style.display = 'none'; return; }
+  found.sort(function(a,b) { return b.sim - a.sim; });
   warnEl.style.display = 'block';
   warnEl.innerHTML = '⚠️ <strong>유사한 제안이 있습니다</strong><br>'
     + found.map(function(f) {
