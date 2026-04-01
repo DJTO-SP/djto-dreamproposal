@@ -167,6 +167,39 @@ function titleCell(d) {
   return '<td><div class="tip-wrap"><div class="title-main">'+esc(d.title)+'</div>'+summaryHtml+'</div></td>';
 }
 
+// ── 유사도 검사 ─────────────────────────────────────
+function trigram(s) {
+  s = (s||'').replace(/\s+/g,'').toLowerCase();
+  if (s.length < 3) return new Set([s]);
+  var set = new Set();
+  for (var i = 0; i <= s.length - 3; i++) set.add(s.substring(i, i+3));
+  return set;
+}
+function similarity(a, b) {
+  var sa = trigram(a), sb = trigram(b);
+  if (!sa.size || !sb.size) return 0;
+  var inter = 0;
+  sa.forEach(function(t) { if (sb.has(t)) inter++; });
+  return inter / Math.max(sa.size, sb.size);
+}
+function checkSimilar() {
+  var title = (document.getElementById('sf-title').value||'').trim();
+  var warnEl = document.getElementById('sf-similar-warn');
+  if (!title || title.length < 4) { warnEl.style.display = 'none'; return; }
+  var found = [];
+  DATA.forEach(function(d) {
+    var sim = similarity(title, d.title);
+    if (sim >= 0.8) found.push({ title: d.title, period: d.period, sim: Math.round(sim*100) });
+  });
+  if (!found.length) { warnEl.style.display = 'none'; return; }
+  warnEl.style.display = 'block';
+  warnEl.innerHTML = '⚠️ <strong>유사한 제안이 있습니다</strong><br>'
+    + found.map(function(f) {
+      return '· <strong>' + esc(f.title) + '</strong> (' + (f.period||'') + ') — 유사도 ' + f.sim + '%';
+    }).join('<br>')
+    + '<br><span style="font-size:12px;color:#92400e">중복 제안이 아닌지 확인해주세요. 제출은 가능합니다.</span>';
+}
+
 // ── 탭 ───────────────────────────────────────────────
 var _fromTab = 'list'; // 상세보기 진입 전 탭 기억
 
