@@ -184,18 +184,26 @@ function checkSimilar() {
     return;
   }
   var inputKw = extractKeywords(title);
-  if (!inputKw.length) { warnEl.style.display = 'none'; return; }
+  var titleLower = title.toLowerCase();
+  // 입력 텍스트를 공백으로 분리 (1글자도 포함)
+  var inputWords = titleLower.split(/\s+/).filter(function(w) { return w.length >= 1; });
   var scored = [];
   DATA.forEach(function(d) {
+    var dTitle = (d.title||'').toLowerCase();
     var dKw = extractKeywords(d.title);
-    if (!dKw.length) return;
     var match = 0;
+    var total = Math.max(inputKw.length, inputWords.length);
+    // 키워드 매칭 (2글자 이상)
     inputKw.forEach(function(w) {
       for (var i = 0; i < dKw.length; i++) {
         if (dKw[i].indexOf(w) >= 0 || w.indexOf(dKw[i]) >= 0) { match++; break; }
       }
     });
-    if (match > 0) scored.push({ title: d.title, period: d.period, category: d.category, match: match, total: inputKw.length });
+    // 단어 직접 포함 매칭 (1글자도 가능, 제목에 포함되면 카운트)
+    inputWords.forEach(function(w) {
+      if (w.length < 2 && dTitle.indexOf(w) >= 0) match++;
+    });
+    if (match > 0) scored.push({ title: d.title, period: d.period, category: d.category, match: match, total: total });
   });
   scored.sort(function(a,b) { return b.match - a.match; });
   // 제목 중복 제거
