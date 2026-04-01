@@ -242,7 +242,7 @@
             <div class="section-title-icon">📝</div>
             <div>
               <h2 class="section-title-text">제 안 서</h2>
-              <p class="section-title-sub">[별지 제1호 서식] 제안 내용을 작성하세요</p>
+              <p class="section-title-sub">제안 내용을 작성하세요</p>
             </div>
           </div>
           <div class="info-box-blue">
@@ -304,7 +304,10 @@
           <input id="sf-save" type="hidden"><input id="sf-revenue" type="hidden"><input id="sf-effect" type="hidden">
 
           <div class="sf-field full">
-            <label>제안서 파일 (PDF) <span class="field-req">*</span></label>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+              <label style="margin-bottom:0">제안서 파일 (PDF) <span class="field-req">*</span></label>
+              <a href="제안서서식.hwp" download style="font-size:12px;font-weight:600;color:#2c6fbd;text-decoration:none;background:#eef3ff;padding:4px 12px;border-radius:6px;border:1px solid #bfdbfe">📥 제안서 서식(HWP) 다운로드</a>
+            </div>
             <div class="file-drop-zone" id="sf-drop" onclick="document.getElementById('sf-file').click()"
                  ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')"
                  ondrop="event.preventDefault();this.classList.remove('dragover');if(event.dataTransfer.files[0]){document.getElementById('sf-file').files=event.dataTransfer.files;showPickedFile();}">
