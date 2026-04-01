@@ -171,7 +171,7 @@ function titleCell(d) {
 function checkSimilar() {
   var title = (document.getElementById('sf-title').value||'').trim();
   var warnEl = document.getElementById('sf-similar-warn');
-  if (!title || title.length < 2) { warnEl.style.display = 'none'; return; }
+  if (!title) { warnEl.style.display = 'none'; return; }
   if (!DATA.length) {
     api({action:'getProposals'}).then(function(rows) {
       if (!Array.isArray(rows)) return;
