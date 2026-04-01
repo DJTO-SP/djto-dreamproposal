@@ -95,8 +95,8 @@ function loadFromSheet() {
 // ────────────────────────────────────────────────
 
 
-// ★ 관리자 비밀번호 ★
-var ADMIN_PW = "alsk0118**";
+// ★ 관리자 비밀번호 (로그인 시 서버 검증 후 저장) ★
+var ADMIN_PW = "";
 
 // ★ 데이터 (시트에서 자동 로드) ★
 var DATA = [];
@@ -209,12 +209,22 @@ function toggleAdmin() {
 }
 function closePw() { document.getElementById('pwModal').classList.remove('on'); document.getElementById('pwInput').value=''; }
 function doLogin() {
-  if (document.getElementById('pwInput').value===ADMIN_PW) {
-    isAdmin=true;
-    document.getElementById('adminBtn').classList.add('on');
-    document.getElementById('adminBtn').textContent='🔓 관리자';
-    closePw(); showToast('관리자 모드 활성화','ok'); renderAll();
-  } else { showToast('비밀번호가 틀렸습니다','err'); document.getElementById('pwInput').value=''; document.getElementById('pwInput').focus(); }
+  var pw = document.getElementById('pwInput').value;
+  if (!pw) return;
+  api({ action: 'getProposalsAdmin', pw: pw }).then(function(res) {
+    if (res.error) {
+      showToast('비밀번호가 틀렸습니다','err');
+      document.getElementById('pwInput').value='';
+      document.getElementById('pwInput').focus();
+    } else {
+      ADMIN_PW = pw;
+      isAdmin = true;
+      document.getElementById('adminBtn').classList.add('on');
+      document.getElementById('adminBtn').textContent='🔓 관리자';
+      closePw(); showToast('관리자 모드 활성화','ok');
+      loadFromSheet();
+    }
+  }).catch(function() { showToast('서버 연결 실패','err'); });
 }
 
 // ── 토스트 ───────────────────────────────────────────
@@ -1184,10 +1194,12 @@ var _rvCode = '';
 // 폴백용 로컬 코드 (SCRIPT_URL 미설정 시)
 var REVIEW_CODES = {
   'review-2025': { type: 'review', label: '2025년 전체 검토', filter: function(d) { return (d.period||'').indexOf('2025') >= 0; } },
+  'review-2026': { type: 'review', label: '2026년 전체 검토', filter: function(d) { return (d.period||'').indexOf('2026') >= 0; } },
   'review-test': { type: 'review', label: '테스트 검토', filter: function() { return true; } }
 };
 var JUDGE_CODES = {
   'judge-2025': { type: 'judge', label: '2025년 전체 심사', filter: function(d) { return (d.period||'').indexOf('2025') >= 0; } },
+  'judge-2026': { type: 'judge', label: '2026년 전체 심사', filter: function(d) { return (d.period||'').indexOf('2026') >= 0; } },
   'judge-test': { type: 'judge', label: '테스트 심사', filter: function() { return true; } }
 };
 
@@ -1208,36 +1220,37 @@ function manageLogin() {
   if (!input) { errEl.textContent = '비밀번호 또는 코드를 입력하세요.'; errEl.style.display = 'block'; return; }
   errEl.style.display = 'none';
 
-  // 관리자 비밀번호 체크
-  if (input === ADMIN_PW) {
-    isAdmin = true;
-    document.getElementById('mg-lock').style.display = 'none';
-    document.getElementById('mg-admin').style.display = 'block';
-    // 접수현황 탭 활성화
-    showMgPanel('mg-inbox', document.querySelector('.admin-nav-btn'));
-    // 관리자 모드로 다시 로드 후 접수현황 렌더
-    loadFromSheet().then(function() { renderMgInbox(); });
-    return;
-  }
-
-  // 서버 코드 검증
   if (SCRIPT_URL) {
-    api({ action: 'verifyCode', code: input }).then(function(res) {
-      if (!res.ok) { errEl.textContent = res.error || '유효하지 않은 코드 또는 비밀번호입니다.'; errEl.style.display = 'block'; return; }
-      _rvCode = input;
-      _rvMode = res.type;
-      document.getElementById('mg-lock').style.display = 'none';
-      if (res.type === 'review') {
-        document.getElementById('mg-review').style.display = 'block';
-        api({ action: 'getReviewsByCode', code: input }).then(function(data) {
-          if (data.ok) renderReviewListFromServer(data);
-        });
-      } else {
-        document.getElementById('mg-judge').style.display = 'block';
-        api({ action: 'getScoresByCode', code: input }).then(function(data) {
-          if (data.ok) renderJudgeListFromServer(data);
-        });
+    // 먼저 관리자 비밀번호로 시도
+    api({ action: 'getProposalsAdmin', pw: input }).then(function(adminRes) {
+      if (!adminRes.error) {
+        // 관리자 인증 성공
+        ADMIN_PW = input;
+        isAdmin = true;
+        document.getElementById('mg-lock').style.display = 'none';
+        document.getElementById('mg-admin').style.display = 'block';
+        showMgPanel('mg-inbox', document.querySelector('.admin-nav-btn'));
+        loadFromSheet().then(function() { renderMgInbox(); });
+        return;
       }
+      // 관리자 실패 → 검토/심사 코드 시도
+      api({ action: 'verifyCode', code: input }).then(function(res) {
+        if (!res.ok) { errEl.textContent = res.error || '유효하지 않은 코드 또는 비밀번호입니다.'; errEl.style.display = 'block'; return; }
+        _rvCode = input;
+        _rvMode = res.type;
+        document.getElementById('mg-lock').style.display = 'none';
+        if (res.type === 'review') {
+          document.getElementById('mg-review').style.display = 'block';
+          api({ action: 'getReviewsByCode', code: input }).then(function(data) {
+            if (data.ok) renderReviewListFromServer(data);
+          });
+        } else {
+          document.getElementById('mg-judge').style.display = 'block';
+          api({ action: 'getScoresByCode', code: input }).then(function(data) {
+            if (data.ok) renderJudgeListFromServer(data);
+          });
+        }
+      }).catch(function(e) { errEl.textContent = '서버 연결 실패'; errEl.style.display = 'block'; });
     }).catch(function(e) { errEl.textContent = '서버 연결 실패'; errEl.style.display = 'block'; });
     return;
   }
@@ -1261,6 +1274,7 @@ function manageLogout() {
   _rvMode = null;
   _rvCode = '';
   isAdmin = false;
+  ADMIN_PW = '';
   document.getElementById('mg-lock').style.display = 'block';
   document.getElementById('mg-admin').style.display = 'none';
   document.getElementById('mg-review').style.display = 'none';
@@ -1464,7 +1478,7 @@ function uploadCodeExcel(input) {
       var p = parsed[done];
       apiPost({
         action: 'manageCode', pw: ADMIN_PW, op: 'create',
-        type: p.type, targetYear: '2025', code: '', label: p.dept, assignedTo: p.name
+        type: p.type, targetYear: new Date().getFullYear().toString(), code: '', label: p.dept, assignedTo: p.name
       }).then(function(res) {
         results.push({ type: p.type === 'judge' ? '심사' : '검토', name: p.name, code: res.code || '?' });
         done++;
