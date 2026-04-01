@@ -186,9 +186,16 @@ function checkSimilar() {
   var title = (document.getElementById('sf-title').value||'').trim();
   var warnEl = document.getElementById('sf-similar-warn');
   if (!title || title.length < 4) { warnEl.style.display = 'none'; return; }
-  // DATA가 아직 로드되지 않았으면 로드 후 재검사
-  if (!DATA.length && !DATA_LOADED) {
-    loadFromSheet().then(function() { checkSimilar(); });
+  // DATA가 아직 로드되지 않았으면 직접 API 호출하여 비교
+  if (!DATA.length) {
+    api({action:'getProposals'}).then(function(rows) {
+      if (!Array.isArray(rows)) return;
+      DATA = rows.map(function(r) {
+        return { id: r.id||'', title: r.title||'', period: (r.date||'').substring(0,4), category: r.category||'', award: (r.award||'').trim(), summary: r.summary||'' };
+      });
+      DATA_LOADED = true;
+      checkSimilar();
+    });
     return;
   }
   var found = [];
