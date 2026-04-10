@@ -34,6 +34,7 @@ function doGet(e) {
       case 'getReviewsByCode':  result = getReviewsByCode(p.code); break;
       case 'getScoresByCode':   result = getScoresByCode(p.code); break;
       case 'getStats':          result = getStats(); break;
+      case 'getNotice':         result = getNotice(); break;
       case 'getCodes':          result = checkAdmin(p.pw) ? getCodes() : {error:'권한 없음'}; break;
       case 'getScoreSummary':   result = checkAdmin(p.pw) ? getScoreSummary(p.proposalId) : {error:'권한 없음'}; break;
       case 'getTracking':       result = getTracking(); break;
@@ -62,6 +63,7 @@ function doPost(e) {
       case 'updateAward':     result = checkAdmin(d.pw) ? updateAward(d) : {error:'권한 없음'}; break;
       case 'bulkUpdateAward': result = checkAdmin(d.pw) ? bulkUpdateAward(d) : {error:'권한 없음'}; break;
       case 'saveTracking':    result = saveTracking(d); break;
+      case 'saveNotice':      result = checkAdmin(d.pw) ? saveNotice(d) : {error:'권한 없음'}; break;
       case 'deleteTracking':  result = checkAdmin(d.pw) ? deleteTracking(d.id) : {error:'권한 없음'}; break;
       default:                result = {error: 'Unknown action'};
     }
@@ -553,6 +555,30 @@ function saveTracking(d) {
 
 function deleteTracking(id) {
   deleteRowById(S_TRACKING, id);
+  return { ok: true };
+}
+
+// ══════════════════════════════════════════
+// 공지사항
+// ══════════════════════════════════════════
+function getNotice() {
+  try {
+    const s = ss().getSheetByName('공지');
+    if (!s || s.getLastRow() < 2) return { ok: true, notice: '' };
+    return { ok: true, notice: String(s.getRange(2, 1).getValue() || '') };
+  } catch(e) {
+    return { ok: true, notice: '' };
+  }
+}
+
+function saveNotice(d) {
+  let s = ss().getSheetByName('공지');
+  if (!s) {
+    s = ss().insertSheet('공지');
+    s.getRange(1, 1).setValue('내용');
+    s.getRange(1, 1).setFontWeight('bold').setBackground('#e8edf5');
+  }
+  s.getRange(2, 1).setValue(d.notice || '');
   return { ok: true };
 }
 

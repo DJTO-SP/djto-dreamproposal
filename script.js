@@ -1353,6 +1353,7 @@ function showMgPanel(id, btn) {
   if (id === 'mg-inbox') renderMgInbox();
   if (id === 'mg-codes') loadCodes();
   if (id === 'mg-tracking') { loadTracking().then(function() { initMgTracking(); }); }
+  if (id === 'mg-notice') loadNoticeAdmin();
 }
 
 function renderMgInbox() {
@@ -2148,3 +2149,94 @@ function saveJudgeScore(idx) {
   }
   alert('✅ 심사 점수가 저장되었습니다. (합계: ' + total + '점)');
 }
+
+// ══════════════════════════════════════════
+// 공지사항 관리
+// ══════════════════════════════════════════
+function loadNoticeAdmin() {
+  if (!SCRIPT_URL) return;
+  api({ action: 'getNotice' }).then(function(res) {
+    if (res && res.ok) {
+      var input = document.getElementById('mg-notice-input');
+      if (input) input.value = res.notice || '';
+      updateNoticePreview(res.notice || '');
+    }
+  });
+}
+
+function updateNoticePreview(text) {
+  var preview = document.getElementById('mg-notice-preview');
+  var previewText = document.getElementById('mg-notice-preview-text');
+  if (!preview || !previewText) return;
+  if (text) {
+    previewText.textContent = text;
+    preview.style.display = 'block';
+  } else {
+    preview.style.display = 'none';
+  }
+}
+
+function saveNoticeAdmin() {
+  if (!SCRIPT_URL) return alert('Apps Script 미연결');
+  var notice = (document.getElementById('mg-notice-input').value || '').trim();
+  apiPost({ action: 'saveNotice', pw: ADMIN_PW, notice: notice }).then(function(res) {
+    if (res && res.ok) {
+      alert('✅ 공지사항이 ' + (notice ? '저장' : '삭제') + '되었습니다.');
+      updateNoticePreview(notice);
+      // 현재 페이지의 말풍선도 즉시 업데이트
+      renderNoticeBubble(notice);
+    } else {
+      alert('❌ 저장 실패: ' + (res.error || ''));
+    }
+  });
+}
+
+// 페이지 로딩 시 공지 말풍선 표시
+function loadAndShowNotice() {
+  if (!SCRIPT_URL) return;
+  api({ action: 'getNotice' }).then(function(res) {
+    if (res && res.ok && res.notice) {
+      renderNoticeBubble(res.notice);
+    }
+  });
+}
+
+function renderNoticeBubble(text) {
+  // 기존 말풍선 제거
+  var existing = document.querySelector('.site-notice-bubble');
+  if (existing) existing.remove();
+
+  if (!text) return;
+
+  // 배너 이미지 찾기
+  var titleBar = document.querySelector('[style*="border-bottom:2px solid"]');
+  if (!titleBar) return;
+  var inner = titleBar.querySelector('[style*="justify-content:space-between"]') || titleBar;
+  var img = inner.querySelector('img');
+  if (!img) return;
+
+  // 이미지를 wrapper로 감싸기 (이미 감싸져 있으면 재사용)
+  var wrap = img.parentElement;
+  if (!wrap.classList.contains('pn-img-wrap')) {
+    wrap = document.createElement('div');
+    wrap.className = 'pn-img-wrap';
+    wrap.style.cssText = 'position:relative;display:inline-block';
+    img.parentElement.insertBefore(wrap, img);
+    wrap.appendChild(img);
+  }
+
+  var bubble = document.createElement('div');
+  bubble.className = 'site-notice-bubble';
+  bubble.style.cssText = 'position:absolute;right:calc(100% + 10px);top:50%;transform:translateY(-50%);z-index:10';
+  bubble.innerHTML = '<div style="position:relative;background:#fff;color:#204473;font-size:14px;font-weight:800;padding:9px 18px;border-radius:20px;border:2.5px solid #204473;white-space:nowrap">' +
+    '📢 ' + text +
+    '<span style="position:absolute;right:-18px;top:50%;margin-top:-7px;border:8px solid transparent;border-left:10px solid #204473"></span>' +
+    '<span style="position:absolute;right:-14px;top:50%;margin-top:-6px;border:7px solid transparent;border-left:9px solid #fff"></span>' +
+    '</div>';
+  wrap.appendChild(bubble);
+}
+
+// 페이지 로드 시 공지 표시
+document.addEventListener('DOMContentLoaded', function() {
+  setTimeout(loadAndShowNotice, 500);
+});
