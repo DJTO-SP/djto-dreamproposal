@@ -1275,11 +1275,21 @@ var SCORE_ITEMS = [
 ];
 
 // ── 관리 탭 통합 로그인 ──
+function mgLoginLoading(show) {
+  var btn = document.getElementById('mg-login-btn');
+  var spinner = document.getElementById('mg-login-loading');
+  var inp = document.getElementById('mg-input');
+  if (btn) btn.style.display = show ? 'none' : '';
+  if (spinner) spinner.style.display = show ? 'block' : 'none';
+  if (inp) inp.disabled = show;
+}
+
 function manageLogin() {
   var input = document.getElementById('mg-input').value.trim();
   var errEl = document.getElementById('mg-error');
   if (!input) { errEl.textContent = '비밀번호 또는 코드를 입력하세요.'; errEl.style.display = 'block'; return; }
   errEl.style.display = 'none';
+  mgLoginLoading(true);
 
   if (SCRIPT_URL) {
     // 먼저 관리자 비밀번호로 시도
@@ -1296,7 +1306,7 @@ function manageLogin() {
       }
       // 관리자 실패 → 검토/심사 코드 시도
       api({ action: 'verifyCode', code: input }).then(function(res) {
-        if (!res.ok) { errEl.textContent = res.error || '유효하지 않은 코드 또는 비밀번호입니다.'; errEl.style.display = 'block'; return; }
+        if (!res.ok) { mgLoginLoading(false); errEl.textContent = res.error || '유효하지 않은 코드 또는 비밀번호입니다.'; errEl.style.display = 'block'; return; }
         _rvCode = input;
         _rvMode = res.type;
         document.getElementById('mg-lock').style.display = 'none';
@@ -1311,8 +1321,8 @@ function manageLogin() {
             if (data.ok) renderJudgeListFromServer(data);
           });
         }
-      }).catch(function(e) { errEl.textContent = '서버 연결 실패'; errEl.style.display = 'block'; });
-    }).catch(function(e) { errEl.textContent = '서버 연결 실패'; errEl.style.display = 'block'; });
+      }).catch(function(e) { mgLoginLoading(false); errEl.textContent = '서버 연결 실패'; errEl.style.display = 'block'; });
+    }).catch(function(e) { mgLoginLoading(false); errEl.textContent = '서버 연결 실패'; errEl.style.display = 'block'; });
     return;
   }
 

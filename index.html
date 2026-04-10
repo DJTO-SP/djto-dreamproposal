@@ -347,7 +347,12 @@
           <input id="mg-input" type="password" placeholder="관리자 비밀번호 또는 검토·심사 코드" style="width:100%;border:1.5px solid #d5dbe8;border-radius:8px;padding:12px 40px 12px 14px;font-family:inherit;font-size:14px;color:var(--navy);background:#fafbfc;outline:none;text-align:center;transition:border-color .18s" onkeydown="if(event.key==='Enter')manageLogin()" onfocus="this.style.borderColor='var(--blue)';this.style.background='#fff'" onblur="this.style.borderColor='#d5dbe8';this.style.background='#fafbfc'">
           <span onclick="var i=document.getElementById('mg-input');i.type=i.type==='password'?'text':'password'" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:16px;opacity:0.4;user-select:none">👁</span>
         </div>
-        <button class="btn-submit-full" style="width:100%;justify-content:center;padding:12px;font-size:14px" onclick="manageLogin()">로그인</button>
+        <button id="mg-login-btn" class="btn-submit-full" style="width:100%;justify-content:center;padding:12px;font-size:14px" onclick="manageLogin()">로그인</button>
+        <div id="mg-login-loading" style="display:none;text-align:center;margin-top:4px">
+          <div style="display:inline-block;width:28px;height:28px;border:3px solid #e8edf5;border-top-color:var(--blue);border-radius:50%;animation:mg-spin .7s linear infinite;margin-bottom:4px"></div>
+          <div style="font-size:13px;font-weight:600;color:var(--navy)">인증 중...</div>
+        </div>
+        <style>@keyframes mg-spin{to{transform:rotate(360deg)}}</style>
       </div>
       <p id="mg-error" style="color:var(--rose);font-size:13px;margin-top:10px;display:none"></p>
       <div style="margin-top:28px;padding-top:18px;border-top:1px solid #eee;font-size:12px;color:#aaa;line-height:2">
