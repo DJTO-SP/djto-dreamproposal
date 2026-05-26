@@ -231,16 +231,54 @@ function checkSimilar() {
 // ── 탭 ───────────────────────────────────────────────
 var _fromTab = 'list'; // 상세보기 진입 전 탭 기억
 
-function switchTab(name, btn) {
+var LEDGER_TABS = ['list','year','cat','adopted','tracking','stats'];
+
+function toggleLedgerMenu(e) {
+  if (e) e.stopPropagation();
+  var menu = document.getElementById('ledgerMenu');
+  var wrap = menu && menu.parentElement;
+  if (!menu) return;
+  menu.classList.toggle('open');
+  if (wrap) wrap.classList.toggle('open');
+}
+
+function closeLedgerMenu() {
+  var menu = document.getElementById('ledgerMenu');
+  var wrap = menu && menu.parentElement;
+  if (menu) menu.classList.remove('open');
+  if (wrap) wrap.classList.remove('open');
+}
+
+document.addEventListener('click', function(e) {
+  var menu = document.getElementById('ledgerMenu');
+  var btn = document.getElementById('ledgerBtn');
+  if (!menu || !btn) return;
+  if (!menu.contains(e.target) && !btn.contains(e.target)) closeLedgerMenu();
+});
+
+function switchTab(name, btn, dropItem) {
   document.querySelectorAll('.tab-content').forEach(el=>el.classList.remove('on'));
   document.querySelectorAll('.nav-btn').forEach(el=>el.classList.remove('on'));
+  document.querySelectorAll('.ledger-item').forEach(el=>el.classList.remove('on'));
   document.getElementById('tab-'+name).classList.add('on');
-  if (btn) btn.classList.add('on');
-  else {
-    var tabMap = {list:0, year:1, cat:2, adopted:3, tracking:4};
-    var idx = tabMap[name];
-    if (idx !== undefined) document.querySelectorAll('.nav-btn')[idx].classList.add('on');
+
+  var isLedger = LEDGER_TABS.indexOf(name) >= 0;
+  if (isLedger) {
+    var ledgerBtn = document.getElementById('ledgerBtn');
+    if (ledgerBtn) ledgerBtn.classList.add('on');
+    if (dropItem) {
+      dropItem.classList.add('on');
+    } else {
+      document.querySelectorAll('.ledger-item').forEach(function(el){
+        var onc = el.getAttribute('onclick') || '';
+        if (onc.indexOf("'"+name+"'") >= 0) el.classList.add('on');
+      });
+    }
+    closeLedgerMenu();
+  } else if (btn) {
+    btn.classList.add('on');
   }
+
   // 상세/목록 카드 초기화
   document.getElementById('detailCard').style.display='none';
   document.getElementById('listCard').style.display = (name==='list') ? 'block' : 'none';
@@ -254,6 +292,7 @@ function switchTab(name, btn) {
   if (name==='tracking') renderTracking();
   if (name==='stats')    renderStats2();
   if (name==='submit')   initSubmitTab();
+  // 'mine' / 'review' / 'judge' — 4~6단계에서 핸들러 추가
 }
 
 // ── 관리자 ───────────────────────────────────────────
