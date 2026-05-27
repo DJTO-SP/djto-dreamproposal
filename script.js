@@ -2133,6 +2133,7 @@ function manageLogin() {
         errEl.style.display = 'block';
         return;
       }
+      mgLoginLoading(false);
       ADMIN_PW = input;
       isAdmin = true;
       document.getElementById('mg-lock').style.display = 'none';
@@ -2155,6 +2156,7 @@ function manageLogin() {
 function manageLogout() {
   isAdmin = false;
   ADMIN_PW = '';
+  if (typeof mgLoginLoading === 'function') mgLoginLoading(false);
   document.getElementById('mg-lock').style.display = 'block';
   document.getElementById('mg-admin').style.display = 'none';
   document.getElementById('mg-input').value = '';
@@ -2168,7 +2170,6 @@ function showMgPanel(id, btn) {
   document.getElementById(id).classList.add('active');
   if (btn) btn.classList.add('active');
   if (id === 'mg-inbox') renderMgInbox();
-  if (id === 'mg-codes') loadCodes();
   if (id === 'mg-tracking') { loadTracking().then(function() { initMgTracking(); }); }
   if (id === 'mg-notice') loadNoticeAdmin();
 }

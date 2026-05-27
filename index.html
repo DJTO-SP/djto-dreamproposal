@@ -595,7 +595,6 @@
         <div class="admin-nav">
           <button class="admin-nav-btn active" onclick="showMgPanel('mg-inbox',this)">📋 접수현황</button>
           <button class="admin-nav-btn" onclick="showMgPanel('mg-proposals',this)">📝 제안관리</button>
-          <button class="admin-nav-btn" onclick="showMgPanel('mg-codes',this)">👥 검토·심사 위원</button>
           <button class="admin-nav-btn" onclick="showMgPanel('mg-tracking',this)">📌 추진현황</button>
           <button class="admin-nav-btn" onclick="showMgPanel('mg-notice',this)">📢 공지설정</button>
         </div>
@@ -716,34 +715,6 @@
       </div>
 
       <!-- 검토·심사 위원 명단 -->
-      <div id="mg-codes" class="admin-panel">
-        <div class="card" style="padding:20px 24px">
-          <div style="font-weight:700;color:var(--navy);margin-bottom:6px;font-size:16px">👥 검토·심사 위원 명단</div>
-          <div style="font-size:13px;color:#64748b;margin-bottom:16px">위원을 등록하면 로그인 코드가 자동 생성됩니다. 코드를 해당 위원에게 전달하세요.</div>
-
-          <!-- Excel 업로드 -->
-          <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:14px 16px;margin-bottom:16px;font-size:13px;color:#0369a1">
-            <div style="font-weight:600;margin-bottom:6px">📋 Excel 파일로 위원 일괄 등록</div>
-            <div>첫 번째 행: <code style="background:#e0f2fe;padding:2px 6px;border-radius:4px">역할, 이름, 부서</code></div>
-            <div style="margin-top:4px">예시: <code style="background:#e0f2fe;padding:2px 6px;border-radius:4px">검토위원 | 홍길동 | 전략기획팀</code></div>
-            <div style="margin-top:4px">역할은 <b>검토위원</b> 또는 <b>심사위원</b>으로 입력</div>
-          </div>
-
-          <div style="margin-bottom:16px">
-            <label style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:6px;display:block">Excel 파일 업로드</label>
-            <div class="file-drop" id="code-drop-zone" onclick="document.getElementById('code-xlsx-input').click()" style="border:2px dashed #d5dbe8;border-radius:10px;padding:24px;text-align:center;cursor:pointer;color:#94a3b8;font-size:13px;transition:all .2s">
-              <span id="code-xlsx-label">클릭하거나 파일을 끌어다 놓으세요</span>
-            </div>
-            <input type="file" id="code-xlsx-input" accept=".xlsx,.xls" style="display:none" onchange="uploadCodeExcel(this)">
-          </div>
-
-          <div style="background:#f8fafc;border-radius:8px;padding:14px 16px;font-size:13px;color:#64748b;text-align:center;margin-top:16px">
-            📋 등록된 위원 목록은 <a href="https://docs.google.com/spreadsheets" target="_blank" style="color:var(--blue);font-weight:600">Google Sheets</a>에서 확인하세요.
-          </div>
-          <div id="mgCodesBody" style="display:none"></div>
-          <div id="codeCreateForm" style="display:none"></div>
-        </div>
-      </div>
     </div>
 
     <!-- mg-review / mg-judge 패널 제거됨
