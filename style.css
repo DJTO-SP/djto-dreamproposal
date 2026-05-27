@@ -437,6 +437,10 @@ textarea.fi { resize:vertical; }
 .rv-opinion-receipt b { color: var(--blue); font-family: 'Exo 2', 'Noto Sans KR', sans-serif; letter-spacing: .5px; }
 .rv-opinion-title { font-size: 14px; font-weight: 700; color: var(--navy); margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px dashed #e8edf5; }
 .rv-opinion-textarea { width: 100%; min-height: 240px; border: 1.5px solid #d5dbe8; border-radius: 8px; padding: 12px 14px; font-size: 14px; font-family: inherit; line-height: 1.7; resize: vertical; box-sizing: border-box; background: #fafbfd; }
+.rv-not-related-box { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; padding: 8px 12px; background: #fafbfd; border: 1.5px solid #d5dbe8; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--navy); transition: all .15s; }
+.rv-not-related-box:hover { border-color: var(--blue); background: #eef3ff; }
+.rv-not-related-box input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--blue); margin: 0; }
+.rv-not-related-hint { font-size: 11px; color: #94a3b8; font-weight: 500; margin-left: auto; }
 .rv-opinion-textarea:focus { border-color: var(--blue); background: #fff; outline: none; }
 .rv-opinion-btns { display: flex; gap: 8px; margin-top: 12px; }
 .rv-opinion-btns button { flex: 1; padding: 11px; font-size: 14px; font-weight: 700; border-radius: 8px; cursor: pointer; font-family: inherit; }

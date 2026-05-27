@@ -131,10 +131,7 @@ function dreamGetJudgeItems(data) {
 
     var items = [];
     pRows.forEach(function(p) {
-      var status = String(p[12] || '');
-      // 심사 대상: 상태가 '심사중' 또는 '심사완료'인 것
-      if (status !== '심사중' && status !== '심사완료') return;
-
+      // 모든 제안 표시 (검토 완료 여부 무관) — 심사위원이 전체 제안을 평가
       var receiptNo = String(p[0]);
       var my = myScoresMap[receiptNo] || { scores: {}, total: 0, opinion: '', status: '' };
 

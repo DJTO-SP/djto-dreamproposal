@@ -1190,6 +1190,15 @@ function showPickedFile() {
   }
 }
 
+// 담당부서 최대 2개 선택 제한
+function limitTargetDepts(cb) {
+  var checked = document.querySelectorAll('#sf-target-depts input[type="checkbox"]:checked');
+  if (checked.length > 2) {
+    cb.checked = false;
+    showToast('담당부서는 최대 2개까지만 선택 가능합니다.', 'warn');
+  }
+}
+
 function clearSubmitForm() {
   ['sf-name','sf-title','sf-reason','sf-method','sf-effect','sf-save','sf-revenue'].forEach(function(id) {
     var el = document.getElementById(id);
@@ -1753,14 +1762,30 @@ function renderOpinionPanel(idx) {
   var locked = item.myStatus === '완료';
 
   var html = '<div class="rv-opinion-receipt">접수번호 <b>'+esc(item.receiptNo)+'</b></div>' +
-    '<div class="rv-opinion-title">'+esc(item.title)+'</div>' +
-    '<textarea class="rv-opinion-textarea" id="rv-opinion-input"' + (locked ? ' readonly' : '') + ' placeholder="○ 검토의견을 작성해주세요...&#10;○ 추진 가능성, 기대 효과, 보완 사항 등을 자유롭게 기재">' + esc(item.myOpinion||'') + '</textarea>' +
-    (locked
-      ? '<div class="rv-locked-notice done">✅ 검토 완료 상태입니다. 수정이 필요하면 관리자에게 문의하세요.</div>'
-      : '<div class="rv-opinion-btns">' +
-          '<button class="rv-btn-draft" onclick="dreamSaveReviewOpinion(\'작성중\')">임시저장</button>' +
-          '<button class="rv-btn-submit" onclick="dreamSaveReviewOpinion(\'완료\')">작성 완료</button>' +
-        '</div>');
+    '<div class="rv-opinion-title">'+esc(item.title)+'</div>';
+
+  // "본 부서 업무와 관련 없음" 체크박스 (잠금 X일 때만)
+  var NOT_RELATED_TEXT = '본 부서 업무와 관련 없음';
+  var notRelated = item.myOpinion === NOT_RELATED_TEXT;
+  if (!locked) {
+    html += '<label class="rv-not-related-box">' +
+      '<input type="checkbox" id="rv-not-related" ' + (notRelated ? 'checked' : '') + ' onchange="toggleNotRelated(this)">' +
+      '<span>본 부서 업무와 관련 없음</span>' +
+      '<span class="rv-not-related-hint">체크 시 검토의견 자동 입력</span>' +
+      '</label>';
+  }
+
+  // textarea — 체크박스 체크 상태면 readonly
+  var taReadonly = locked || notRelated;
+  var taBg = notRelated && !locked ? 'background:#f1f5f9;' : '';
+  html += '<textarea class="rv-opinion-textarea" id="rv-opinion-input"' + (taReadonly ? ' readonly' : '') + ' style="' + taBg + '" placeholder="○ 검토의견을 작성해주세요...&#10;○ 추진 가능성, 기대 효과, 보완 사항 등을 자유롭게 기재">' + esc(item.myOpinion||'') + '</textarea>';
+
+  html += (locked
+    ? '<div class="rv-locked-notice done">✅ 검토 완료 상태입니다. 수정이 필요하면 관리자에게 문의하세요.</div>'
+    : '<div class="rv-opinion-btns">' +
+        '<button class="rv-btn-draft" onclick="dreamSaveReviewOpinion(\'작성중\')">임시저장</button>' +
+        '<button class="rv-btn-submit" onclick="dreamSaveReviewOpinion(\'완료\')">작성 완료</button>' +
+      '</div>');
 
   if (locked) {
     if (item.otherReviews && item.otherReviews.length > 0) {
@@ -1787,6 +1812,25 @@ function renderOpinionPanel(idx) {
 
 function renderOpinionPanelEmpty() {
   document.getElementById('rv-opinion-area').innerHTML = '<p class="mine-empty">왼쪽 목록에서 제안을 선택하세요.</p>';
+}
+
+// "본 부서 업무와 관련 없음" 체크박스 토글
+//   체크 → textarea에 자동 입력 + readonly
+//   해제 → textarea 비우고 입력 가능
+function toggleNotRelated(cb) {
+  var ta = document.getElementById('rv-opinion-input');
+  if (!ta) return;
+  if (cb.checked) {
+    ta.value = '본 부서 업무와 관련 없음';
+    ta.readOnly = true;
+    ta.style.background = '#f1f5f9';
+  } else {
+    // 이전 값이 자동 입력값이면 비우기, 사용자가 추가 작성한 게 있으면 유지
+    if (ta.value === '본 부서 업무와 관련 없음') ta.value = '';
+    ta.readOnly = false;
+    ta.style.background = '';
+    ta.focus();
+  }
 }
 
 function dreamSaveReviewOpinion(status) {
