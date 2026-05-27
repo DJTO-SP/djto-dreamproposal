@@ -256,8 +256,10 @@
               <p class="section-title-sub">제안 내용을 작성하세요</p>
             </div>
           </div>
-          <div class="info-box-blue">
-            💡 제안서(PDF)를 첨부하여 접수하세요. 담당부서 검토 후 심사가 진행됩니다.
+          <div class="info-box-amber">
+            ⚠️ <b>익명성 보장</b>을 위해 안내드립니다.<br>
+            ① 제안 내용·첨부 PDF에 <b>본인 이름·소속·서명·연락처</b> 등을 직접 적지 말아주세요.<br>
+            ② 본인 정보는 아래 양식에서만 받으며, <b>검토·심사위원에게는 익명으로 전달</b>됩니다.
           </div>
 
           <div class="sf-row">
@@ -273,7 +275,8 @@
                 <option>총무회계팀</option><option>관광사업단</option><option>관광사업팀</option><option>융합사업팀</option>
                 <option>홍보마케팅팀</option><option>축제행사팀</option><option>관광개발사업단</option><option>관광개발팀</option>
                 <option>시설운영팀</option><option>시민광장팀</option><option>MICE사업단</option><option>운영지원팀</option>
-                <option>센터마케팅팀</option><option>전시기획팀</option><option>MICE뷰로팀</option>              </select>
+                <option>센터마케팅팀</option><option>전시기획팀</option><option>MICE뷰로팀</option>
+              </select>
             </div>
             <div class="sf-field">
               <label>제안일자</label>
@@ -285,19 +288,36 @@
             <div class="sf-field">
               <label>제안부문 <span class="field-req">*</span></label>
               <select id="sf-category">
-                <option value="">선택</option>
+                <option value="">-- 선택 --</option>
                 <option>관광아이디어발굴</option><option>조직혁신</option><option>사회적가치실현</option>
               </select>
             </div>
-            <div class="sf-field">
-              <label>담당부서</label>
-              <select id="sf-target-dept">
-                <option value="">-- 선택 --</option>
-                <option>안전감사팀</option><option>기획조정실</option><option>전략기획팀</option><option>인사노무팀</option>
-                <option>총무회계팀</option><option>관광사업단</option><option>관광사업팀</option><option>융합사업팀</option>
-                <option>홍보마케팅팀</option><option>축제행사팀</option><option>관광개발사업단</option><option>관광개발팀</option>
-                <option>시설운영팀</option><option>시민광장팀</option><option>MICE사업단</option><option>운영지원팀</option>
-                <option>센터마케팅팀</option><option>전시기획팀</option><option>MICE뷰로팀</option>              </select>
+          </div>
+
+          <div class="sf-field full">
+            <label>담당부서 <span class="field-req">*</span>
+              <span class="lbl-hint">(검토 부서 — 복수 선택 가능)</span>
+            </label>
+            <div class="dept-checkbox-grid" id="sf-target-depts">
+              <label><input type="checkbox" value="안전감사팀"> 안전감사팀</label>
+              <label><input type="checkbox" value="기획조정실"> 기획조정실</label>
+              <label><input type="checkbox" value="전략기획팀"> 전략기획팀</label>
+              <label><input type="checkbox" value="인사노무팀"> 인사노무팀</label>
+              <label><input type="checkbox" value="총무회계팀"> 총무회계팀</label>
+              <label><input type="checkbox" value="관광사업단"> 관광사업단</label>
+              <label><input type="checkbox" value="관광사업팀"> 관광사업팀</label>
+              <label><input type="checkbox" value="융합사업팀"> 융합사업팀</label>
+              <label><input type="checkbox" value="홍보마케팅팀"> 홍보마케팅팀</label>
+              <label><input type="checkbox" value="축제행사팀"> 축제행사팀</label>
+              <label><input type="checkbox" value="관광개발사업단"> 관광개발사업단</label>
+              <label><input type="checkbox" value="관광개발팀"> 관광개발팀</label>
+              <label><input type="checkbox" value="시설운영팀"> 시설운영팀</label>
+              <label><input type="checkbox" value="시민광장팀"> 시민광장팀</label>
+              <label><input type="checkbox" value="MICE사업단"> MICE사업단</label>
+              <label><input type="checkbox" value="운영지원팀"> 운영지원팀</label>
+              <label><input type="checkbox" value="센터마케팅팀"> 센터마케팅팀</label>
+              <label><input type="checkbox" value="전시기획팀"> 전시기획팀</label>
+              <label><input type="checkbox" value="MICE뷰로팀"> MICE뷰로팀</label>
             </div>
           </div>
 
@@ -308,24 +328,37 @@
           </div>
 
           <div class="sf-field full">
-            <label>제안 요약</label>
-            <textarea id="sf-reason" rows="3" placeholder="제안 내용을 간략히 요약하세요 (선택사항)"></textarea>
-            <input id="sf-method" type="hidden" value="-">
+            <label>제안사유 <span class="field-req">*</span>
+              <span class="lbl-hint">(원인분석)</span>
+            </label>
+            <textarea id="sf-reason" rows="5" placeholder="○ 구체적으로 작성, 개선이 필요한 사항 중심&#10;  예) 관광객 대상 안내소 운영시간이 짧아 불편함이 지속됨&#10;○ 조직적·제도적·시스템적 원인 분석 중심으로 작성&#10;  예) 이용자 수요 분석없이 정해진 운영시간"></textarea>
           </div>
 
-          <input id="sf-save" type="hidden"><input id="sf-revenue" type="hidden"><input id="sf-effect" type="hidden">
+          <div class="sf-field full">
+            <label>실시방법 <span class="field-req">*</span>
+              <span class="lbl-hint">(개선방향)</span>
+            </label>
+            <textarea id="sf-method" rows="5" placeholder="○ 구체적 실행방안, 기대효과 등 포함&#10;○ 시행 절차 및 필요 절차 및 담당 부서&#10;  예) 빅데이터 기반 이용시간 분석 후 안내소 운영시간 조정"></textarea>
+          </div>
+
+          <div class="sf-field full">
+            <label>기대효과 <span class="lbl-hint">(선택)</span></label>
+            <textarea id="sf-effect" rows="4" placeholder="○ 예산절감액: 예) 연 OO만원&#10;○ 수입증대액: 예) 연 OO만원&#10;○ 개선효과: 예) 관광객 만족도 향상, 안내 응대 시간 단축 등"></textarea>
+          </div>
+
+          <input id="sf-save" type="hidden"><input id="sf-revenue" type="hidden">
 
           <div class="sf-field full">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-              <label style="margin-bottom:0">제안서 파일 (PDF) <span class="field-req">*</span></label>
-              <a href="붙임4. 혁신드림제안 제안 서식.hwp" download style="font-size:12px;font-weight:600;color:#566D8C;text-decoration:none;background:#eef3ff;padding:4px 12px;border-radius:6px;border:1px solid #bfdbfe">📥 제안서 서식(HWP) 다운로드</a>
+              <label style="margin-bottom:0">참고자료 첨부 <span class="lbl-hint">(PDF 1개, 선택)</span></label>
+              <a href="붙임4. 혁신드림제안 제안 서식.hwp" download style="font-size:12px;font-weight:600;color:#566D8C;text-decoration:none;background:#eef3ff;padding:4px 12px;border-radius:6px;border:1px solid #bfdbfe">📥 제안서 서식(HWP) 참고</a>
             </div>
             <div class="file-drop-zone" id="sf-drop" onclick="document.getElementById('sf-file').click()"
                  ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')"
                  ondrop="event.preventDefault();this.classList.remove('dragover');if(event.dataTransfer.files[0]){document.getElementById('sf-file').files=event.dataTransfer.files;showPickedFile();}">
               <div style="font-size:28px;margin-bottom:8px">📄</div>
-              <p>PDF 제안서를 클릭하거나 드래그하세요</p>
-              <div class="file-limit">PDF 파일만 가능 (최대 20MB)</div>
+              <p>참고할 PDF 자료가 있다면 클릭하거나 드래그하세요</p>
+              <div class="file-limit">PDF 파일만 가능 (최대 20MB) · 본인 정보가 포함되지 않은 자료만 첨부</div>
               <div class="picked-file" id="sf-picked"></div>
             </div>
             <input type="file" id="sf-file" accept=".pdf" style="display:none" onchange="showPickedFile()">

@@ -348,7 +348,19 @@ textarea.fi { resize:vertical; }
 .section-title-text { font-size: 20px; font-weight: 800; color: var(--navy); margin: 0; }
 .section-title-sub { font-size: 13px; color: #888; margin-top: 2px; }
 .info-box-blue { background: #eef3ff; border: 1px solid #c8d8f5; border-radius: 8px; padding: 11px 16px; font-size: 13px; color: #2c5aa0; margin-bottom: 20px; }
+.info-box-amber { background: #fff8e6; border: 1px solid #f3d99a; border-left: 4px solid var(--amber); border-radius: 8px; padding: 12px 18px; font-size: 13px; color: #6b4a00; margin-bottom: 22px; line-height: 1.85; }
+.info-box-amber b { color: #533800; }
 .field-req { color: var(--rose); }
+.lbl-hint { font-size: 12px; font-weight: 500; color: #94a3b8; margin-left: 4px; }
+
+/* 다중부서 체크박스 그리드 */
+.dept-checkbox-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px 12px; padding: 12px 14px; border: 1.5px solid #d5dbe8; border-radius: 8px; background: #fafbfd; }
+.dept-checkbox-grid label { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; color: #1a2035; cursor: pointer; padding: 4px 0; user-select: none; }
+.dept-checkbox-grid label:hover { color: var(--blue); }
+.dept-checkbox-grid input[type="checkbox"] { width: 15px; height: 15px; accent-color: var(--blue); cursor: pointer; margin: 0; }
+
+/* textarea placeholder 줄바꿈 가독성 */
+.sf-field textarea::placeholder { color: #b8c0d0; line-height: 1.7; font-size: 13px; }
 
 /* ══ 파일 드래그 드롭 ══ */
 .file-drop-zone { border: 2px dashed #d5dbe8; border-radius: 12px; padding: 24px; text-align: center; cursor: pointer; transition: all .2s; background: #fafbfd; }
