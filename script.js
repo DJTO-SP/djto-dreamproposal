@@ -1704,8 +1704,8 @@ function renderOpinionPanel(idx) {
     (locked
       ? '<div class="rv-locked-notice done">✅ 검토 완료 상태입니다. 수정이 필요하면 관리자에게 문의하세요.</div>'
       : '<div class="rv-opinion-btns">' +
-          '<button class="rv-btn-draft" onclick="saveReviewOpinion(\'작성중\')">임시저장</button>' +
-          '<button class="rv-btn-submit" onclick="saveReviewOpinion(\'완료\')">작성 완료</button>' +
+          '<button class="rv-btn-draft" onclick="dreamSaveReviewOpinion(\'작성중\')">임시저장</button>' +
+          '<button class="rv-btn-submit" onclick="dreamSaveReviewOpinion(\'완료\')">작성 완료</button>' +
         '</div>');
 
   if (locked) {
@@ -1735,7 +1735,7 @@ function renderOpinionPanelEmpty() {
   document.getElementById('rv-opinion-area').innerHTML = '<p class="mine-empty">왼쪽 목록에서 제안을 선택하세요.</p>';
 }
 
-function saveReviewOpinion(status) {
+function dreamSaveReviewOpinion(status) {
   if (_selectedReviewIdx === null || !_reviewItems[_selectedReviewIdx]) return alert('제안을 선택하세요.');
   var opinion = (document.getElementById('rv-opinion-input').value || '').trim();
   if (!opinion) return alert('검토 의견을 입력해주세요.');
