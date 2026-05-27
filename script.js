@@ -1307,19 +1307,33 @@ function createProposalPdf(receiptNo, d, attachFile, includePII) {
           var page = pdfDoc.addPage([pageW, pageH]);
           page.drawImage(pngImg, { x: (pageW - w) / 2, y: pageH - h, width: w, height: h });
 
+          console.log('[createProposalPdf] includePII=', includePII, 'attachFile=',
+            attachFile ? (attachFile.name + ' / ' + attachFile.size + ' bytes') : 'NONE');
           if (!attachFile) return pdfDoc.save();
 
           return new Promise(function(res, rej) {
             var r = new FileReader();
             r.onload = function(e) {
-              window.PDFLib.PDFDocument.load(e.target.result).then(function(attDoc) {
-                return pdfDoc.copyPages(attDoc, attDoc.getPageIndices());
-              }).then(function(pages) {
-                pages.forEach(function(p) { pdfDoc.addPage(p); });
-                res(pdfDoc.save());
-              }).catch(rej);
+              console.log('[createProposalPdf] FileReader 완료, ArrayBuffer size=', e.target.result.byteLength);
+              window.PDFLib.PDFDocument.load(e.target.result, { ignoreEncryption: true }).then(function(attDoc) {
+                var n = attDoc.getPageCount();
+                console.log('[createProposalPdf] 첨부 PDF 로드 성공, 페이지 수=', n);
+                if (n === 0) { rej(new Error('첨부 PDF에 페이지가 없습니다.')); return; }
+                return pdfDoc.copyPages(attDoc, attDoc.getPageIndices()).then(function(pages) {
+                  console.log('[createProposalPdf] copyPages 완료, 복사된 페이지 수=', pages.length);
+                  pages.forEach(function(p) { pdfDoc.addPage(p); });
+                  console.log('[createProposalPdf] 최종 총 페이지 수=', pdfDoc.getPageCount());
+                  res(pdfDoc.save());
+                });
+              }).catch(function(loadErr) {
+                console.error('[createProposalPdf] 첨부 병합 실패:', loadErr);
+                rej(new Error('첨부 PDF 병합 실패: ' + (loadErr.message || loadErr)));
+              });
             };
-            r.onerror = rej;
+            r.onerror = function() {
+              console.error('[createProposalPdf] FileReader 오류');
+              rej(new Error('첨부 파일 읽기 실패'));
+            };
             r.readAsArrayBuffer(attachFile);
           });
         });
