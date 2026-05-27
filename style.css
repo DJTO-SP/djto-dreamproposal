@@ -5,13 +5,13 @@ body { font-family: 'Noto Sans KR', 'Malgun Gothic', sans-serif; background: #f0
 
 /* 배너 */
 .dream-banner { background:#fff; border-bottom:2px solid #e8edf5; }
-.dream-banner-inner { max-width:1160px; margin:0 auto; padding:50px 32px 14px 32px; display:flex; align-items:flex-end; justify-content:space-between; }
+.dream-banner-inner { max-width:1400px; margin:0 auto; padding:50px 32px 14px 32px; display:flex; align-items:flex-end; justify-content:space-between; }
 .dream-banner-title { font-size:26px; font-weight:900; color:#1a2035; letter-spacing:-1px; line-height:1; font-family:'Noto Sans KR', 'Malgun Gothic', sans-serif; white-space:nowrap; }
 .dream-banner-title span { color:var(--blue); }
 .dream-banner-img { height:80px; object-fit:contain; filter:drop-shadow(0 2px 8px rgba(0,0,0,.1)); }
 
 header { background:#204473; height:48px; position:sticky; top:0; z-index:100; box-shadow:0 3px 16px rgba(30,58,110,.35); }
-.header-inner { max-width:1160px; margin:0 auto; height:100%; display:flex; align-items:center; justify-content:space-between; padding:0 20px; }
+.header-inner { max-width:1400px; margin:0 auto; height:100%; display:flex; align-items:center; justify-content:space-between; padding:0 20px; }
 .logo { display:flex; align-items:center; gap:11px; }
 .logo-icon { width:34px; height:34px; border-radius:10px; background:linear-gradient(135deg,var(--sky),var(--teal)); display:flex; align-items:center; justify-content:center; font-size:18px; }
 .logo-main { font-weight:700; font-size:15px; color:#fff; letter-spacing:-.4px; }
@@ -24,7 +24,7 @@ nav { display:flex; gap:2px; }
 .admin-btn { padding:6px 13px; border-radius:7px; border:1px solid rgba(255,255,255,.2); cursor:pointer; font-weight:600; font-size:12px; background:transparent; color:#7a99cc; font-family:inherit; transition:all .2s; }
 .admin-btn.on { border-color:var(--teal); background:rgba(42,157,143,.2); color:#4ecdc4; }
 
-main { max-width:1160px; margin:0 auto; padding:24px 20px; }
+main { max-width:1400px; margin:0 auto; padding:24px 20px; }
 
 .stats { display:flex; justify-content:center; gap:16px; }
 .stat-card { background:#f5f8fb; border-radius:12px; padding:14px 24px; display:flex; align-items:center; gap:10px; position:relative; overflow:visible; cursor:default; transition:box-shadow .2s, transform .2s; }
@@ -368,7 +368,7 @@ textarea.fi { resize:vertical; }
 .form-section-label { font-size: 13px; font-weight: 800; color: var(--navy); letter-spacing: -.3px; padding: 4px 12px; background: #eef3ff; border-radius: 6px; border-left: 3px solid var(--blue); }
 
 /* 심사 페이지 배점표 (컴팩트) */
-#tab-judge .rv-right .card { position: sticky; top: 64px; max-height: calc(100vh - 84px); overflow-y: auto; }
+#tab-judge .rv-right .card { position: sticky; top: 64px; }
 .tjd-score-group { margin-bottom: 6px; padding: 7px 10px; border: 1.5px solid #e8edf5; border-radius: 8px; background: #fafbfd; }
 .tjd-score-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
 .tjd-score-name { font-size: 13px; font-weight: 800; color: var(--navy); }
