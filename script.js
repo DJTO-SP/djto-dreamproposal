@@ -2340,6 +2340,9 @@ function openInboxDetail(receiptNo, rowEl) {
     '<button class="btn-submit-full" style="padding:9px;font-size:13px;margin-top:0" onclick="saveAdminResult(\'' + esc(d.receiptNo) + '\')">결과 저장</button>' +
     '</div>';
 
+  // 통합 PDF 다운로드 (제안서 + 검토의견 + 첨부)
+  infoHtml += '<button class="btn-submit-full" style="background:#0f9d58;padding:10px;font-size:13px;margin-top:8px" onclick="downloadIntegratedPdf(\'' + esc(d.receiptNo) + '\')">📥 통합 PDF 다운로드</button>';
+
   document.getElementById('inbox-info-area').innerHTML = infoHtml;
   split.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
@@ -2485,6 +2488,142 @@ function downloadAdminExcel() {
 
   XLSX.writeFile(wb, fileName);
   showToast('✅ 엑셀 다운로드 완료', 'ok');
+}
+
+// ── 통합 PDF 다운로드 (제안서 + 검토의견 + 첨부) ─────
+function downloadIntegratedPdf(receiptNo) {
+  var d = _adminItems.find(function(x) { return String(x.receiptNo) === String(receiptNo); });
+  if (!d) return alert('제안 정보를 찾을 수 없습니다.');
+  if (typeof PDFLib === 'undefined' || typeof html2canvas === 'undefined') {
+    return alert('PDF 라이브러리 로드 실패. 새로고침 후 다시 시도하세요.');
+  }
+
+  showLoadingOverlay('PDF 생성 중... (잠시만 기다려주세요)');
+
+  buildIntegratedPdf_(d).then(function(pdfDoc) {
+    if (!d.anonymousUrl) return pdfDoc.save();
+    showLoadingOverlay('첨부 자료 합치는 중...');
+    return apiPost({
+      action: 'dreamGetPdfBase64',
+      pw: ADMIN_PW,
+      receiptNo: d.receiptNo,
+      type: 'anonymous'
+    }).then(function(res) {
+      if (!res || !res.ok || !res.base64) {
+        console.warn('첨부 가져오기 실패:', res && res.error);
+        return pdfDoc.save();
+      }
+      var bin = atob(res.base64);
+      var bytes = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      return PDFLib.PDFDocument.load(bytes, { ignoreEncryption: true }).then(function(attDoc) {
+        return pdfDoc.copyPages(attDoc, attDoc.getPageIndices()).then(function(pages) {
+          pages.forEach(function(p) { pdfDoc.addPage(p); });
+          return pdfDoc.save();
+        });
+      }).catch(function(err) {
+        console.warn('첨부 병합 실패:', err);
+        return pdfDoc.save();
+      });
+    });
+  }).then(function(pdfBytes) {
+    var blob = new Blob([pdfBytes], { type: 'application/pdf' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = d.receiptNo + '_제안서_검토의견.pdf';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    hideLoadingOverlay();
+    showToast('✅ 통합 PDF 다운로드 완료', 'ok');
+  }).catch(function(e) {
+    hideLoadingOverlay();
+    alert('PDF 생성 실패: ' + e.message);
+  });
+}
+
+function buildIntegratedPdf_(d) {
+  var pages = [buildAdminCoverHtml_(d)];
+  (d.targetDepts || []).forEach(function(dept) {
+    var review = (d.reviews || []).find(function(r) { return r.dept === dept; });
+    pages.push(buildReviewPageHtml_(d, dept, review));
+  });
+
+  return PDFLib.PDFDocument.create().then(function(pdfDoc) {
+    return pages.reduce(function(p, html) {
+      return p.then(function() { return renderHtmlToPdfPage_(html, pdfDoc); });
+    }, Promise.resolve()).then(function() { return pdfDoc; });
+  });
+}
+
+function renderHtmlToPdfPage_(html, pdfDoc) {
+  var div = document.getElementById('pdfCoverHidden');
+  if (!div) return Promise.reject(new Error('pdfCoverHidden div 없음'));
+  div.innerHTML = html;
+  return html2canvas(div, { scale: 2, backgroundColor: '#ffffff' }).then(function(canvas) {
+    div.innerHTML = '';
+    var dataUrl = canvas.toDataURL('image/png');
+    var bin = atob(dataUrl.split(',')[1]);
+    var pngBytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) pngBytes[i] = bin.charCodeAt(i);
+    return pdfDoc.embedPng(pngBytes).then(function(pngImg) {
+      var pageW = 595, pageH = 842;
+      var scale = Math.min(pageW / pngImg.width, pageH / pngImg.height);
+      var w = pngImg.width * scale, h = pngImg.height * scale;
+      var page = pdfDoc.addPage([pageW, pageH]);
+      page.drawImage(pngImg, { x: (pageW - w) / 2, y: pageH - h, width: w, height: h });
+    });
+  });
+}
+
+function buildAdminCoverHtml_(d) {
+  var safe = function(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
+  var nl2br = function(s) { return safe(s).replace(/\n/g,'<br>'); };
+  return ''
+    + '<div style="text-align:center;font-size:28px;font-weight:900;letter-spacing:-1px;margin-bottom:24px;border-bottom:3px double #204473;padding-bottom:14px">혁신드림제안서</div>'
+    + '<table style="width:100%;border-collapse:collapse;margin-bottom:18px;font-size:13.5px">'
+    + '<tr><td style="background:#eef3ff;border:1px solid #d5dbe8;padding:8px 14px;font-weight:700;width:90px">접수번호</td><td style="border:1px solid #d5dbe8;padding:8px 14px;font-weight:600;color:#204473">' + safe(d.receiptNo) + '</td>'
+    + '<td style="background:#eef3ff;border:1px solid #d5dbe8;padding:8px 14px;font-weight:700;width:90px">접수일시</td><td style="border:1px solid #d5dbe8;padding:8px 14px">' + safe(d.submittedAt) + '</td></tr>'
+    + '<tr><td style="background:#eef3ff;border:1px solid #d5dbe8;padding:8px 14px;font-weight:700">제안부문</td><td style="border:1px solid #d5dbe8;padding:8px 14px" colspan="3">' + safe(d.category) + '</td></tr>'
+    + '<tr><td style="background:#eef3ff;border:1px solid #d5dbe8;padding:8px 14px;font-weight:700">성명</td><td style="border:1px solid #d5dbe8;padding:8px 14px">' + safe(d.name) + '</td>'
+    + '<td style="background:#eef3ff;border:1px solid #d5dbe8;padding:8px 14px;font-weight:700">소속</td><td style="border:1px solid #d5dbe8;padding:8px 14px">' + safe(d.dept) + '</td></tr>'
+    + '<tr><td style="background:#eef3ff;border:1px solid #d5dbe8;padding:8px 14px;font-weight:700">담당부서</td><td style="border:1px solid #d5dbe8;padding:8px 14px" colspan="3">' + safe((d.targetDepts||[]).join(', ')) + '</td></tr>'
+    + '<tr><td style="background:#eef3ff;border:1px solid #d5dbe8;padding:8px 14px;font-weight:700">제목</td><td style="border:1px solid #d5dbe8;padding:8px 14px;font-weight:700" colspan="3">' + safe(d.title) + '</td></tr>'
+    + '</table>'
+    + '<div style="background:#f6f8fd;border-left:4px solid #204473;padding:8px 14px;font-weight:800;font-size:14px;margin-bottom:8px">제안사유 (원인분석)</div>'
+    + '<div style="padding:0 8px 16px;font-size:13px;line-height:1.75">' + nl2br(d.reason) + '</div>'
+    + '<div style="background:#f6f8fd;border-left:4px solid #204473;padding:8px 14px;font-weight:800;font-size:14px;margin-bottom:8px">실시방법 (개선방향)</div>'
+    + '<div style="padding:0 8px 16px;font-size:13px;line-height:1.75">' + nl2br(d.method) + '</div>'
+    + (d.effect
+        ? '<div style="background:#f6f8fd;border-left:4px solid #204473;padding:8px 14px;font-weight:800;font-size:14px;margin-bottom:8px">기대효과</div><div style="padding:0 8px 16px;font-size:13px;line-height:1.75">' + nl2br(d.effect) + '</div>'
+        : '');
+}
+
+function buildReviewPageHtml_(d, dept, review) {
+  var safe = function(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
+  var nl2br = function(s) { return safe(s).replace(/\n/g,'<br>'); };
+  var statusBg = '#fef3c7', statusFg = '#92400e', statusLabel = '검토 대기';
+  if (review) {
+    if (review.status === '완료')      { statusBg = '#bbf7d0'; statusFg = '#166534'; statusLabel = '검토 완료'; }
+    else if (review.status === '작성중') { statusBg = '#bfdbfe'; statusFg = '#1e40af'; statusLabel = '작성 중'; }
+  }
+  return ''
+    + '<div style="text-align:center;font-size:24px;font-weight:900;letter-spacing:-1px;margin-bottom:14px;border-bottom:3px double #204473;padding-bottom:12px">담당부서 검토의견</div>'
+    + '<table style="width:100%;border-collapse:collapse;margin-bottom:18px;font-size:13px">'
+    + '<tr><td style="background:#eef3ff;border:1px solid #d5dbe8;padding:7px 12px;font-weight:700;width:90px">접수번호</td><td style="border:1px solid #d5dbe8;padding:7px 12px;color:#204473;font-weight:600">' + safe(d.receiptNo) + '</td>'
+    + '<td style="background:#eef3ff;border:1px solid #d5dbe8;padding:7px 12px;font-weight:700;width:90px">제목</td><td style="border:1px solid #d5dbe8;padding:7px 12px">' + safe(d.title) + '</td></tr>'
+    + '<tr><td style="background:#eef3ff;border:1px solid #d5dbe8;padding:7px 12px;font-weight:700">검토부서</td><td style="border:1px solid #d5dbe8;padding:7px 12px;font-weight:700">' + safe(dept) + '</td>'
+    + '<td style="background:#eef3ff;border:1px solid #d5dbe8;padding:7px 12px;font-weight:700">상태</td><td style="border:1px solid #d5dbe8;padding:7px 12px"><span style="background:'+statusBg+';color:'+statusFg+';padding:2px 10px;border-radius:8px;font-size:12px;font-weight:700">'+statusLabel+'</span></td></tr>'
+    + ((review && review.reviewer)
+        ? '<tr><td style="background:#eef3ff;border:1px solid #d5dbe8;padding:7px 12px;font-weight:700">검토자</td><td style="border:1px solid #d5dbe8;padding:7px 12px">' + safe(review.reviewer) + '</td><td style="background:#eef3ff;border:1px solid #d5dbe8;padding:7px 12px;font-weight:700">검토일</td><td style="border:1px solid #d5dbe8;padding:7px 12px">' + safe(review.date || '') + '</td></tr>'
+        : '')
+    + '</table>'
+    + '<div style="background:#f6f8fd;border-left:4px solid #204473;padding:8px 14px;font-weight:800;font-size:14px;margin-bottom:8px">검토 의견</div>'
+    + '<div style="padding:10px 12px;font-size:13px;line-height:1.85;min-height:400px;border:1px solid #e8edf5;border-radius:6px;background:#fff">'
+    + ((review && review.opinion) ? nl2br(review.opinion) : '<span style="color:#aaa;font-style:italic">아직 검토의견이 작성되지 않았습니다.</span>')
+    + '</div>';
 }
 
 // 기존 함수 호환성 유지

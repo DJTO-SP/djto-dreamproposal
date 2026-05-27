@@ -101,6 +101,38 @@ function dreamGetAdminProposals(data) {
   }
 }
 
+// 첨부 PDF 또는 원본 PDF를 base64로 반환 (관리자만, CORS 우회용)
+function dreamGetPdfBase64(data) {
+  try {
+    if (!data || !data.pw || !checkAdmin(data.pw)) return { ok: false, error: '권한 없음' };
+    var receiptNo = String(data.receiptNo || '').trim();
+    var type = String(data.type || 'anonymous').trim();
+    if (!receiptNo) throw new Error('receiptNo 누락');
+
+    var ss = SpreadsheetApp.openById(DREAM_SHEET_ID);
+    var pSheet = ss.getSheetByName('제안');
+    if (!pSheet || pSheet.getLastRow() < 2) throw new Error('제안 없음');
+
+    var rows = pSheet.getRange(2, 1, pSheet.getLastRow() - 1, 12).getValues();
+    var url = '';
+    for (var i = 0; i < rows.length; i++) {
+      if (String(rows[i][0]) === receiptNo) {
+        url = type === 'original' ? String(rows[i][10] || '') : String(rows[i][11] || '');
+        break;
+      }
+    }
+    if (!url) return { ok: false, error: '해당 PDF 파일이 없습니다.' };
+
+    var match = url.match(/\/d\/([^\/]+)/) || url.match(/[?&]id=([^&]+)/);
+    if (!match) return { ok: false, error: 'URL 형식 오류' };
+
+    var file = DriveApp.getFileById(match[1]);
+    return { ok: true, base64: Utilities.base64Encode(file.getBlob().getBytes()) };
+  } catch (err) {
+    return { ok: false, error: String(err.message || err) };
+  }
+}
+
 // 최종결과 저장 (최우수/우수/장려/특별상/미채택)
 function dreamSetResult(data) {
   try {
