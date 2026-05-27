@@ -1208,6 +1208,138 @@ function clearSubmitForm() {
   if (picked) picked.textContent = '';
 }
 
+// pdf.js 워커 초기화
+window.addEventListener('load', function() {
+  if (window.pdfjsLib) {
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+});
+
+// ── 첨부 PDF 텍스트 추출 (PII 검사용) ─────────────────
+function extractPdfText(file) {
+  return new Promise(function(resolve, reject) {
+    if (!window.pdfjsLib) return reject(new Error('pdf.js 미로드'));
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var typed = new Uint8Array(e.target.result);
+      window.pdfjsLib.getDocument({ data: typed }).promise.then(function(pdf) {
+        var promises = [];
+        for (var i = 1; i <= pdf.numPages; i++) {
+          promises.push(pdf.getPage(i).then(function(p) {
+            return p.getTextContent().then(function(c) {
+              return c.items.map(function(it) { return it.str; }).join(' ');
+            });
+          }));
+        }
+        return Promise.all(promises);
+      }).then(function(pages) { resolve(pages.join('\n')); }).catch(reject);
+    };
+    reader.onerror = reject;
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+// ── 개인정보(PII) 검사 ────────────────────────────────
+function checkPII(text, proposerName) {
+  var findings = [];
+  if (proposerName && proposerName.length >= 2) {
+    var safe = proposerName.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+    var m = text.match(new RegExp(safe, 'g'));
+    if (m && m.length > 0) findings.push({ label: '본인 성명 "' + proposerName + '"', count: m.length });
+  }
+  var emails = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g);
+  if (emails && emails.length > 0) findings.push({ label: '이메일 주소', count: emails.length });
+  var phones = text.match(/(?:\+?82[-\s.]?)?0?1[0-9][-\s.]?\d{3,4}[-\s.]?\d{4}/g);
+  if (phones && phones.length > 0) findings.push({ label: '휴대폰 번호', count: phones.length });
+  return findings;
+}
+
+// ── PDF 표지 HTML 빌드 ────────────────────────────────
+function buildCoverHtml(receiptNo, d, includePII) {
+  var esc = function(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
+  var nl2br = function(s) { return esc(s).replace(/\n/g,'<br>'); };
+  var name = includePII ? esc(d.name) : '';
+  var dept = includePII ? esc(d.dept) : '';
+  var tDep = includePII ? esc((d.targetDepts || []).join(', ')) : '';
+  return ''
+    + '<div style="text-align:center;font-size:28px;font-weight:900;letter-spacing:-1px;margin-bottom:24px;border-bottom:3px double #204473;padding-bottom:14px">혁신드림제안서</div>'
+    + '<table style="width:100%;border-collapse:collapse;margin-bottom:18px;font-size:13.5px">'
+    + '<tr><td style="background:#eef3ff;border:1px solid #d5dbe8;padding:8px 14px;font-weight:700;width:90px">접수번호</td><td style="border:1px solid #d5dbe8;padding:8px 14px;font-weight:600;color:#204473">' + esc(receiptNo) + '</td>'
+    + '<td style="background:#eef3ff;border:1px solid #d5dbe8;padding:8px 14px;font-weight:700;width:90px">접수일시</td><td style="border:1px solid #d5dbe8;padding:8px 14px">' + esc(d.submittedAt) + '</td></tr>'
+    + '<tr><td style="background:#eef3ff;border:1px solid #d5dbe8;padding:8px 14px;font-weight:700">제안부문</td><td style="border:1px solid #d5dbe8;padding:8px 14px" colspan="3">' + esc(d.category) + '</td></tr>'
+    + '<tr><td style="background:#eef3ff;border:1px solid #d5dbe8;padding:8px 14px;font-weight:700">성명</td><td style="border:1px solid #d5dbe8;padding:8px 14px">' + name + '</td>'
+    + '<td style="background:#eef3ff;border:1px solid #d5dbe8;padding:8px 14px;font-weight:700">소속</td><td style="border:1px solid #d5dbe8;padding:8px 14px">' + dept + '</td></tr>'
+    + '<tr><td style="background:#eef3ff;border:1px solid #d5dbe8;padding:8px 14px;font-weight:700">담당부서</td><td style="border:1px solid #d5dbe8;padding:8px 14px" colspan="3">' + tDep + '</td></tr>'
+    + '<tr><td style="background:#eef3ff;border:1px solid #d5dbe8;padding:8px 14px;font-weight:700">제목</td><td style="border:1px solid #d5dbe8;padding:8px 14px;font-weight:700" colspan="3">' + esc(d.title) + '</td></tr>'
+    + '</table>'
+    + '<div style="background:#f6f8fd;border-left:4px solid #204473;padding:8px 14px;font-weight:800;font-size:14px;margin-bottom:8px">제안사유 (원인분석)</div>'
+    + '<div style="padding:0 8px 16px;font-size:13px;line-height:1.75">' + nl2br(d.reason) + '</div>'
+    + '<div style="background:#f6f8fd;border-left:4px solid #204473;padding:8px 14px;font-weight:800;font-size:14px;margin-bottom:8px">실시방법 (개선방향)</div>'
+    + '<div style="padding:0 8px 16px;font-size:13px;line-height:1.75">' + nl2br(d.method) + '</div>'
+    + (d.effect
+        ? '<div style="background:#f6f8fd;border-left:4px solid #204473;padding:8px 14px;font-weight:800;font-size:14px;margin-bottom:8px">기대효과</div><div style="padding:0 8px 16px;font-size:13px;line-height:1.75">' + nl2br(d.effect) + '</div>'
+        : '');
+}
+
+// ── PDF 생성 (표지 1페이지 + 첨부 페이지 병합) ────────
+//    includePII=true → 원본(개인정보 포함) / false → 익명
+function createProposalPdf(receiptNo, d, attachFile, includePII) {
+  return new Promise(function(resolve, reject) {
+    var coverDiv = document.getElementById('pdfCoverHidden');
+    if (!coverDiv) return reject(new Error('pdfCoverHidden div 없음'));
+    if (!window.html2canvas || !window.PDFLib) return reject(new Error('PDF 라이브러리 미로드'));
+
+    coverDiv.innerHTML = buildCoverHtml(receiptNo, d, includePII);
+
+    window.html2canvas(coverDiv, { scale: 2, backgroundColor: '#ffffff' })
+    .then(function(canvas) {
+      coverDiv.innerHTML = '';
+      var dataUrl = canvas.toDataURL('image/png');
+      var bin = atob(dataUrl.split(',')[1]);
+      var pngBytes = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) pngBytes[i] = bin.charCodeAt(i);
+      return window.PDFLib.PDFDocument.create().then(function(pdfDoc) {
+        return pdfDoc.embedPng(pngBytes).then(function(pngImg) {
+          var pageW = 595, pageH = 842; // A4 pt
+          var scale = Math.min(pageW / pngImg.width, pageH / pngImg.height);
+          var w = pngImg.width * scale, h = pngImg.height * scale;
+          var page = pdfDoc.addPage([pageW, pageH]);
+          page.drawImage(pngImg, { x: (pageW - w) / 2, y: pageH - h, width: w, height: h });
+
+          if (!attachFile) return pdfDoc.save();
+
+          return new Promise(function(res, rej) {
+            var r = new FileReader();
+            r.onload = function(e) {
+              window.PDFLib.PDFDocument.load(e.target.result).then(function(attDoc) {
+                return pdfDoc.copyPages(attDoc, attDoc.getPageIndices());
+              }).then(function(pages) {
+                pages.forEach(function(p) { pdfDoc.addPage(p); });
+                res(pdfDoc.save());
+              }).catch(rej);
+            };
+            r.onerror = rej;
+            r.readAsArrayBuffer(attachFile);
+          });
+        });
+      });
+    }).then(function(pdfBytes) {
+      // Uint8Array → base64
+      var bytes = new Uint8Array(pdfBytes);
+      var binary = '';
+      var chunk = 8192;
+      for (var i = 0; i < bytes.length; i += chunk) {
+        binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+      }
+      resolve(btoa(binary));
+    }).catch(function(err) {
+      coverDiv.innerHTML = '';
+      reject(err);
+    });
+  });
+}
+
 function submitProposal() {
   // 1) 필드 수집
   var name   = (document.getElementById('sf-name').value   || '').trim();
@@ -1236,33 +1368,81 @@ function submitProposal() {
 
   if (!SCRIPT_URL) return alert('Apps Script가 연결되지 않았습니다.');
 
-  // 3) Apps Script 호출 (3b: 텍스트만. PDF·PII 검사는 3c에서)
+  var formData = { name:name, dept:dept, cat:cat, targetDepts:targetDepts,
+                   title:title, reason:reason, method:method, effect:effect, file:file };
+
+  // 3) 첨부가 있으면 PII 검사 → 경고 → 진행
+  if (file) {
+    showLoadingOverlay('첨부 PDF 검사 중...');
+    extractPdfText(file).then(function(text) {
+      hideLoadingOverlay();
+      var findings = checkPII(text, name);
+      if (findings.length > 0) {
+        var msg = '⚠️ 첨부 PDF에서 다음 개인정보가 발견됐어요.\n\n';
+        findings.forEach(function(f) { msg += '  • ' + f.label + ' (' + f.count + '회)\n'; });
+        msg += '\n익명성 보장을 위해 PDF를 수정 후 다시 첨부하시는 것을 권장합니다.\n\n[확인] 그대로 접수      [취소] 돌아가기';
+        if (!confirm(msg)) return;
+      }
+      doSubmitFlow(formData);
+    }).catch(function(e) {
+      hideLoadingOverlay();
+      console.warn('PDF 텍스트 추출 실패:', e);
+      doSubmitFlow(formData); // 추출 실패해도 진행
+    });
+    return;
+  }
+
+  doSubmitFlow(formData);
+}
+
+function doSubmitFlow(f) {
   var btn = document.querySelector('#tab-submit .btn-submit-full');
   if (btn) { btn.disabled = true; btn.textContent = '접수 중...'; }
   showLoadingOverlay('제안서 접수 중...');
 
+  // 단계 1: 시트 행 추가 + 접수번호 발급
   apiPost({
     action: 'dreamSubmit',
-    name: name,
-    dept: dept,
-    category: cat,
-    targetDepts: targetDepts,
-    title: title,
-    reason: reason,
-    method: method,
-    effect: effect
+    name: f.name, dept: f.dept, category: f.cat, targetDepts: f.targetDepts,
+    title: f.title, reason: f.reason, method: f.method, effect: f.effect
   }).then(function(res) {
+    if (!res || !res.ok || !res.receiptNo) throw new Error((res && res.error) || '접수 실패');
+    var receiptNo = res.receiptNo;
+
+    // 단계 2: PDF 두 개 생성
+    showLoadingOverlay('PDF 생성 중... (잠시만요)');
+    var submittedAt = new Date().toISOString().substring(0,16).replace('T',' ');
+    var d = { name:f.name, dept:f.dept, category:f.cat, targetDepts:f.targetDepts,
+              title:f.title, reason:f.reason, method:f.method, effect:f.effect,
+              submittedAt: submittedAt };
+    return Promise.all([
+      createProposalPdf(receiptNo, d, f.file, true),   // 원본 (개인정보 포함)
+      createProposalPdf(receiptNo, d, f.file, false)   // 익명
+    ]).then(function(pdfs) {
+      // 단계 3: Drive 저장
+      showLoadingOverlay('Drive에 저장 중...');
+      return apiPost({
+        action: 'dreamSavePdfs',
+        receiptNo: receiptNo,
+        originalPdf: pdfs[0],
+        anonymousPdf: pdfs[1]
+      }).then(function(saveRes) {
+        return { receiptNo: receiptNo, saveRes: saveRes };
+      });
+    });
+  }).then(function(result) {
     hideLoadingOverlay();
     if (btn) { btn.disabled = false; btn.textContent = '제안서 접수'; }
-    if (res && res.ok && res.receiptNo) {
-      showSubmitDone(res.receiptNo, name);
+    if (result.saveRes && result.saveRes.ok) {
+      showSubmitDone(result.receiptNo, f.name);
     } else {
-      alert('❌ 접수 실패: ' + ((res && res.error) || '알 수 없는 오류'));
+      alert('⚠️ 접수는 완료됐으나 PDF 저장에 실패했습니다.\n관리자에게 문의 (접수번호: ' + result.receiptNo + ')\n오류: ' + ((result.saveRes && result.saveRes.error) || '알 수 없음'));
+      showSubmitDone(result.receiptNo, f.name);
     }
   }).catch(function(e) {
     hideLoadingOverlay();
     if (btn) { btn.disabled = false; btn.textContent = '제안서 접수'; }
-    alert('❌ 서버 오류: ' + e.message);
+    alert('❌ 오류: ' + e.message);
   });
 }
 

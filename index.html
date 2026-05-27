@@ -10,6 +10,9 @@
 <title>대전관광공사 혁신드림제안제도</title>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" defer></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <link rel="stylesheet" href="style.css">
 </head>
@@ -696,6 +699,9 @@
   <div style="font-size:13px;color:#94a3b8;margin-top:6px">잠시만 기다려주세요</div>
 </div>
 <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+
+<!-- PDF 표지 렌더링용 (화면에 안 보임, html2canvas로 캡처됨) -->
+<div id="pdfCoverHidden" style="position:fixed;left:-9999px;top:0;width:794px;background:#fff;padding:40px;font-family:'Noto Sans KR','Malgun Gothic',sans-serif;color:#1a2035;box-sizing:border-box"></div>
 
 <script src="script.js"></script>
 </html>
