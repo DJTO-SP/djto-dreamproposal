@@ -94,6 +94,7 @@ function dreamGetMyProposal(data) {
         reason:      String(found[7]),
         method:      String(found[8]),
         effect:      String(found[9] || ''),
+        attachmentUrl: String(found[11] || ''),  // 익명링크 = 첨부 자료
         status:      String(found[12] || '접수완료'),
         award:       String(found[13] || '심사중')
       },

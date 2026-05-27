@@ -1282,9 +1282,35 @@ function buildCoverHtml(receiptNo, d, includePII) {
         : '');
 }
 
-// ── PDF 생성 (표지 1페이지 + 첨부 페이지 병합) ────────
-//    includePII=true → 원본(개인정보 포함) / false → 익명
+// File → base64 헬퍼
+function fileToBase64(file) {
+  return new Promise(function(res, rej) {
+    var r = new FileReader();
+    r.onload = function(e) {
+      var bytes = new Uint8Array(e.target.result);
+      var binary = '';
+      var chunk = 8192;
+      for (var i = 0; i < bytes.length; i += chunk) {
+        binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+      }
+      res(btoa(binary));
+    };
+    r.onerror = rej;
+    r.readAsArrayBuffer(file);
+  });
+}
+
+// ── PDF 생성 ─────────────────────────────────────────
+//    includePII=true  → 원본(표지 + 첨부) — 관리자 보관용
+//    includePII=false → 익명(첨부만) — 검토·심사 위원 / 본인용
+//                       첨부 없으면 null 반환 (PDF 안 만듦)
 function createProposalPdf(receiptNo, d, attachFile, includePII) {
+  // 익명 PDF: 첨부만 (없으면 PDF 자체 안 만듦)
+  if (!includePII) {
+    if (!attachFile) return Promise.resolve(null);
+    return fileToBase64(attachFile);
+  }
+  // 원본 PDF: 표지 + 첨부 (기존 로직)
   return new Promise(function(resolve, reject) {
     var coverDiv = document.getElementById('pdfCoverHidden');
     if (!coverDiv) return reject(new Error('pdfCoverHidden div 없음'));
@@ -1439,7 +1465,7 @@ function doSubmitFlow(f) {
         action: 'dreamSavePdfs',
         receiptNo: receiptNo,
         originalPdf: pdfs[0],
-        anonymousPdf: pdfs[1]
+        anonymousPdf: pdfs[1] || ''  // 첨부 없으면 빈 문자열
       }).then(function(saveRes) {
         return { receiptNo: receiptNo, saveRes: saveRes };
       });
@@ -1540,6 +1566,17 @@ function renderMyProposal(res) {
   var effBlock = document.getElementById('mine-effect-block');
   if (p.effect) { effEl.textContent = p.effect; effBlock.style.display = ''; }
   else { effBlock.style.display = 'none'; }
+
+  // 첨부 자료 링크 (첨부 PDF 있는 경우만)
+  var attachBlock = document.getElementById('mine-attachment-block');
+  if (attachBlock) {
+    if (p.attachmentUrl) {
+      attachBlock.style.display = '';
+      document.getElementById('mine-attachment-link').href = p.attachmentUrl;
+    } else {
+      attachBlock.style.display = 'none';
+    }
+  }
 
   // 검토 진행 — 담당부서 순서로 표시
   var deptReviews = {};
@@ -1677,7 +1714,7 @@ function renderReviewWork() {
           '<div class="rv-pb-row"><div class="rv-pb-label">제안사유 (원인분석)</div><div class="rv-pb-text">'+esc(it.reason||'')+'</div></div>' +
           '<div class="rv-pb-row"><div class="rv-pb-label">실시방법 (개선방향)</div><div class="rv-pb-text">'+esc(it.method||'')+'</div></div>' +
           (it.effect ? '<div class="rv-pb-row"><div class="rv-pb-label">기대효과</div><div class="rv-pb-text">'+esc(it.effect)+'</div></div>' : '') +
-          (it.anonymousUrl ? '<div class="rv-pb-row"><a href="'+esc(it.anonymousUrl)+'" target="_blank" style="font-size:12px;color:var(--blue);font-weight:600">📄 익명 처리된 제안서 + 첨부 보기 (새 창)</a></div>' : '') +
+          (it.anonymousUrl ? '<div class="rv-pb-row"><a href="'+esc(it.anonymousUrl)+'" target="_blank" style="font-size:12px;color:var(--blue);font-weight:600">📎 첨부 자료 보기 (새 창)</a></div>' : '') +
         '</div>' +
         '</div>';
     });
@@ -1885,7 +1922,7 @@ function renderJudgeWork() {
           '<div class="rv-pb-row"><div class="rv-pb-label">제안사유 (원인분석)</div><div class="rv-pb-text">'+esc(it.reason||'')+'</div></div>' +
           '<div class="rv-pb-row"><div class="rv-pb-label">실시방법 (개선방향)</div><div class="rv-pb-text">'+esc(it.method||'')+'</div></div>' +
           (it.effect ? '<div class="rv-pb-row"><div class="rv-pb-label">기대효과</div><div class="rv-pb-text">'+esc(it.effect)+'</div></div>' : '') +
-          (it.anonymousUrl ? '<div class="rv-pb-row"><a href="'+esc(it.anonymousUrl)+'" target="_blank" style="font-size:12px;color:var(--blue);font-weight:600">📄 익명 처리된 제안서 + 첨부 보기 (새 창)</a></div>' : '') +
+          (it.anonymousUrl ? '<div class="rv-pb-row"><a href="'+esc(it.anonymousUrl)+'" target="_blank" style="font-size:12px;color:var(--blue);font-weight:600">📎 첨부 자료 보기 (새 창)</a></div>' : '') +
           (it.reviews && it.reviews.length > 0 ? renderJudgeReviewSummary(it.reviews) : '') +
         '</div>' +
         '</div>';

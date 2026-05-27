@@ -19,29 +19,35 @@ function dreamSavePdfs(data) {
   try {
     if (!data || !data.receiptNo) throw new Error('receiptNo가 비어있습니다.');
     if (!data.originalPdf)        throw new Error('originalPdf가 비어있습니다.');
-    if (!data.anonymousPdf)       throw new Error('anonymousPdf가 비어있습니다.');
+    // anonymousPdf는 첨부 없으면 빈 값 OK (익명 PDF 생성 안 함)
 
     var receiptNo = String(data.receiptNo);
 
-    // Drive 폴더 (혁신드림제안/{연도}/{반기}/01_제안서원본/)
     var folders = dreamGetCurrentHalfFolders_();
     var proposalFolder = folders.proposal;
 
-    // base64 → Blob → Drive 파일
+    // 원본 PDF (표지 + 첨부) — 관리자 보관용, 비공개 유지
     var origBlob = Utilities.newBlob(
       Utilities.base64Decode(data.originalPdf),
       'application/pdf',
       receiptNo + '_제안서_원본.pdf'
     );
-    var anonBlob = Utilities.newBlob(
-      Utilities.base64Decode(data.anonymousPdf),
-      'application/pdf',
-      receiptNo + '_제안서_익명.pdf'
-    );
     var origFile = proposalFolder.createFile(origBlob);
-    var anonFile = proposalFolder.createFile(anonBlob);
 
-    // 시트의 해당 접수번호 행을 찾아 원본링크(K)/익명링크(L) 컬럼 update
+    // 익명 PDF (첨부만) — 위원·본인 공개용. 첨부 없으면 생성 안 함
+    var anonFile = null;
+    if (data.anonymousPdf) {
+      var anonBlob = Utilities.newBlob(
+        Utilities.base64Decode(data.anonymousPdf),
+        'application/pdf',
+        receiptNo + '_첨부자료.pdf'
+      );
+      anonFile = proposalFolder.createFile(anonBlob);
+      // 링크 있는 사람 누구나 보기 가능 (위원/본인이 접근)
+      anonFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    }
+
+    // 시트 update
     var ss = SpreadsheetApp.openById(DREAM_SHEET_ID);
     var sheet = ss.getSheetByName('제안');
     if (!sheet) throw new Error('"제안" 시트가 없습니다.');
@@ -51,8 +57,8 @@ function dreamSavePdfs(data) {
       var receipts = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
       for (var i = 0; i < receipts.length; i++) {
         if (String(receipts[i][0]) === receiptNo) {
-          sheet.getRange(i + 2, 11).setValue(origFile.getUrl()); // K 원본링크
-          sheet.getRange(i + 2, 12).setValue(anonFile.getUrl()); // L 익명링크
+          sheet.getRange(i + 2, 11).setValue(origFile.getUrl());                   // K 원본링크
+          sheet.getRange(i + 2, 12).setValue(anonFile ? anonFile.getUrl() : '');   // L 익명링크 (없으면 빈 칸)
           break;
         }
       }
@@ -61,7 +67,7 @@ function dreamSavePdfs(data) {
     return {
       ok: true,
       originalUrl: origFile.getUrl(),
-      anonymousUrl: anonFile.getUrl()
+      anonymousUrl: anonFile ? anonFile.getUrl() : ''
     };
   } catch (err) {
     return { ok: false, error: String(err && err.message ? err.message : err) };
