@@ -1588,7 +1588,190 @@ function resetMyProposal() {
 }
 
 // ══════════════════════════════════════════════════════════
-// ██  검토·심사 탭  ██
+// ██  검토 페이지 (위원 코드 로그인)  ██
+// ══════════════════════════════════════════════════════════
+
+var _reviewCode = null;
+var _reviewerInfo = null;
+var _reviewItems = [];
+var _selectedReviewIdx = null;
+
+function reviewLogin() {
+  var code = (document.getElementById('review-code').value || '').trim().toUpperCase();
+  var err  = document.getElementById('review-login-err');
+  if (!code) { err.textContent = '코드를 입력해주세요.'; err.style.display = 'block'; return; }
+  err.style.display = 'none';
+  showLoadingOverlay('인증 중...');
+  apiPost({ action: 'dreamReviewLogin', code: code }).then(function(res) {
+    hideLoadingOverlay();
+    if (!res || !res.ok) {
+      err.textContent = (res && res.error) || '로그인 실패';
+      err.style.display = 'block';
+      return;
+    }
+    _reviewCode = code;
+    _reviewerInfo = res.reviewer;
+    loadReviewItems();
+  }).catch(function(e) {
+    hideLoadingOverlay();
+    err.textContent = '서버 오류: ' + e.message;
+    err.style.display = 'block';
+  });
+}
+
+function loadReviewItems() {
+  showLoadingOverlay('제안 목록 로드 중...');
+  apiPost({ action: 'dreamGetReviewItems', code: _reviewCode }).then(function(res) {
+    hideLoadingOverlay();
+    if (!res || !res.ok) { alert('목록 로드 실패: ' + ((res && res.error) || '')); return; }
+    _reviewItems = res.items || [];
+    renderReviewWork();
+  }).catch(function(e) {
+    hideLoadingOverlay();
+    alert('서버 오류: ' + e.message);
+  });
+}
+
+function renderReviewWork() {
+  document.getElementById('review-login-card').style.display = 'none';
+  document.getElementById('review-work').style.display = 'block';
+  document.getElementById('rv-dept').textContent = _reviewerInfo.dept;
+  document.getElementById('rv-name').textContent = _reviewerInfo.name;
+
+  var doneCnt = _reviewItems.filter(function(it){ return it.myStatus === '완료'; }).length;
+  document.getElementById('rv-done-cnt').textContent = doneCnt;
+  document.getElementById('rv-total-cnt').textContent = _reviewItems.length;
+
+  var html = '';
+  if (!_reviewItems.length) {
+    html = '<p class="mine-empty">담당으로 배정된 제안이 없습니다.</p>';
+  } else {
+    _reviewItems.forEach(function(it, idx) {
+      var statusClass = it.myStatus === '완료' ? 'completed' : (it.myStatus === '작성중' ? 'draft' : 'pending');
+      var statusLabel = it.myStatus === '완료' ? '완료' : (it.myStatus === '작성중' ? '작성중' : '대기');
+      html += '<div class="rv-proposal-card" data-idx="'+idx+'">' +
+        '<div class="rv-proposal-head" onclick="toggleReviewItem('+idx+')">' +
+          '<span class="rv-proposal-no">'+esc(it.receiptNo)+'</span>' +
+          '<span class="rv-proposal-title">'+esc(it.title)+'</span>' +
+          '<span class="rv-proposal-status '+statusClass+'">'+statusLabel+'</span>' +
+        '</div>' +
+        '<div class="rv-proposal-body">' +
+          '<div class="rv-pb-row"><div class="rv-pb-label">제안부문</div><div class="rv-pb-text">'+esc(it.category)+'</div></div>' +
+          '<div class="rv-pb-row"><div class="rv-pb-label">제안사유 (원인분석)</div><div class="rv-pb-text">'+esc(it.reason||'')+'</div></div>' +
+          '<div class="rv-pb-row"><div class="rv-pb-label">실시방법 (개선방향)</div><div class="rv-pb-text">'+esc(it.method||'')+'</div></div>' +
+          (it.effect ? '<div class="rv-pb-row"><div class="rv-pb-label">기대효과</div><div class="rv-pb-text">'+esc(it.effect)+'</div></div>' : '') +
+          (it.anonymousUrl ? '<div class="rv-pb-row"><a href="'+esc(it.anonymousUrl)+'" target="_blank" style="font-size:12px;color:var(--blue);font-weight:600">📄 익명 PDF 열기 (새 창)</a></div>' : '') +
+        '</div>' +
+        '</div>';
+    });
+  }
+  document.getElementById('rv-list').innerHTML = html;
+
+  // 이전 선택 유지
+  if (_selectedReviewIdx !== null && _reviewItems[_selectedReviewIdx]) {
+    var card = document.querySelector('.rv-proposal-card[data-idx="'+_selectedReviewIdx+'"]');
+    if (card) { card.classList.add('expanded'); card.classList.add('selected'); }
+    renderOpinionPanel(_selectedReviewIdx);
+  } else {
+    renderOpinionPanelEmpty();
+  }
+}
+
+function toggleReviewItem(idx) {
+  var sameOne = (_selectedReviewIdx === idx);
+  document.querySelectorAll('.rv-proposal-card').forEach(function(c) {
+    c.classList.remove('expanded');
+    c.classList.remove('selected');
+  });
+  if (sameOne) {
+    _selectedReviewIdx = null;
+    renderOpinionPanelEmpty();
+    return;
+  }
+  var card = document.querySelector('.rv-proposal-card[data-idx="'+idx+'"]');
+  if (card) { card.classList.add('expanded'); card.classList.add('selected'); }
+  _selectedReviewIdx = idx;
+  renderOpinionPanel(idx);
+}
+
+function renderOpinionPanel(idx) {
+  var item = _reviewItems[idx];
+  var locked = item.myStatus === '완료';
+
+  var html = '<div class="rv-opinion-receipt">접수번호 <b>'+esc(item.receiptNo)+'</b></div>' +
+    '<div class="rv-opinion-title">'+esc(item.title)+'</div>' +
+    '<textarea class="rv-opinion-textarea" id="rv-opinion-input"' + (locked ? ' readonly' : '') + ' placeholder="○ 검토의견을 작성해주세요...&#10;○ 추진 가능성, 기대 효과, 보완 사항 등을 자유롭게 기재">' + esc(item.myOpinion||'') + '</textarea>' +
+    (locked
+      ? '<div class="rv-locked-notice done">✅ 검토 완료 상태입니다. 수정이 필요하면 관리자에게 문의하세요.</div>'
+      : '<div class="rv-opinion-btns">' +
+          '<button class="rv-btn-draft" onclick="saveReviewOpinion(\'작성중\')">임시저장</button>' +
+          '<button class="rv-btn-submit" onclick="saveReviewOpinion(\'완료\')">작성 완료</button>' +
+        '</div>');
+
+  if (locked) {
+    if (item.otherReviews && item.otherReviews.length > 0) {
+      html += '<div class="rv-other-reviews"><div class="rv-other-title">📌 다른 부서 검토 의견</div>';
+      item.otherReviews.forEach(function(o) {
+        html += '<div class="mine-review-item completed" style="margin-bottom:8px">' +
+          '<div class="mine-review-head">' +
+            '<span class="mine-review-dept">'+esc(o.dept)+'</span>' +
+            '<span class="mine-review-meta">'+esc(o.date||'')+'</span>' +
+          '</div>' +
+          '<div class="mine-review-opinion" style="font-size:12.5px">'+esc(o.opinion||'')+'</div>' +
+        '</div>';
+      });
+      html += '</div>';
+    } else {
+      html += '<div class="rv-locked-notice wait" style="margin-top:14px">다른 부서가 아직 검토를 완료하지 않았습니다.</div>';
+    }
+  } else {
+    html += '<div class="rv-locked-notice wait" style="margin-top:14px">💡 본인 검토를 [작성 완료]하시면 다른 부서의 검토 의견을 열람할 수 있습니다.</div>';
+  }
+
+  document.getElementById('rv-opinion-area').innerHTML = html;
+}
+
+function renderOpinionPanelEmpty() {
+  document.getElementById('rv-opinion-area').innerHTML = '<p class="mine-empty">왼쪽 목록에서 제안을 선택하세요.</p>';
+}
+
+function saveReviewOpinion(status) {
+  if (_selectedReviewIdx === null || !_reviewItems[_selectedReviewIdx]) return alert('제안을 선택하세요.');
+  var opinion = (document.getElementById('rv-opinion-input').value || '').trim();
+  if (!opinion) return alert('검토 의견을 입력해주세요.');
+  if (status === '완료' && !confirm('작성 완료 후에는 수정할 수 없습니다. 진행하시겠습니까?')) return;
+
+  showLoadingOverlay(status === '완료' ? '제출 중...' : '저장 중...');
+  apiPost({
+    action: 'dreamSaveReview',
+    code: _reviewCode,
+    receiptNo: _reviewItems[_selectedReviewIdx].receiptNo,
+    opinion: opinion,
+    status: status
+  }).then(function(res) {
+    hideLoadingOverlay();
+    if (!res || !res.ok) { alert('저장 실패: ' + ((res && res.error) || '')); return; }
+    showToast(status === '완료' ? '✅ 검토 완료되었습니다.' : '✅ 임시저장되었습니다.', 'ok');
+    loadReviewItems(); // 목록 새로고침 (선택 유지됨)
+  }).catch(function(e) {
+    hideLoadingOverlay();
+    alert('서버 오류: ' + e.message);
+  });
+}
+
+function reviewLogout() {
+  _reviewCode = null;
+  _reviewerInfo = null;
+  _reviewItems = [];
+  _selectedReviewIdx = null;
+  document.getElementById('review-login-card').style.display = 'block';
+  document.getElementById('review-work').style.display = 'none';
+  document.getElementById('review-code').value = '';
+  document.getElementById('review-login-err').style.display = 'none';
+}
+
+// ══════════════════════════════════════════════════════════
+// ██  검토·심사 탭 (기존 - 관리자 패널 내부)  ██
 // ══════════════════════════════════════════════════════════
 
 var _rvMode = null; // 'review' or 'judge'

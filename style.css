@@ -367,6 +367,46 @@ textarea.fi { resize:vertical; }
 .form-section-divider::after { content: ""; flex: 1; height: 1px; background: linear-gradient(to right, #d5dbe8, transparent); }
 .form-section-label { font-size: 13px; font-weight: 800; color: var(--navy); letter-spacing: -.3px; padding: 4px 12px; background: #eef3ff; border-radius: 6px; border-left: 3px solid var(--blue); }
 
+/* 검토 페이지 */
+.rv-header { background: var(--navy); color: #fff; padding: 14px 22px; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; box-shadow: 0 3px 14px rgba(30,58,110,.2); }
+.rv-hdr-info { display: flex; gap: 28px; align-items: center; }
+.rv-hdr-label { font-size: 11px; color: #a0b4d8; margin-right: 8px; letter-spacing: .5px; }
+.rv-hdr-value { font-size: 14px; font-weight: 700; color: #fff; }
+.rv-split { display: grid; grid-template-columns: 60fr 40fr; gap: 16px; align-items: start; }
+
+.rv-proposal-card { border: 1.5px solid #e8edf5; border-radius: 10px; margin-bottom: 10px; overflow: hidden; transition: border .15s, box-shadow .15s; }
+.rv-proposal-card.selected { border-color: var(--blue); box-shadow: 0 0 0 3px #eef3ff; }
+.rv-proposal-head { padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; background: #fafbfd; }
+.rv-proposal-card.selected .rv-proposal-head { background: #eef3ff; }
+.rv-proposal-no { font-size: 12px; font-weight: 700; color: var(--blue); font-family: 'Exo 2', 'Noto Sans KR', sans-serif; letter-spacing: .5px; min-width: 115px; }
+.rv-proposal-title { flex: 1; font-size: 14px; font-weight: 700; color: var(--navy); }
+.rv-proposal-status { font-size: 11px; padding: 3px 9px; border-radius: 10px; font-weight: 700; white-space: nowrap; }
+.rv-proposal-status.pending { background: #fde68a; color: #92400e; }
+.rv-proposal-status.draft { background: #bfdbfe; color: #1e40af; }
+.rv-proposal-status.completed { background: #bbf7d0; color: #166534; }
+.rv-proposal-body { padding: 14px 16px; display: none; background: #fff; font-size: 13px; line-height: 1.7; }
+.rv-proposal-card.expanded .rv-proposal-body { display: block; }
+.rv-pb-row { margin-bottom: 12px; }
+.rv-pb-label { font-size: 11px; font-weight: 700; color: var(--blue); padding: 3px 9px; background: #eef3ff; border-radius: 4px; display: inline-block; margin-bottom: 5px; }
+.rv-pb-text { color: #1a2035; white-space: pre-wrap; padding: 0 4px; word-break: keep-all; }
+
+.rv-opinion-receipt { font-size: 13px; color: #64748b; margin-bottom: 6px; }
+.rv-opinion-receipt b { color: var(--blue); font-family: 'Exo 2', 'Noto Sans KR', sans-serif; letter-spacing: .5px; }
+.rv-opinion-title { font-size: 14px; font-weight: 700; color: var(--navy); margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px dashed #e8edf5; }
+.rv-opinion-textarea { width: 100%; min-height: 240px; border: 1.5px solid #d5dbe8; border-radius: 8px; padding: 12px 14px; font-size: 14px; font-family: inherit; line-height: 1.7; resize: vertical; box-sizing: border-box; background: #fafbfd; }
+.rv-opinion-textarea:focus { border-color: var(--blue); background: #fff; outline: none; }
+.rv-opinion-btns { display: flex; gap: 8px; margin-top: 12px; }
+.rv-opinion-btns button { flex: 1; padding: 11px; font-size: 14px; font-weight: 700; border-radius: 8px; cursor: pointer; font-family: inherit; }
+.rv-btn-draft { background: #fff; color: var(--navy); border: 1.5px solid #d5dbe8; }
+.rv-btn-draft:hover { background: #f6f8fd; }
+.rv-btn-submit { background: var(--blue); color: #fff; border: none; }
+.rv-btn-submit:hover { filter: brightness(1.08); }
+.rv-locked-notice { border-radius: 8px; padding: 10px 14px; font-size: 12px; margin-top: 12px; line-height: 1.6; }
+.rv-locked-notice.done { background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; }
+.rv-locked-notice.wait { background: #fff8e6; border: 1px solid #fde68a; color: #92400e; }
+.rv-other-reviews { margin-top: 18px; padding-top: 14px; border-top: 2px solid #e8edf5; }
+.rv-other-title { font-size: 13px; font-weight: 700; color: var(--navy); margin-bottom: 10px; }
+
 /* 내 제안 확인 화면 */
 .mine-section-title { font-size: 15px; font-weight: 800; color: var(--navy); margin-bottom: 16px; padding-bottom: 10px; border-bottom: 2px solid #e8edf5; letter-spacing: -.3px; }
 .mine-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border-top: 1px solid #e8edf5; }

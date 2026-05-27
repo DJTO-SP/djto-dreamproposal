@@ -456,13 +456,52 @@
     </div>
   </div>
 
-  <!-- ===== 검토 (5단계 구현 예정) ===== -->
+  <!-- ===== 검토 ===== -->
   <div class="tab-content" id="tab-review">
-    <div class="card" style="padding:60px 40px;text-align:center;color:#aaa">
-      <div style="font-size:48px;margin-bottom:16px">📝</div>
-      <div style="font-size:18px;font-weight:700;color:#666">검토</div>
-      <div style="font-size:13px;margin-top:10px;color:#999">검토위원이 부서코드로 로그인 후 담당 제안을 검토하는 화면입니다.</div>
-      <div style="font-size:12px;margin-top:6px;color:#bbb">(5단계에서 좌우분할 검토 화면 구현 예정)</div>
+    <!-- 로그인 화면 -->
+    <div class="card" id="review-login-card" style="padding:40px 32px;max-width:480px;margin:24px auto">
+      <div class="section-title-bar">
+        <div class="section-title-icon">📝</div>
+        <div><h2 class="section-title-text">검토위원 로그인</h2></div>
+      </div>
+      <p style="font-size:13px;color:#64748b;margin-bottom:20px;line-height:1.7">
+        관리자로부터 받은 <b>검토위원 코드</b>를 입력해주세요.<br>
+        코드 인증 후 본인 부서가 담당으로 지정된 제안 목록이 표시됩니다.
+      </p>
+      <div class="sf-field full" style="margin-bottom:18px">
+        <label>검토위원 코드 <span class="field-req">*</span></label>
+        <input id="review-code" placeholder="예: RV-K7Q3" style="font-family:'Exo 2','Noto Sans KR',sans-serif;letter-spacing:2px;text-transform:uppercase" onkeydown="if(event.key==='Enter')reviewLogin()">
+      </div>
+      <button class="btn-submit-full" onclick="reviewLogin()">로그인</button>
+      <p id="review-login-err" style="display:none;margin-top:12px;padding:10px 14px;background:#fee2e2;border:1px solid #fca5a5;border-radius:8px;color:#991b1b;font-size:13px;text-align:center"></p>
+    </div>
+
+    <!-- 검토 작업 화면 -->
+    <div id="review-work" style="display:none">
+      <div class="rv-header">
+        <div class="rv-hdr-info">
+          <div><span class="rv-hdr-label">검토부서</span><span class="rv-hdr-value" id="rv-dept">—</span></div>
+          <div><span class="rv-hdr-label">검토자</span><span class="rv-hdr-value" id="rv-name">—</span></div>
+          <div><span class="rv-hdr-label">진행</span><span class="rv-hdr-value"><span id="rv-done-cnt">0</span> / <span id="rv-total-cnt">0</span></span></div>
+        </div>
+        <button class="btn-cancel" onclick="reviewLogout()" style="padding:6px 14px;font-size:12px">로그아웃</button>
+      </div>
+      <div class="rv-split">
+        <div class="rv-left">
+          <div class="card" style="padding:20px 24px">
+            <div class="mine-section-title">📋 검토 대상 제안</div>
+            <div id="rv-list"></div>
+          </div>
+        </div>
+        <div class="rv-right">
+          <div class="card" style="padding:20px 24px;position:sticky;top:64px">
+            <div class="mine-section-title">✍️ 검토 의견 작성</div>
+            <div id="rv-opinion-area">
+              <p class="mine-empty">왼쪽 목록에서 제안을 선택하세요.</p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
