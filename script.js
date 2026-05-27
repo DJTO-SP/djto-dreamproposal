@@ -3595,7 +3595,7 @@ function renderNoticeBubble(text) {
   bubble.className = 'site-notice-bubble';
   bubble.style.cssText = 'position:absolute;right:calc(100% + 10px);top:50%;transform:translateY(-50%);z-index:10';
   bubble.innerHTML = '<div style="position:relative;background:#fff;color:#204473;font-size:14px;font-weight:800;padding:9px 18px;border-radius:20px;border:2.5px solid #204473;white-space:nowrap">' +
-    '📢 ' + text +
+    '📢 ' + esc(text) +
     '<span style="position:absolute;right:-18px;top:50%;margin-top:-7px;border:8px solid transparent;border-left:10px solid #204473"></span>' +
     '<span style="position:absolute;right:-14px;top:50%;margin-top:-6px;border:7px solid transparent;border-left:9px solid #fff"></span>' +
     '</div>';
