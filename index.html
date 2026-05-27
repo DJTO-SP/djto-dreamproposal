@@ -389,13 +389,70 @@
     </div>
   </div>
 
-  <!-- ===== 내 제안 확인 (4단계 구현 예정) ===== -->
+  <!-- ===== 내 제안 확인 ===== -->
   <div class="tab-content" id="tab-mine">
-    <div class="card" style="padding:60px 40px;text-align:center;color:#aaa">
-      <div style="font-size:48px;margin-bottom:16px">🔍</div>
-      <div style="font-size:18px;font-weight:700;color:#666">내 제안 확인</div>
-      <div style="font-size:13px;margin-top:10px;color:#999">접수번호 + 이름으로 본인 제안의 검토/심사 진행상황을 확인하는 화면입니다.</div>
-      <div style="font-size:12px;margin-top:6px;color:#bbb">(4단계에서 구현 예정)</div>
+    <!-- 조회 폼 -->
+    <div class="card" id="mine-login-card" style="padding:40px 32px;max-width:480px;margin:24px auto">
+      <div class="section-title-bar">
+        <div class="section-title-icon">🔍</div>
+        <div><h2 class="section-title-text">내 제안 확인</h2></div>
+      </div>
+      <p style="font-size:13px;color:#64748b;margin-bottom:20px;line-height:1.7">
+        접수 시 발급받은 <b>접수번호</b>와 <b>본인 성명</b>을 입력하시면<br>
+        검토 진행상황과 심사 결과를 확인할 수 있습니다.
+      </p>
+      <div class="sf-field full" style="margin-bottom:14px">
+        <label>접수번호 <span class="field-req">*</span></label>
+        <input id="mine-receipt-no" placeholder="예: 2026-H1-001" style="font-family:'Exo 2','Noto Sans KR',sans-serif;letter-spacing:1px">
+      </div>
+      <div class="sf-field full" style="margin-bottom:18px">
+        <label>본인 성명 <span class="field-req">*</span></label>
+        <input id="mine-name" placeholder="홍길동" onkeydown="if(event.key==='Enter')lookupMyProposal()">
+      </div>
+      <button class="btn-submit-full" onclick="lookupMyProposal()">조회하기</button>
+      <p id="mine-error" style="display:none;margin-top:12px;padding:10px 14px;background:#fee2e2;border:1px solid #fca5a5;border-radius:8px;color:#991b1b;font-size:13px;text-align:center"></p>
+    </div>
+
+    <!-- 조회 결과 -->
+    <div id="mine-result" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding:0 4px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:13px;color:#64748b">접수번호</span>
+          <span id="mine-r-no" style="font-size:18px;font-weight:800;color:var(--blue);font-family:'Exo 2','Noto Sans KR',sans-serif;letter-spacing:1px">—</span>
+        </div>
+        <button class="btn-cancel" onclick="resetMyProposal()" style="padding:6px 16px;font-size:12px">다시 조회</button>
+      </div>
+
+      <div class="card" style="padding:24px 28px;margin-bottom:14px">
+        <div class="mine-section-title">📋 제안 정보</div>
+        <div class="mine-grid" id="mine-info"></div>
+      </div>
+
+      <div class="card" style="padding:24px 28px;margin-bottom:14px">
+        <div class="mine-section-title">📝 제출 내용</div>
+        <div class="mine-content-block">
+          <div class="mine-content-label">제안사유 (원인분석)</div>
+          <div class="mine-content-text" id="mine-reason">—</div>
+        </div>
+        <div class="mine-content-block">
+          <div class="mine-content-label">실시방법 (개선방향)</div>
+          <div class="mine-content-text" id="mine-method">—</div>
+        </div>
+        <div class="mine-content-block" id="mine-effect-block">
+          <div class="mine-content-label">기대효과</div>
+          <div class="mine-content-text" id="mine-effect">—</div>
+        </div>
+      </div>
+
+      <div class="card" style="padding:24px 28px;margin-bottom:14px">
+        <div class="mine-section-title">💬 검토 진행 현황</div>
+        <div id="mine-reviews"></div>
+      </div>
+
+      <div class="card" style="padding:24px 28px">
+        <div class="mine-section-title">🏅 심사 결과</div>
+        <div id="mine-scores"></div>
+      </div>
     </div>
   </div>
 

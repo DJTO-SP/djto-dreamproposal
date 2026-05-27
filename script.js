@@ -1462,6 +1462,132 @@ function showSubmitDone(receiptNo, name) {
 }
 
 // ══════════════════════════════════════════════════════════
+// ██  내 제안 확인  ██
+// ══════════════════════════════════════════════════════════
+
+function lookupMyProposal() {
+  var no   = (document.getElementById('mine-receipt-no').value || '').trim();
+  var name = (document.getElementById('mine-name').value || '').trim();
+  var err  = document.getElementById('mine-error');
+
+  if (!no || !name) {
+    err.textContent = '접수번호와 본인 성명을 모두 입력해주세요.';
+    err.style.display = 'block';
+    return;
+  }
+
+  err.style.display = 'none';
+  showLoadingOverlay('조회 중...');
+
+  apiPost({ action: 'dreamGetMyProposal', receiptNo: no, name: name }).then(function(res) {
+    hideLoadingOverlay();
+    if (!res || !res.ok) {
+      err.textContent = (res && res.error) || '조회에 실패했습니다.';
+      err.style.display = 'block';
+      return;
+    }
+    renderMyProposal(res);
+  }).catch(function(e) {
+    hideLoadingOverlay();
+    err.textContent = '서버 오류: ' + e.message;
+    err.style.display = 'block';
+  });
+}
+
+function renderMyProposal(res) {
+  var p = res.proposal;
+  document.getElementById('mine-login-card').style.display = 'none';
+  document.getElementById('mine-result').style.display = 'block';
+  document.getElementById('mine-r-no').textContent = p.receiptNo;
+
+  var statusBadge = function(s) {
+    var map = { '접수완료':'#fbbf24', '검토중':'#3b82f6', '심사중':'#a855f7', '심사완료':'#22c55e' };
+    var c = map[s] || '#94a3b8';
+    return '<span style="background:'+c+';color:#fff;padding:3px 10px;border-radius:10px;font-size:12px;font-weight:700">'+esc(s||'-')+'</span>';
+  };
+  var awardBadge2 = function(a) {
+    if (!a || a === '심사중') return '<span style="color:#94a3b8;font-size:13px">진행중</span>';
+    return '<span class="abadge a-'+esc(a)+'"><span class="adot"></span>'+esc(a)+'</span>';
+  };
+
+  document.getElementById('mine-info').innerHTML =
+    '<div class="mine-cell"><div class="mine-cell-label">제 안 자</div><div class="mine-cell-value">'+esc(p.name)+'</div></div>' +
+    '<div class="mine-cell"><div class="mine-cell-label">소  속</div><div class="mine-cell-value">'+esc(p.dept)+'</div></div>' +
+    '<div class="mine-cell"><div class="mine-cell-label">접수일시</div><div class="mine-cell-value">'+esc(p.submittedAt)+'</div></div>' +
+    '<div class="mine-cell"><div class="mine-cell-label">제안부문</div><div class="mine-cell-value">'+esc(p.category)+'</div></div>' +
+    '<div class="mine-cell full"><div class="mine-cell-label">제   목</div><div class="mine-cell-value" style="font-weight:700">'+esc(p.title)+'</div></div>' +
+    '<div class="mine-cell full"><div class="mine-cell-label">담당부서</div><div class="mine-cell-value">'+p.targetDepts.map(esc).join(', ')+'</div></div>' +
+    '<div class="mine-cell"><div class="mine-cell-label">상   태</div><div class="mine-cell-value">'+statusBadge(p.status)+'</div></div>' +
+    '<div class="mine-cell"><div class="mine-cell-label">결   과</div><div class="mine-cell-value">'+awardBadge2(p.award)+'</div></div>';
+
+  document.getElementById('mine-reason').textContent = p.reason || '—';
+  document.getElementById('mine-method').textContent = p.method || '—';
+  var effEl = document.getElementById('mine-effect');
+  var effBlock = document.getElementById('mine-effect-block');
+  if (p.effect) { effEl.textContent = p.effect; effBlock.style.display = ''; }
+  else { effBlock.style.display = 'none'; }
+
+  // 검토 진행 — 담당부서 순서로 표시
+  var deptReviews = {};
+  (res.reviews || []).forEach(function(r) { deptReviews[r.dept] = r; });
+  var rvHtml = '';
+  (p.targetDepts || []).forEach(function(d) {
+    var r = deptReviews[d];
+    if (r && r.status === '완료') {
+      rvHtml += '<div class="mine-review-item completed">' +
+        '<div class="mine-review-head">' +
+          '<span class="mine-review-dept">'+esc(d)+'</span>' +
+          '<span class="mine-review-status completed">검토 완료</span>' +
+          '<span class="mine-review-meta">'+esc(r.date||'')+'</span>' +
+        '</div>' +
+        '<div class="mine-review-opinion">'+esc(r.opinion||'')+'</div>' +
+        '</div>';
+    } else if (r) {
+      rvHtml += '<div class="mine-review-item pending">' +
+        '<div class="mine-review-head">' +
+          '<span class="mine-review-dept">'+esc(d)+'</span>' +
+          '<span class="mine-review-status pending">검토 중</span>' +
+        '</div></div>';
+    } else {
+      rvHtml += '<div class="mine-review-item">' +
+        '<div class="mine-review-head">' +
+          '<span class="mine-review-dept">'+esc(d)+'</span>' +
+          '<span class="mine-review-status" style="background:#94a3b8;color:#fff">대기</span>' +
+        '</div></div>';
+    }
+  });
+  if (!p.targetDepts.length) rvHtml = '<div class="mine-empty">배정된 검토 부서가 없습니다.</div>';
+  document.getElementById('mine-reviews').innerHTML = rvHtml;
+
+  // 심사 결과
+  var scHtml = '';
+  if (res.scores && res.scores.length > 0) {
+    res.scores.forEach(function(s) {
+      scHtml += '<div class="mine-score-item">' +
+        '<div class="mine-score-head">' +
+          '<span class="mine-score-judge">심사위원: '+esc(s.judge||'')+'</span>' +
+          '<span class="mine-score-total">'+esc(s.total||0)+'점</span>' +
+        '</div>' +
+        (s.opinion ? '<div class="mine-review-opinion">'+esc(s.opinion)+'</div>' : '') +
+        '</div>';
+    });
+  } else {
+    scHtml = '<div class="mine-empty">아직 심사가 진행되지 않았습니다.</div>';
+  }
+  document.getElementById('mine-scores').innerHTML = scHtml;
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function resetMyProposal() {
+  document.getElementById('mine-login-card').style.display = 'block';
+  document.getElementById('mine-result').style.display = 'none';
+  document.getElementById('mine-receipt-no').value = '';
+  document.getElementById('mine-name').value = '';
+  document.getElementById('mine-error').style.display = 'none';
+}
+
+// ══════════════════════════════════════════════════════════
 // ██  검토·심사 탭  ██
 // ══════════════════════════════════════════════════════════
 

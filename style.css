@@ -367,6 +367,35 @@ textarea.fi { resize:vertical; }
 .form-section-divider::after { content: ""; flex: 1; height: 1px; background: linear-gradient(to right, #d5dbe8, transparent); }
 .form-section-label { font-size: 13px; font-weight: 800; color: var(--navy); letter-spacing: -.3px; padding: 4px 12px; background: #eef3ff; border-radius: 6px; border-left: 3px solid var(--blue); }
 
+/* 내 제안 확인 화면 */
+.mine-section-title { font-size: 15px; font-weight: 800; color: var(--navy); margin-bottom: 16px; padding-bottom: 10px; border-bottom: 2px solid #e8edf5; letter-spacing: -.3px; }
+.mine-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border-top: 1px solid #e8edf5; }
+.mine-grid > .mine-cell { display: flex; padding: 11px 0; border-bottom: 1px solid #e8edf5; }
+.mine-grid > .mine-cell.full { grid-column: 1 / -1; }
+.mine-cell-label { width: 100px; font-size: 13px; font-weight: 700; color: #6b7a99; letter-spacing: .3px; }
+.mine-cell-value { flex: 1; font-size: 14px; font-weight: 600; color: var(--navy); padding-right: 16px; }
+.mine-content-block { margin-bottom: 18px; }
+.mine-content-block:last-child { margin-bottom: 0; }
+.mine-content-label { font-size: 13px; font-weight: 800; color: var(--blue); padding: 7px 12px; background: #eef3ff; border-left: 3px solid var(--blue); border-radius: 4px; margin-bottom: 8px; display: inline-block; }
+.mine-content-text { font-size: 13.5px; line-height: 1.85; color: #1a2035; padding: 4px 10px; white-space: pre-wrap; word-break: keep-all; }
+
+.mine-review-item { padding: 14px 16px; border-radius: 10px; margin-bottom: 10px; border: 1px solid #e8edf5; background: #fafbfd; }
+.mine-review-item.completed { background: #f0f9ff; border-color: #bae6fd; }
+.mine-review-item.pending { background: #fff8e6; border-color: #fde68a; }
+.mine-review-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.mine-review-dept { font-size: 14px; font-weight: 800; color: var(--navy); }
+.mine-review-status { font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 10px; }
+.mine-review-status.completed { background: #0369a1; color: #fff; }
+.mine-review-status.pending { background: #d97706; color: #fff; }
+.mine-review-meta { font-size: 12px; color: #64748b; margin-left: auto; }
+.mine-review-opinion { font-size: 13px; color: #1a2035; line-height: 1.8; padding: 8px 12px; background: #fff; border-radius: 6px; white-space: pre-wrap; }
+
+.mine-score-item { padding: 14px 16px; border-radius: 10px; margin-bottom: 10px; border: 1px solid #e8edf5; background: #fafbfd; }
+.mine-score-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.mine-score-judge { font-size: 14px; font-weight: 700; color: var(--navy); }
+.mine-score-total { font-size: 18px; font-weight: 900; color: var(--blue); font-family: 'Exo 2', 'Noto Sans KR', sans-serif; }
+.mine-empty { text-align: center; padding: 32px 16px; color: #94a3b8; font-size: 13px; }
+
 /* 접수 완료 화면 */
 .done-info-box { background: #f6f8fd; border: 1px solid #dde5f0; border-radius: 12px; padding: 20px 28px; max-width: 380px; margin: 0 auto 22px; }
 .done-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; }
