@@ -609,9 +609,11 @@
               <h2 class="section-title-text" style="font-size:17px">접수현황</h2>
             </div>
             <select id="mgInboxFilter" onchange="renderMgInbox()" style="border:1.5px solid #d5dbe8;border-radius:8px;padding:6px 12px;font-size:13px;font-family:inherit">
-              <option value="all">전체</option>
-              <option value="심사중" selected>심사중</option>
+              <option value="all" selected>전체</option>
               <option value="접수완료">접수완료</option>
+              <option value="검토중">검토중</option>
+              <option value="심사중">심사중</option>
+              <option value="심사완료">심사완료</option>
             </select>
           </div>
           <div id="mgInboxBody"><p style="text-align:center;color:#aaa;padding:20px">불러오는 중...</p></div>

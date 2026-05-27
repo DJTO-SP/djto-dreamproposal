@@ -2156,6 +2156,7 @@ function manageLogin() {
 function manageLogout() {
   isAdmin = false;
   ADMIN_PW = '';
+  _adminItems = [];
   if (typeof mgLoginLoading === 'function') mgLoginLoading(false);
   document.getElementById('mg-lock').style.display = 'block';
   document.getElementById('mg-admin').style.display = 'none';
@@ -2174,74 +2175,195 @@ function showMgPanel(id, btn) {
   if (id === 'mg-notice') loadNoticeAdmin();
 }
 
+// 관리자 접수현황 — 새 운영시트(제안/검토/심사) 통합 조회
+var _adminItems = [];
+
 function renderMgInbox() {
+  if (!isAdmin || !ADMIN_PW) return;
   var body = document.getElementById('mgInboxBody');
   if (!body) return;
+
+  if (_adminItems.length === 0) {
+    body.innerHTML = '<p style="text-align:center;color:#aaa;padding:20px;font-size:13px">불러오는 중...</p>';
+    apiPost({ action: 'dreamGetAdminProposals', pw: ADMIN_PW }).then(function(res) {
+      if (!res || !res.ok) {
+        body.innerHTML = '<p style="text-align:center;color:var(--rose);padding:20px;font-size:13px">' + esc((res && res.error) || '조회 실패') + '</p>';
+        return;
+      }
+      _adminItems = res.items || [];
+      renderMgInboxList();
+    }).catch(function(e) {
+      body.innerHTML = '<p style="text-align:center;color:var(--rose);padding:20px;font-size:13px">서버 오류: ' + esc(e.message) + '</p>';
+    });
+  } else {
+    renderMgInboxList();
+  }
+}
+
+function reloadMgInbox() {
+  _adminItems = [];
+  renderMgInbox();
+}
+
+function renderMgInboxList() {
+  var body = document.getElementById('mgInboxBody');
   var filter = (document.getElementById('mgInboxFilter') || {}).value || 'all';
-  var items = DATA.filter(function(d) {
-    if (filter === 'all') return d.award === '심사중' || d.award === '접수완료' || d.status === '접수완료';
-    return d.award === filter || d.status === filter;
-  });
+  var items = filter === 'all' ? _adminItems : _adminItems.filter(function(it){ return it.status === filter; });
 
   if (!items.length) {
-    body.innerHTML = '<p style="text-align:center;color:#aaa;padding:20px;font-size:13px">접수된 제안이 없습니다.</p>';
+    body.innerHTML = '<p style="text-align:center;color:#aaa;padding:20px;font-size:13px">해당 조건의 제안이 없습니다.</p>';
     var split = document.getElementById('inbox-split'); if (split) split.style.display = 'none';
     return;
   }
-  var html = '<table class="submit-list-table"><thead><tr><th>접수일</th><th>제목</th><th>제안자</th><th>부서</th><th>제안부문</th><th>상태</th></tr></thead><tbody>';
-  items.forEach(function(d, i) {
-    var date = (d.period || d.submittedAt || '').toString().substring(0, 10);
-    html += '<tr onclick="openInboxDetail(\'' + d.id + '\',this)" style="cursor:pointer" class="inbox-row">' +
-      '<td class="sl-date">' + date + '</td>' +
-      '<td class="sl-title">' + esc(d.title) + '</td>' +
-      '<td>' + esc(d.proposer || '') + '</td>' +
-      '<td>' + esc(d.dept || '') + '</td>' +
+
+  var html = '<table class="submit-list-table"><thead><tr>' +
+    '<th>접수번호</th><th>제안자</th><th>소속</th><th>제목</th><th>분류</th><th>검토</th><th>상태</th><th>결과</th>' +
+    '</tr></thead><tbody>';
+  items.forEach(function(d) {
+    html += '<tr onclick="openInboxDetail(\'' + esc(d.receiptNo) + '\', this)" style="cursor:pointer" class="inbox-row">' +
+      '<td style="font-family:\'Exo 2\',\'Noto Sans KR\',sans-serif;font-weight:700;color:var(--blue)">' + esc(d.receiptNo) + '</td>' +
+      '<td>' + esc(d.name) + '</td>' +
+      '<td>' + esc(d.dept) + '</td>' +
+      '<td>' + esc(d.title) + '</td>' +
       '<td>' + catBadge(d.category) + '</td>' +
-      '<td>' + awardBadge(d.award) + '</td>' +
+      '<td style="text-align:center;font-family:\'Exo 2\',sans-serif;color:#64748b">' + d.reviewDone + '/' + d.reviewTotal + '</td>' +
+      '<td>' + admStatusBadge(d.status) + '</td>' +
+      '<td>' + (d.result ? awardBadge(d.result) : '<span style="color:#bbb;font-size:12px">—</span>') + '</td>' +
     '</tr>';
   });
   html += '</tbody></table>';
   body.innerHTML = html;
 }
 
-function openInboxDetail(id, rowEl) {
-  var d = DATA.find(function(x) { return String(x.id) === String(id); });
+function admStatusBadge(s) {
+  var map = { '접수완료':'#fbbf24', '검토중':'#3b82f6', '심사중':'#a855f7', '심사완료':'#22c55e' };
+  var c = map[s] || '#94a3b8';
+  return '<span style="background:'+c+';color:#fff;padding:2px 9px;border-radius:10px;font-size:11px;font-weight:700;white-space:nowrap">' + esc(s||'-') + '</span>';
+}
+
+function openInboxDetail(receiptNo, rowEl) {
+  var d = _adminItems.find(function(x) { return String(x.receiptNo) === String(receiptNo); });
   if (!d) return;
-  // 행 활성화
+
   document.querySelectorAll('.inbox-row').forEach(function(r) { r.classList.remove('active-row'); });
   if (rowEl) rowEl.classList.add('active-row');
-  // 분할화면 표시
+
   var split = document.getElementById('inbox-split');
   split.style.display = 'flex';
-  // 좌측: 제안 상세 + 첨부파일 미리보기
-  var inboxPdfHtml = '';
-  var inboxFileUrl = d.driveUrl || '';
-  var inboxFileName = d.pdf || '';
-  if (inboxFileUrl && inboxFileUrl.indexOf('drive.google.com') >= 0) {
-    var inboxFileId = inboxFileUrl.match(/\/d\/([^\/]+)/) || inboxFileUrl.match(/[?&]id=([^&]+)/);
-    var inboxPreview = inboxFileId ? 'https://drive.google.com/file/d/' + inboxFileId[1] + '/preview' : inboxFileUrl;
-    inboxPdfHtml = '<div style="margin-top:16px;border-top:1px solid #e8edf5;padding-top:12px">' +
-      '<div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:8px">📎 ' + esc(inboxFileName) + '</div>' +
-      '<iframe src="' + inboxPreview + '" style="width:100%;height:500px;border:1px solid #e8edf5;border-radius:8px" allowfullscreen></iframe>' +
-      '<a href="' + esc(inboxFileUrl) + '" target="_blank" style="display:inline-block;margin-top:6px;color:var(--blue);font-size:12px">🔗 새 탭에서 열기</a>' +
-    '</div>';
-  } else if (inboxFileName) {
-    inboxPdfHtml = '<div style="margin-top:12px"><a href="' + esc(inboxFileUrl || '#') + '" target="_blank" style="color:var(--blue);font-size:13px">📎 ' + esc(inboxFileName) + '</a></div>';
+
+  // 좌측 — 검토 의견 + 심사 점수(로우) + 제안 내용
+  var html = '<div style="margin-bottom:10px"><span style="background:#eef3ff;color:var(--blue);padding:3px 10px;border-radius:6px;font-size:12px;font-weight:700;font-family:\'Exo 2\',sans-serif">' + esc(d.receiptNo) + '</span> ' + catBadge(d.category) + '</div>' +
+    '<h3 style="font-size:17px;font-weight:800;color:var(--navy);margin-bottom:14px">' + esc(d.title) + '</h3>';
+
+  // 검토 의견
+  if (d.reviews && d.reviews.length > 0) {
+    html += '<div class="adm-block"><div class="adm-block-title">💬 검토 의견 (' + d.reviewDone + '/' + d.reviewTotal + ')</div>';
+    d.reviews.forEach(function(r) {
+      var sBg = r.status === '완료' ? '#bbf7d0' : '#fde68a';
+      var sFg = r.status === '완료' ? '#166534' : '#92400e';
+      html += '<div class="adm-review"><div class="adm-review-head">' +
+        '<b>' + esc(r.dept) + '</b>' +
+        '<span style="background:'+sBg+';color:'+sFg+';padding:2px 8px;border-radius:8px;font-size:11px;font-weight:700">' + esc(r.status||'대기') + '</span>' +
+        (r.reviewer ? '<span style="color:#888;font-size:12px">' + esc(r.reviewer) + '</span>' : '') +
+        (r.date ? '<span style="color:#888;font-size:11px;margin-left:auto">' + esc(r.date) + '</span>' : '') +
+        '</div>' +
+        (r.opinion ? '<div class="adm-review-text">' + esc(r.opinion) + '</div>' : '') +
+        '</div>';
+    });
+    html += '</div>';
   }
-  document.getElementById('inbox-detail-area').innerHTML =
-    '<div style="margin-bottom:10px">' + catBadge(d.category) + ' ' + awardBadge(d.award) + '</div>' +
-    '<h3 style="font-size:17px;font-weight:800;color:var(--navy);margin-bottom:12px">' + esc(d.title) + '</h3>' +
-    '<div style="font-size:13px;color:#555;line-height:1.8">' + fmtSummary(d.summary) + '</div>' +
-    inboxPdfHtml;
-  // 우측: 제안 정보
-  document.getElementById('inbox-info-area').innerHTML =
-    '<div class="info-item"><span class="info-label">제안자</span><span>' + esc(d.proposer || '-') + '</span></div>' +
-    '<div class="info-item"><span class="info-label">부서</span><span>' + esc(d.dept || '-') + '</span></div>' +
-    '<div class="info-item"><span class="info-label">제안부문</span><span>' + esc(d.category || '-') + '</span></div>' +
-    '<div class="info-item"><span class="info-label">접수일</span><span>' + esc(d.period || '-') + '</span></div>' +
-    '<div class="info-item"><span class="info-label">상태</span><span>' + (d.award || '-') + '</span></div>' +
-    (d.keywords ? '<div class="info-item"><span class="info-label">키워드</span><span>' + fmtKeywords(d.keywords) + '</span></div>' : '');
+
+  // 심사 점수 (로우 데이터 — 가중치 X)
+  if (d.scores && d.scores.length > 0) {
+    html += '<div class="adm-block"><div class="adm-block-title">📊 심사 점수 (위원별 로우 데이터)</div>' +
+      '<table class="adm-score-table"><thead><tr>' +
+      '<th>심사위원</th><th>실시<br>가능</th><th>창의성</th><th>효과성</th><th>효율성</th><th>적용<br>범위</th><th>지속성</th><th>노력도</th><th>합계</th><th>상태</th>' +
+      '</tr></thead><tbody>';
+    d.scores.forEach(function(s) {
+      var sBg = s.status === '제출완료' ? '#bbf7d0' : '#fde68a';
+      var sFg = s.status === '제출완료' ? '#166534' : '#92400e';
+      html += '<tr>' +
+        '<td style="text-align:left;font-weight:600">' + esc(s.judge) + '</td>' +
+        '<td>' + s.feasibility + '</td><td>' + s.creativity + '</td><td>' + s.effect + '</td>' +
+        '<td>' + s.efficiency + '</td><td>' + s.scope + '</td><td>' + s.sustain + '</td><td>' + s.effort + '</td>' +
+        '<td style="font-weight:800;color:var(--blue)">' + s.total + '</td>' +
+        '<td><span style="background:'+sBg+';color:'+sFg+';padding:1px 7px;border-radius:8px;font-size:11px;font-weight:700">' + esc(s.status||'-') + '</span></td>' +
+        '</tr>';
+    });
+    html += '</tbody></table>';
+    var opinions = d.scores.filter(function(s){ return s.opinion; });
+    if (opinions.length > 0) {
+      html += '<div style="margin-top:10px">';
+      opinions.forEach(function(s) {
+        html += '<div class="adm-review"><div class="adm-review-head"><b>' + esc(s.judge) + '</b></div><div class="adm-review-text">' + esc(s.opinion) + '</div></div>';
+      });
+      html += '</div>';
+    }
+    html += '</div>';
+  }
+
+  // 제안 내용
+  html += '<div class="adm-block"><div class="adm-block-title">📝 제안 내용</div>' +
+    '<div class="adm-content-row"><div class="adm-content-label">제안사유 (원인분석)</div><div class="adm-content-text">' + esc(d.reason || '') + '</div></div>' +
+    '<div class="adm-content-row"><div class="adm-content-label">실시방법 (개선방향)</div><div class="adm-content-text">' + esc(d.method || '') + '</div></div>' +
+    (d.effect ? '<div class="adm-content-row"><div class="adm-content-label">기대효과</div><div class="adm-content-text">' + esc(d.effect) + '</div></div>' : '') +
+    '</div>';
+
+  document.getElementById('inbox-detail-area').innerHTML = html;
+
+  // 우측 — 정보 + 결과 입력
+  var infoHtml =
+    '<div class="info-item"><span class="info-label">접수번호</span><span style="font-weight:700;color:var(--blue);font-family:\'Exo 2\',sans-serif">' + esc(d.receiptNo) + '</span></div>' +
+    '<div class="info-item"><span class="info-label">제안자</span><span>' + esc(d.name) + '</span></div>' +
+    '<div class="info-item"><span class="info-label">소속</span><span>' + esc(d.dept) + '</span></div>' +
+    '<div class="info-item"><span class="info-label">접수일시</span><span style="font-size:12px">' + esc(d.submittedAt) + '</span></div>' +
+    '<div class="info-item"><span class="info-label">제안부문</span><span>' + esc(d.category) + '</span></div>' +
+    '<div class="info-item"><span class="info-label">담당부서</span><span style="font-size:12px;text-align:right">' + esc(d.targetDepts.join(', ')) + '</span></div>' +
+    '<div class="info-item"><span class="info-label">상태</span>' + admStatusBadge(d.status) + '</div>' +
+    '<div class="info-item"><span class="info-label">검토 진행</span><span style="font-family:\'Exo 2\',sans-serif">' + d.reviewDone + ' / ' + d.reviewTotal + '</span></div>';
+
+  if (d.originalUrl) {
+    infoHtml += '<div class="info-item"><span class="info-label">원본 PDF</span><a href="' + esc(d.originalUrl) + '" target="_blank" style="color:var(--blue);font-size:12px;font-weight:600">🔗 열기</a></div>';
+  }
+  if (d.anonymousUrl) {
+    infoHtml += '<div class="info-item"><span class="info-label">첨부 자료</span><a href="' + esc(d.anonymousUrl) + '" target="_blank" style="color:var(--blue);font-size:12px;font-weight:600">🔗 열기</a></div>';
+  }
+
+  infoHtml += '<div style="margin-top:14px;padding:14px;background:#fff8e6;border:1px solid #f3d99a;border-radius:8px">' +
+    '<label style="font-size:12px;font-weight:800;color:#6b4a00;margin-bottom:8px;display:block">🏅 최종결과 입력</label>' +
+    '<select id="adm-result-sel" class="fi" style="width:100%;margin-bottom:8px">' +
+      ['', '심사중', '최우수', '우수', '장려', '특별상', '미채택'].map(function(opt) {
+        var sel = (d.result === opt) || (!d.result && !opt) ? ' selected' : '';
+        return '<option value="' + esc(opt) + '"' + sel + '>' + (opt || '-- 선택 --') + '</option>';
+      }).join('') +
+    '</select>' +
+    '<button class="btn-submit-full" style="padding:9px;font-size:13px;margin-top:0" onclick="saveAdminResult(\'' + esc(d.receiptNo) + '\')">결과 저장</button>' +
+    '</div>';
+
+  document.getElementById('inbox-info-area').innerHTML = infoHtml;
   split.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function saveAdminResult(receiptNo) {
+  var sel = document.getElementById('adm-result-sel');
+  if (!sel) return;
+  var result = sel.value;
+
+  showLoadingOverlay('결과 저장 중...');
+  apiPost({
+    action: 'dreamSetResult',
+    pw: ADMIN_PW,
+    receiptNo: receiptNo,
+    result: result
+  }).then(function(res) {
+    hideLoadingOverlay();
+    if (!res || !res.ok) { alert('저장 실패: ' + ((res && res.error) || '')); return; }
+    showToast('✅ 결과 저장됨', 'ok');
+    reloadMgInbox();
+  }).catch(function(e) {
+    hideLoadingOverlay();
+    alert('서버 오류: ' + e.message);
+  });
 }
 
 // 기존 함수 호환성 유지
