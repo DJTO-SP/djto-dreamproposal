@@ -538,10 +538,13 @@
       <div class="rv-header" style="background:linear-gradient(135deg,var(--navy),#3a5a8e)">
         <div class="rv-hdr-info">
           <div><span class="rv-hdr-label">심사위원</span><span class="rv-hdr-value" id="tjd-name">—</span></div>
-          <div><span class="rv-hdr-label">진행</span><span class="rv-hdr-value"><span id="tjd-done-cnt">0</span> / <span id="tjd-total-cnt">0</span></span></div>
+          <div><span class="rv-hdr-label">저장</span><span class="rv-hdr-value"><span id="tjd-done-cnt">0</span> / <span id="tjd-total-cnt">0</span></span></div>
           <div><span class="rv-hdr-label">평균</span><span class="rv-hdr-value" id="tjd-avg">—</span></div>
         </div>
-        <button class="btn-cancel" onclick="judgeLogout()" style="padding:6px 14px;font-size:12px">로그아웃</button>
+        <div style="display:flex;align-items:center;gap:8px">
+          <button id="tjd-finalize-btn" onclick="finalizeJudge()" disabled style="background:#cbd5e1;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:700;cursor:not-allowed;font-family:inherit;transition:all .15s">🏁 최종 심사 완료</button>
+          <button class="btn-cancel" onclick="judgeLogout()" style="padding:6px 14px;font-size:12px">로그아웃</button>
+        </div>
       </div>
       <div class="rv-split">
         <div class="rv-left">

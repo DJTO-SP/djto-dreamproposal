@@ -1900,17 +1900,46 @@ function renderJudgeWork() {
   document.getElementById('judge-login-card').style.display = 'none';
   document.getElementById('judge-work').style.display = 'block';
   document.getElementById('tjd-name').textContent = _judgeInfo.name;
-  var submitted = _judgeItems.filter(function(it){ return it.myStatus === '제출완료'; });
-  document.getElementById('tjd-done-cnt').textContent = submitted.length;
+  // 저장 = 임시저장 + 제출완료 (둘 다 저장된 상태)
+  var saved = _judgeItems.filter(function(it){
+    return it.myStatus === '임시저장' || it.myStatus === '제출완료';
+  });
+  var allFinalized = _judgeItems.length > 0 && _judgeItems.every(function(it){ return it.myStatus === '제출완료'; });
+  var allSaved = _judgeItems.length > 0 && _judgeItems.every(function(it){
+    return it.myStatus === '임시저장' || it.myStatus === '제출완료';
+  });
+
+  document.getElementById('tjd-done-cnt').textContent = saved.length;
   document.getElementById('tjd-total-cnt').textContent = _judgeItems.length;
-  // 본인 채점 평균 (제출완료된 제안만)
+  // 평균: 저장된 항목 모두 집계
   var avgEl = document.getElementById('tjd-avg');
   if (avgEl) {
-    if (submitted.length > 0) {
-      var sum = submitted.reduce(function(s, it){ return s + (Number(it.myTotal)||0); }, 0);
-      avgEl.textContent = (Math.round((sum / submitted.length) * 10) / 10) + '점';
+    if (saved.length > 0) {
+      var sum = saved.reduce(function(s, it){ return s + (Number(it.myTotal)||0); }, 0);
+      avgEl.textContent = (Math.round((sum / saved.length) * 10) / 10) + '점';
     } else {
       avgEl.textContent = '—';
+    }
+  }
+
+  // 최종 심사 완료 버튼 상태
+  var finBtn = document.getElementById('tjd-finalize-btn');
+  if (finBtn) {
+    if (allFinalized) {
+      finBtn.textContent = '✅ 심사 완료됨';
+      finBtn.disabled = true;
+      finBtn.style.background = '#94a3b8';
+      finBtn.style.cursor = 'default';
+    } else if (allSaved) {
+      finBtn.textContent = '🏁 최종 심사 완료';
+      finBtn.disabled = false;
+      finBtn.style.background = '#0f9d58';
+      finBtn.style.cursor = 'pointer';
+    } else {
+      finBtn.textContent = '🏁 최종 심사 완료';
+      finBtn.disabled = true;
+      finBtn.style.background = '#cbd5e1';
+      finBtn.style.cursor = 'not-allowed';
     }
   }
 
@@ -1919,11 +1948,17 @@ function renderJudgeWork() {
     html = '<p class="mine-empty">심사 대상 제안이 없습니다.<br><span style="font-size:12px;color:#bbb">모든 담당부서 검토가 완료된 제안만 표시됩니다.</span></p>';
   } else {
     _judgeItems.forEach(function(it, idx) {
-      var statusClass = it.myStatus === '제출완료' ? 'completed' : (it.myStatus === '임시저장' ? 'draft' : 'pending');
-      var statusLabel;
-      if (it.myStatus === '제출완료') statusLabel = '제출완료 · ' + (it.myTotal || 0) + '점';
-      else if (it.myStatus === '임시저장') statusLabel = '임시저장';
-      else statusLabel = '대기';
+      var statusClass, statusLabel;
+      if (it.myStatus === '제출완료') {
+        statusClass = 'completed';
+        statusLabel = '완료 · ' + (it.myTotal || 0) + '점';
+      } else if (it.myStatus === '임시저장') {
+        statusClass = 'draft';
+        statusLabel = '저장 · ' + (it.myTotal || 0) + '점';
+      } else {
+        statusClass = 'pending';
+        statusLabel = '대기';
+      }
       html += '<div class="rv-proposal-card" data-tjd-idx="'+idx+'">' +
         '<div class="rv-proposal-head" onclick="toggleJudgeItem('+idx+')">' +
           '<span class="rv-proposal-no">'+esc(it.receiptNo)+'</span>' +
@@ -2010,11 +2045,10 @@ function renderScorePanel(idx) {
   '</div>';
 
   if (locked) {
-    html += '<div class="rv-locked-notice done" style="margin-top:14px">✅ 심사 제출 완료 상태입니다. 수정이 필요하면 관리자에게 문의하세요.</div>';
+    html += '<div class="rv-locked-notice done" style="margin-top:14px">✅ 최종 심사 완료 상태입니다. 수정이 필요하면 관리자에게 문의하세요.</div>';
   } else {
     html += '<div class="rv-opinion-btns" style="margin-top:14px">' +
-      '<button class="rv-btn-draft" onclick="dreamSaveJudgeScore(\'임시저장\')">임시저장</button>' +
-      '<button class="rv-btn-submit" onclick="dreamSaveJudgeScore(\'제출완료\')">제출 완료</button>' +
+      '<button class="rv-btn-submit" onclick="dreamSaveJudgeScore()">💾 저장</button>' +
     '</div>';
   }
 
@@ -2045,7 +2079,7 @@ function updateJudgeTotal() {
   if (el) el.textContent = total;
 }
 
-function dreamSaveJudgeScore(status) {
+function dreamSaveJudgeScore() {
   if (_selectedJudgeIdx === null || !_judgeItems[_selectedJudgeIdx]) return alert('제안을 선택하세요.');
   var scores = {};
   var total = 0;
@@ -2055,12 +2089,11 @@ function dreamSaveJudgeScore(status) {
     if (!checked) { allFilled = false; scores[def.key] = 0; }
     else { scores[def.key] = parseInt(checked.value, 10) || 0; total += scores[def.key]; }
   });
-  if (status === '제출완료' && !allFilled) return alert('7개 항목 모두 채점해주세요.');
-  if (status === '제출완료' && !confirm('제출 후에는 수정할 수 없습니다. 진행하시겠습니까?')) return;
+  if (!allFilled) return alert('7개 항목 모두 채점해주세요.');
 
   var opinion = (document.getElementById('tjd-opinion-input').value || '').trim();
 
-  showLoadingOverlay(status === '제출완료' ? '제출 중...' : '저장 중...');
+  showLoadingOverlay('저장 중...');
   apiPost({
     action: 'dreamSaveScore',
     code: _judgeCode,
@@ -2069,11 +2102,37 @@ function dreamSaveJudgeScore(status) {
     scores: scores,
     total: total,
     opinion: opinion,
-    status: status
+    status: '임시저장'   // 항상 임시저장으로 — 최종 제출은 상단 버튼으로
   }).then(function(res) {
     hideLoadingOverlay();
     if (!res || !res.ok) { alert('저장 실패: ' + ((res && res.error) || '')); return; }
-    showToast(status === '제출완료' ? '✅ 심사 제출 완료' : '✅ 임시저장됨', 'ok');
+    showToast('✅ ' + total + '점 저장됨', 'ok');
+    loadJudgeItems();
+  }).catch(function(e) {
+    hideLoadingOverlay();
+    alert('서버 오류: ' + e.message);
+  });
+}
+
+// 모든 저장된 점수를 최종 제출 (제출완료로 일괄 변경)
+function finalizeJudge() {
+  var saved = _judgeItems.filter(function(it){
+    return it.myStatus === '임시저장' || it.myStatus === '제출완료';
+  });
+  if (saved.length === 0) return alert('저장된 점수가 없습니다.');
+  if (saved.length < _judgeItems.length) {
+    return alert('모든 제안서 채점이 끝나야 최종 제출할 수 있습니다.\n저장 ' + saved.length + ' / ' + _judgeItems.length);
+  }
+  if (!confirm('모든 점수를 최종 제출합니다.\n이후에는 수정이 불가능합니다.\n\n진행하시겠습니까?')) return;
+
+  showLoadingOverlay('최종 제출 중...');
+  apiPost({
+    action: 'dreamFinalizeJudge',
+    code: _judgeCode
+  }).then(function(res) {
+    hideLoadingOverlay();
+    if (!res || !res.ok) { alert('제출 실패: ' + ((res && res.error) || '')); return; }
+    showToast('✅ 심사가 최종 완료되었습니다.', 'ok');
     loadJudgeItems();
   }).catch(function(e) {
     hideLoadingOverlay();

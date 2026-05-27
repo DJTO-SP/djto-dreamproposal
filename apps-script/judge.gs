@@ -13,6 +13,33 @@
  *   case 'dreamSaveScore':        result = dreamSaveScore(d); break;
  */
 
+// 본인이 임시저장한 모든 심사를 일괄 제출완료로 변경
+function dreamFinalizeJudge(data) {
+  try {
+    if (!data || !data.code) throw new Error('코드 누락');
+    var info = dreamFindJudge_(data.code);
+    if (!info || info.role !== '심사위원') return { ok: false, error: '권한 없음' };
+    var judgeName = String(info.name || '').trim();
+    if (!judgeName) return { ok: false, error: '위원 이름이 등록되지 않음' };
+
+    var ss = SpreadsheetApp.openById(DREAM_SHEET_ID);
+    var sSheet = ss.getSheetByName('심사');
+    if (!sSheet || sSheet.getLastRow() < 2) return { ok: false, error: '심사 데이터 없음' };
+
+    var rows = sSheet.getRange(2, 1, sSheet.getLastRow() - 1, 15).getValues();
+    var updated = 0;
+    for (var i = 0; i < rows.length; i++) {
+      if (String(rows[i][2]).trim() === judgeName && String(rows[i][13]) === '임시저장') {
+        sSheet.getRange(i + 2, 14).setValue('제출완료'); // N 상태
+        updated++;
+      }
+    }
+    return { ok: true, updated: updated };
+  } catch (err) {
+    return { ok: false, error: String(err.message || err) };
+  }
+}
+
 // 위원 시트에서 심사위원 코드 매칭 (역할='심사위원'만)
 function dreamFindJudge_(code) {
   var ss = SpreadsheetApp.openById(DREAM_SHEET_ID);
