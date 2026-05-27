@@ -1663,7 +1663,7 @@ function renderReviewWork() {
           '<div class="rv-pb-row"><div class="rv-pb-label">제안사유 (원인분석)</div><div class="rv-pb-text">'+esc(it.reason||'')+'</div></div>' +
           '<div class="rv-pb-row"><div class="rv-pb-label">실시방법 (개선방향)</div><div class="rv-pb-text">'+esc(it.method||'')+'</div></div>' +
           (it.effect ? '<div class="rv-pb-row"><div class="rv-pb-label">기대효과</div><div class="rv-pb-text">'+esc(it.effect)+'</div></div>' : '') +
-          (it.anonymousUrl ? '<div class="rv-pb-row"><a href="'+esc(it.anonymousUrl)+'" target="_blank" style="font-size:12px;color:var(--blue);font-weight:600">📄 익명 PDF 열기 (새 창)</a></div>' : '') +
+          (it.anonymousUrl ? '<div class="rv-pb-row"><a href="'+esc(it.anonymousUrl)+'" target="_blank" style="font-size:12px;color:var(--blue);font-weight:600">📄 익명 처리된 제안서 + 첨부 보기 (새 창)</a></div>' : '') +
         '</div>' +
         '</div>';
     });
@@ -1810,17 +1810,20 @@ var _selectedJudgeIdx = null;
 
 function judgeLogin() {
   var code = (document.getElementById('judge-code').value || '').trim().toUpperCase();
-  var name = (document.getElementById('judge-name').value || '').trim();
   var err  = document.getElementById('judge-login-err');
   if (!code) { err.textContent = '코드를 입력해주세요.'; err.style.display = 'block'; return; }
-  if (!name) { err.textContent = '본인 성명을 입력해주세요.'; err.style.display = 'block'; return; }
   err.style.display = 'none';
   showLoadingOverlay('인증 중...');
   apiPost({ action: 'dreamJudgeLogin', code: code }).then(function(res) {
     hideLoadingOverlay();
     if (!res || !res.ok) { err.textContent = (res && res.error) || '로그인 실패'; err.style.display = 'block'; return; }
+    if (!res.judge || !res.judge.name) {
+      err.textContent = '위원 시트에 이름이 등록되지 않았습니다. 관리자에 문의하세요.';
+      err.style.display = 'block';
+      return;
+    }
     _judgeCode = code;
-    _judgeInfo = { name: name };
+    _judgeInfo = { name: res.judge.name };  // 위원 시트에서 받은 이름 사용
     loadJudgeItems();
   }).catch(function(e) {
     hideLoadingOverlay();
@@ -1868,7 +1871,7 @@ function renderJudgeWork() {
           '<div class="rv-pb-row"><div class="rv-pb-label">제안사유 (원인분석)</div><div class="rv-pb-text">'+esc(it.reason||'')+'</div></div>' +
           '<div class="rv-pb-row"><div class="rv-pb-label">실시방법 (개선방향)</div><div class="rv-pb-text">'+esc(it.method||'')+'</div></div>' +
           (it.effect ? '<div class="rv-pb-row"><div class="rv-pb-label">기대효과</div><div class="rv-pb-text">'+esc(it.effect)+'</div></div>' : '') +
-          (it.anonymousUrl ? '<div class="rv-pb-row"><a href="'+esc(it.anonymousUrl)+'" target="_blank" style="font-size:12px;color:var(--blue);font-weight:600">📄 익명 PDF 열기 (새 창)</a></div>' : '') +
+          (it.anonymousUrl ? '<div class="rv-pb-row"><a href="'+esc(it.anonymousUrl)+'" target="_blank" style="font-size:12px;color:var(--blue);font-weight:600">📄 익명 처리된 제안서 + 첨부 보기 (새 창)</a></div>' : '') +
           (it.reviews && it.reviews.length > 0 ? renderJudgeReviewSummary(it.reviews) : '') +
         '</div>' +
         '</div>';
@@ -1920,28 +1923,22 @@ function renderScorePanel(idx) {
   var html = '<div class="rv-opinion-receipt">접수번호 <b>'+esc(item.receiptNo)+'</b></div>' +
     '<div class="rv-opinion-title">'+esc(item.title)+'</div>';
 
+  html += '<table class="tjd-score-table"><tbody>';
   DREAM_SCORE_DEF.forEach(function(def) {
-    html += '<div class="tjd-score-group">' +
-      '<div class="tjd-score-head">' +
-        '<span class="tjd-score-name">'+def.name+'</span>' +
-        '<span class="tjd-score-max">'+def.max+'점</span>' +
-      '</div>' +
-      '<div class="tjd-score-options">';
+    html += '<tr>' +
+      '<th>' + def.name + '<span class="max">(' + def.max + '점)</span></th>';
     def.options.forEach(function(opt) {
       var isChecked = myScores[def.key] === opt.v;
-      html += '<label class="' + (isChecked ? 'checked' : '') + '">' +
+      html += '<td><label class="' + (isChecked ? 'checked' : '') + '">' +
         '<input type="radio" name="tjd-' + def.key + '" value="'+opt.v+'"' + (isChecked ? ' checked' : '') + (locked ? ' disabled' : '') + ' onchange="onScoreChange(\''+def.key+'\')">' +
         '<span class="tjd-score-points">'+opt.v+'</span>' +
         '<span class="tjd-score-label">'+opt.label+'</span>' +
-      '</label>';
+      '</label></td>';
     });
-    html += '</div></div>';
+    html += '</tr>';
   });
-
-  html += '<div class="tjd-total-bar">' +
-    '<span class="tjd-total-label">합 계</span>' +
-    '<span class="tjd-total-value"><span id="tjd-total">0</span> / 100점</span>' +
-  '</div>';
+  html += '<tr class="total-row"><th>합 계</th><td colspan="5"><span id="tjd-total">0</span> / 100점</td></tr>';
+  html += '</tbody></table>';
 
   html += '<div class="sf-field full" style="margin-bottom:0">' +
     '<label>심사의견 <span class="lbl-hint">(선택)</span></label>' +
@@ -2028,7 +2025,6 @@ function judgeLogout() {
   document.getElementById('judge-login-card').style.display = 'block';
   document.getElementById('judge-work').style.display = 'none';
   document.getElementById('judge-code').value = '';
-  document.getElementById('judge-name').value = '';
   document.getElementById('judge-login-err').style.display = 'none';
 }
 

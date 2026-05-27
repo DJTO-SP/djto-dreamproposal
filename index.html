@@ -518,16 +518,12 @@
         <div><h2 class="section-title-text">심사위원 로그인</h2></div>
       </div>
       <p style="font-size:13px;color:#64748b;margin-bottom:20px;line-height:1.7">
-        부여받은 <b>심사위원 코드</b>와 <b>본인 성명</b>을 입력해주세요.<br>
+        부여받은 <b>심사위원 코드</b>를 입력해주세요.<br>
         모든 담당부서 검토가 끝난 제안에 한해 100점 만점 배점표로 심사합니다.
       </p>
-      <div class="sf-field full" style="margin-bottom:14px">
-        <label>심사위원 코드 <span class="field-req">*</span></label>
-        <input id="judge-code" style="font-family:'Exo 2','Noto Sans KR',sans-serif;letter-spacing:2px;text-transform:uppercase">
-      </div>
       <div class="sf-field full" style="margin-bottom:18px">
-        <label>본인 성명 <span class="field-req">*</span></label>
-        <input id="judge-name" placeholder="홍길동" onkeydown="if(event.key==='Enter')judgeLogin()">
+        <label>심사위원 코드 <span class="field-req">*</span></label>
+        <input id="judge-code" style="font-family:'Exo 2','Noto Sans KR',sans-serif;letter-spacing:2px;text-transform:uppercase" onkeydown="if(event.key==='Enter')judgeLogin()">
       </div>
       <button class="btn-submit-full" onclick="judgeLogin()">로그인</button>
       <p id="judge-login-err" style="display:none;margin-top:12px;padding:10px 14px;background:#fee2e2;border:1px solid #fca5a5;border-radius:8px;color:#991b1b;font-size:13px;text-align:center"></p>

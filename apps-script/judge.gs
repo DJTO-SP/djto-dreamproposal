@@ -38,7 +38,8 @@ function dreamJudgeLogin(data) {
     var info = dreamFindJudge_(data.code);
     if (!info) return { ok: false, error: '유효하지 않은 코드입니다.' };
     if (info.role !== '심사위원') return { ok: false, error: '심사위원 코드가 아닙니다.' };
-    return { ok: true };
+    // 위원 시트의 이름을 그대로 반환 → 클라이언트가 사용
+    return { ok: true, judge: { name: info.name, dept: info.dept } };
   } catch (err) {
     return { ok: false, error: String(err.message || err) };
   }
@@ -49,7 +50,8 @@ function dreamGetJudgeItems(data) {
     if (!data || !data.code) throw new Error('코드 누락');
     var info = dreamFindJudge_(data.code);
     if (!info || info.role !== '심사위원') return { ok: false, error: '권한 없음' };
-    var judgeName = String(data.judgeName || '').trim();
+    // 위원 시트의 이름 사용 (클라이언트 입력 무시 — 보안)
+    var judgeName = String(info.name || '').trim();
 
     var ss = SpreadsheetApp.openById(DREAM_SHEET_ID);
     var pSheet = ss.getSheetByName('제안');
@@ -145,8 +147,9 @@ function dreamSaveScore(data) {
     if (!data || !data.code || !data.receiptNo) throw new Error('필수 데이터 누락');
     var info = dreamFindJudge_(data.code);
     if (!info || info.role !== '심사위원') return { ok: false, error: '권한 없음' };
-    var judgeName = String(data.judgeName || '').trim();
-    if (!judgeName) return { ok: false, error: '심사위원 이름 누락' };
+    // 클라이언트가 보낸 judgeName은 무시 — 위원 시트의 이름을 그대로 사용 (보안)
+    var judgeName = String(info.name || '').trim();
+    if (!judgeName) return { ok: false, error: '위원 시트에 이름이 등록되지 않았습니다.' };
 
     var receiptNo = String(data.receiptNo).trim();
     var scores = data.scores || {};
