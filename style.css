@@ -367,23 +367,24 @@ textarea.fi { resize:vertical; }
 .form-section-divider::after { content: ""; flex: 1; height: 1px; background: linear-gradient(to right, #d5dbe8, transparent); }
 .form-section-label { font-size: 13px; font-weight: 800; color: var(--navy); letter-spacing: -.3px; padding: 4px 12px; background: #eef3ff; border-radius: 6px; border-left: 3px solid var(--blue); }
 
-/* 심사 페이지 배점표 */
-.tjd-score-group { margin-bottom: 14px; padding: 12px 14px; border: 1.5px solid #e8edf5; border-radius: 10px; background: #fafbfd; }
-.tjd-score-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-.tjd-score-name { font-size: 14px; font-weight: 800; color: var(--navy); }
-.tjd-score-max { font-size: 12px; font-weight: 600; color: #94a3b8; }
-.tjd-score-options { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
-.tjd-score-options label { display: flex; flex-direction: column; align-items: center; padding: 8px 4px; border: 1.5px solid #d5dbe8; border-radius: 7px; cursor: pointer; background: #fff; transition: all .15s; text-align: center; }
+/* 심사 페이지 배점표 (컴팩트) */
+#tab-judge .rv-right .card { position: sticky; top: 64px; max-height: calc(100vh - 84px); overflow-y: auto; }
+.tjd-score-group { margin-bottom: 6px; padding: 7px 10px; border: 1.5px solid #e8edf5; border-radius: 8px; background: #fafbfd; }
+.tjd-score-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
+.tjd-score-name { font-size: 13px; font-weight: 800; color: var(--navy); }
+.tjd-score-max { font-size: 11px; font-weight: 600; color: #94a3b8; }
+.tjd-score-options { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; }
+.tjd-score-options label { display: flex; flex-direction: column; align-items: center; padding: 4px 2px; border: 1.5px solid #d5dbe8; border-radius: 6px; cursor: pointer; background: #fff; transition: all .15s; text-align: center; }
 .tjd-score-options label:hover { border-color: var(--blue); background: #eef3ff; }
 .tjd-score-options input[type="radio"] { display: none; }
 .tjd-score-options label.checked { border-color: var(--blue); background: #eef3ff; box-shadow: 0 0 0 2px rgba(86,109,140,.18); }
 .tjd-score-options label.checked .tjd-score-points { color: var(--blue); }
-.tjd-score-points { font-size: 13px; font-weight: 800; color: var(--navy); margin-bottom: 2px; }
-.tjd-score-label { font-size: 11px; color: #64748b; line-height: 1.3; }
+.tjd-score-points { font-size: 12px; font-weight: 800; color: var(--navy); margin-bottom: 0; line-height: 1.3; }
+.tjd-score-label { font-size: 10px; color: #64748b; line-height: 1.25; }
 
-.tjd-total-bar { background: var(--navy); color: #fff; padding: 14px 18px; border-radius: 10px; display: flex; align-items: center; justify-content: space-between; margin: 14px 0; }
-.tjd-total-label { font-size: 13px; color: #a0b4d8; letter-spacing: .5px; }
-.tjd-total-value { font-size: 26px; font-weight: 900; font-family: 'Exo 2', 'Noto Sans KR', sans-serif; }
+.tjd-total-bar { background: var(--navy); color: #fff; padding: 8px 14px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; margin: 8px 0; }
+.tjd-total-label { font-size: 12px; color: #a0b4d8; letter-spacing: .5px; }
+.tjd-total-value { font-size: 20px; font-weight: 900; font-family: 'Exo 2', 'Noto Sans KR', sans-serif; }
 
 /* 심사 화면 — 좌측 펼침: 검토부서 의견 요약 */
 .tjd-review-summary { margin-top: 14px; padding-top: 12px; border-top: 1px dashed #e8edf5; }
