@@ -1900,9 +1900,19 @@ function renderJudgeWork() {
   document.getElementById('judge-login-card').style.display = 'none';
   document.getElementById('judge-work').style.display = 'block';
   document.getElementById('tjd-name').textContent = _judgeInfo.name;
-  var doneCnt = _judgeItems.filter(function(it){ return it.myStatus === '제출완료'; }).length;
-  document.getElementById('tjd-done-cnt').textContent = doneCnt;
+  var submitted = _judgeItems.filter(function(it){ return it.myStatus === '제출완료'; });
+  document.getElementById('tjd-done-cnt').textContent = submitted.length;
   document.getElementById('tjd-total-cnt').textContent = _judgeItems.length;
+  // 본인 채점 평균 (제출완료된 제안만)
+  var avgEl = document.getElementById('tjd-avg');
+  if (avgEl) {
+    if (submitted.length > 0) {
+      var sum = submitted.reduce(function(s, it){ return s + (Number(it.myTotal)||0); }, 0);
+      avgEl.textContent = (Math.round((sum / submitted.length) * 10) / 10) + '점';
+    } else {
+      avgEl.textContent = '—';
+    }
+  }
 
   var html = '';
   if (!_judgeItems.length) {
@@ -1910,7 +1920,10 @@ function renderJudgeWork() {
   } else {
     _judgeItems.forEach(function(it, idx) {
       var statusClass = it.myStatus === '제출완료' ? 'completed' : (it.myStatus === '임시저장' ? 'draft' : 'pending');
-      var statusLabel = it.myStatus === '제출완료' ? '제출완료' : (it.myStatus === '임시저장' ? '임시저장' : '대기');
+      var statusLabel;
+      if (it.myStatus === '제출완료') statusLabel = '제출완료 · ' + (it.myTotal || 0) + '점';
+      else if (it.myStatus === '임시저장') statusLabel = '임시저장';
+      else statusLabel = '대기';
       html += '<div class="rv-proposal-card" data-tjd-idx="'+idx+'">' +
         '<div class="rv-proposal-head" onclick="toggleJudgeItem('+idx+')">' +
           '<span class="rv-proposal-no">'+esc(it.receiptNo)+'</span>' +

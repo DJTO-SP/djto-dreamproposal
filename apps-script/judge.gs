@@ -127,12 +127,8 @@ function dreamGetJudgeItems(data) {
       });
     });
 
-    // 정렬: 대기 → 임시저장 → 제출완료
-    var sOrder = { '대기': 0, '임시저장': 1, '제출완료': 2 };
+    // 정렬: 접수번호 오름차순 (상태별 정렬 X — 채점 후 위치 변동 방지)
     items.sort(function(a, b) {
-      var oa = sOrder[a.myStatus] !== undefined ? sOrder[a.myStatus] : 0;
-      var ob = sOrder[b.myStatus] !== undefined ? sOrder[b.myStatus] : 0;
-      if (oa !== ob) return oa - ob;
       return a.receiptNo < b.receiptNo ? -1 : 1;
     });
 
