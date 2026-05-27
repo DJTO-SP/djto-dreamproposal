@@ -2153,14 +2153,10 @@ function manageLogin() {
 }
 
 function manageLogout() {
-  _rvMode = null;
-  _rvCode = '';
   isAdmin = false;
   ADMIN_PW = '';
   document.getElementById('mg-lock').style.display = 'block';
   document.getElementById('mg-admin').style.display = 'none';
-  document.getElementById('mg-review').style.display = 'none';
-  document.getElementById('mg-judge').style.display = 'none';
   document.getElementById('mg-input').value = '';
   document.getElementById('mg-error').style.display = 'none';
   loadFromSheet(); // 비관리자 모드로 다시 로드
