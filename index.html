@@ -572,7 +572,7 @@
       </div>
       <div style="max-width:320px;margin:0 auto">
         <div style="margin-bottom:14px;position:relative">
-          <input id="mg-input" type="password" placeholder="관리자 비밀번호 또는 검토·심사 코드" style="width:100%;border:1.5px solid #d5dbe8;border-radius:8px;padding:12px 40px 12px 14px;font-family:inherit;font-size:14px;color:var(--navy);background:#fafbfc;outline:none;text-align:center;transition:border-color .18s" onkeydown="if(event.key==='Enter')manageLogin()" onfocus="this.style.borderColor='var(--blue)';this.style.background='#fff'" onblur="this.style.borderColor='#d5dbe8';this.style.background='#fafbfc'">
+          <input id="mg-input" type="password" placeholder="관리자 비밀번호" style="width:100%;border:1.5px solid #d5dbe8;border-radius:8px;padding:12px 40px 12px 14px;font-family:inherit;font-size:14px;color:var(--navy);background:#fafbfc;outline:none;text-align:center;transition:border-color .18s" onkeydown="if(event.key==='Enter')manageLogin()" onfocus="this.style.borderColor='var(--blue)';this.style.background='#fff'" onblur="this.style.borderColor='#d5dbe8';this.style.background='#fafbfc'">
           <span onclick="var i=document.getElementById('mg-input');i.type=i.type==='password'?'text':'password'" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:16px;opacity:0.4;user-select:none">👁</span>
         </div>
         <button id="mg-login-btn" class="btn-submit-full" style="width:100%;justify-content:center;padding:12px;font-size:14px" onclick="manageLogin()">로그인</button>
@@ -583,10 +583,9 @@
         <style>@keyframes mg-spin{to{transform:rotate(360deg)}}</style>
       </div>
       <p id="mg-error" style="color:var(--rose);font-size:13px;margin-top:10px;display:none"></p>
-      <div style="margin-top:28px;padding-top:18px;border-top:1px solid #eee;font-size:12px;color:#aaa;line-height:2">
-        <p>관리자: 비밀번호 입력 → 접수현황·제안관리·코드관리</p>
-        <p>검토자: 검토코드 입력 → 담당부서 검토의견 입력</p>
-        <p>심사위원: 심사코드 입력 → 배점기준표 채점</p>
+      <div style="margin-top:28px;padding-top:18px;border-top:1px solid #eee;font-size:12px;color:#aaa;line-height:1.9">
+        <p>관리자 비밀번호 입력 시 접수현황·제안관리·코드관리 화면이 열립니다.</p>
+        <p style="margin-top:6px;color:#bbb">※ <b>검토위원·심사위원</b>은 상단 메뉴 <b>[검토]</b> / <b>[심사]</b> 탭에서 로그인하세요.</p>
       </div>
     </div>
 

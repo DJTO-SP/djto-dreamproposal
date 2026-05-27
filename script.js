@@ -2121,58 +2121,35 @@ function mgLoginLoading(show) {
 function manageLogin() {
   var input = document.getElementById('mg-input').value.trim();
   var errEl = document.getElementById('mg-error');
-  if (!input) { errEl.textContent = '비밀번호 또는 코드를 입력하세요.'; errEl.style.display = 'block'; return; }
+  if (!input) { errEl.textContent = '비밀번호를 입력하세요.'; errEl.style.display = 'block'; return; }
   errEl.style.display = 'none';
   mgLoginLoading(true);
 
   if (SCRIPT_URL) {
-    // 먼저 관리자 비밀번호로 시도
     api({ action: 'getProposalsAdmin', pw: input }).then(function(adminRes) {
-      if (!adminRes.error) {
-        // 관리자 인증 성공
-        ADMIN_PW = input;
-        isAdmin = true;
-        document.getElementById('mg-lock').style.display = 'none';
-        document.getElementById('mg-admin').style.display = 'block';
-        showMgPanel('mg-inbox', document.querySelector('.admin-nav-btn'));
-        loadFromSheet().then(function() { renderMgInbox(); });
+      if (adminRes.error) {
+        mgLoginLoading(false);
+        errEl.textContent = '비밀번호가 올바르지 않습니다.';
+        errEl.style.display = 'block';
         return;
       }
-      // 관리자 실패 → 검토/심사 코드 시도
-      api({ action: 'verifyCode', code: input }).then(function(res) {
-        if (!res.ok) { mgLoginLoading(false); errEl.textContent = res.error || '유효하지 않은 코드 또는 비밀번호입니다.'; errEl.style.display = 'block'; return; }
-        _rvCode = input;
-        _rvMode = res.type;
-        document.getElementById('mg-lock').style.display = 'none';
-        if (res.type === 'review') {
-          document.getElementById('mg-review').style.display = 'block';
-          api({ action: 'getReviewsByCode', code: input }).then(function(data) {
-            if (data.ok) renderReviewListFromServer(data);
-          });
-        } else {
-          document.getElementById('mg-judge').style.display = 'block';
-          api({ action: 'getScoresByCode', code: input }).then(function(data) {
-            if (data.ok) renderJudgeListFromServer(data);
-          });
-        }
-      }).catch(function(e) { mgLoginLoading(false); errEl.textContent = '서버 연결 실패'; errEl.style.display = 'block'; });
-    }).catch(function(e) { mgLoginLoading(false); errEl.textContent = '서버 연결 실패'; errEl.style.display = 'block'; });
+      ADMIN_PW = input;
+      isAdmin = true;
+      document.getElementById('mg-lock').style.display = 'none';
+      document.getElementById('mg-admin').style.display = 'block';
+      showMgPanel('mg-inbox', document.querySelector('.admin-nav-btn'));
+      loadFromSheet().then(function() { renderMgInbox(); });
+    }).catch(function(e) {
+      mgLoginLoading(false);
+      errEl.textContent = '서버 연결 실패';
+      errEl.style.display = 'block';
+    });
     return;
   }
 
-  // 폴백: 로컬 코드 검증
-  var cfg = REVIEW_CODES[input.toLowerCase()] || JUDGE_CODES[input.toLowerCase()];
-  if (!cfg) { errEl.textContent = '유효하지 않은 코드 또는 비밀번호입니다.'; errEl.style.display = 'block'; return; }
-  _rvCode = input;
-  _rvMode = cfg.type;
-  document.getElementById('mg-lock').style.display = 'none';
-  if (cfg.type === 'review') {
-    document.getElementById('mg-review').style.display = 'block';
-    renderReviewList(cfg);
-  } else {
-    document.getElementById('mg-judge').style.display = 'block';
-    renderJudgeList(cfg);
-  }
+  errEl.textContent = 'Apps Script가 연결되지 않았습니다.';
+  errEl.style.display = 'block';
+  mgLoginLoading(false);
 }
 
 function manageLogout() {
