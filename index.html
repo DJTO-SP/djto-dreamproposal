@@ -509,13 +509,55 @@
     </div>
   </div>
 
-  <!-- ===== 심사 (6단계 구현 예정) ===== -->
+  <!-- ===== 심사 ===== -->
   <div class="tab-content" id="tab-judge">
-    <div class="card" style="padding:60px 40px;text-align:center;color:#aaa">
-      <div style="font-size:48px;margin-bottom:16px">⚖️</div>
-      <div style="font-size:18px;font-weight:700;color:#666">심사</div>
-      <div style="font-size:13px;margin-top:10px;color:#999">심사위원이 코드로 로그인 후 7개 항목(100점 만점) 배점표로 채점하는 화면입니다.</div>
-      <div style="font-size:12px;margin-top:6px;color:#bbb">(6단계에서 배점표 + 좌우분할 구현 예정)</div>
+    <!-- 로그인 -->
+    <div class="card" id="judge-login-card" style="padding:40px 32px;max-width:480px;margin:24px auto">
+      <div class="section-title-bar">
+        <div class="section-title-icon">⚖️</div>
+        <div><h2 class="section-title-text">심사위원 로그인</h2></div>
+      </div>
+      <p style="font-size:13px;color:#64748b;margin-bottom:20px;line-height:1.7">
+        부여받은 <b>심사위원 코드</b>와 <b>본인 성명</b>을 입력해주세요.<br>
+        모든 담당부서 검토가 끝난 제안에 한해 100점 만점 배점표로 심사합니다.
+      </p>
+      <div class="sf-field full" style="margin-bottom:14px">
+        <label>심사위원 코드 <span class="field-req">*</span></label>
+        <input id="judge-code" style="font-family:'Exo 2','Noto Sans KR',sans-serif;letter-spacing:2px;text-transform:uppercase">
+      </div>
+      <div class="sf-field full" style="margin-bottom:18px">
+        <label>본인 성명 <span class="field-req">*</span></label>
+        <input id="judge-name" placeholder="홍길동" onkeydown="if(event.key==='Enter')judgeLogin()">
+      </div>
+      <button class="btn-submit-full" onclick="judgeLogin()">로그인</button>
+      <p id="judge-login-err" style="display:none;margin-top:12px;padding:10px 14px;background:#fee2e2;border:1px solid #fca5a5;border-radius:8px;color:#991b1b;font-size:13px;text-align:center"></p>
+    </div>
+
+    <!-- 심사 작업 화면 -->
+    <div id="judge-work" style="display:none">
+      <div class="rv-header" style="background:linear-gradient(135deg,var(--navy),#3a5a8e)">
+        <div class="rv-hdr-info">
+          <div><span class="rv-hdr-label">심사위원</span><span class="rv-hdr-value" id="tjd-name">—</span></div>
+          <div><span class="rv-hdr-label">진행</span><span class="rv-hdr-value"><span id="tjd-done-cnt">0</span> / <span id="tjd-total-cnt">0</span></span></div>
+        </div>
+        <button class="btn-cancel" onclick="judgeLogout()" style="padding:6px 14px;font-size:12px">로그아웃</button>
+      </div>
+      <div class="rv-split">
+        <div class="rv-left">
+          <div class="card" style="padding:20px 24px">
+            <div class="mine-section-title">🏆 심사 대상 제안</div>
+            <div id="tjd-list"></div>
+          </div>
+        </div>
+        <div class="rv-right">
+          <div class="card" style="padding:20px 24px">
+            <div class="mine-section-title">📊 배점표 채점</div>
+            <div id="tjd-score-area">
+              <p class="mine-empty">왼쪽 목록에서 제안을 선택하세요.</p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 

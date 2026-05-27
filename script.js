@@ -1776,6 +1776,263 @@ function reviewLogout() {
 }
 
 // ══════════════════════════════════════════════════════════
+// ██  심사 페이지 (위원 코드 로그인)  ██
+// ══════════════════════════════════════════════════════════
+
+var DREAM_SCORE_DEF = [
+  { key:'feasibility', name:'실시가능성', max:20, options:[
+    {v:20,label:'매우 크다'},{v:16,label:'다소 크다'},{v:12,label:'보통이다'},{v:8,label:'약간 있다'},{v:4,label:'없다'}
+  ]},
+  { key:'creativity', name:'창의성', max:15, options:[
+    {v:15,label:'획기적'},{v:12,label:'다소 독창'},{v:9,label:'보통'},{v:6,label:'일부 모방'},{v:3,label:'전부 모방'}
+  ]},
+  { key:'effect', name:'효과성', max:15, options:[
+    {v:15,label:'5억 이상'},{v:12,label:'3억 이상'},{v:9,label:'1억 이상'},{v:6,label:'5천만↑'},{v:3,label:'5천만↓'}
+  ]},
+  { key:'efficiency', name:'효율성', max:15, options:[
+    {v:15,label:'매우 크다'},{v:12,label:'다소 크다'},{v:9,label:'보통이다'},{v:6,label:'약간 있다'},{v:3,label:'없다'}
+  ]},
+  { key:'scope', name:'적용범위', max:15, options:[
+    {v:15,label:'전부서'},{v:12,label:'다수부서'},{v:9,label:'일부부서'},{v:6,label:'소속부서'},{v:3,label:'단위업무'}
+  ]},
+  { key:'sustain', name:'지속성', max:10, options:[
+    {v:10,label:'10년 이상'},{v:8,label:'5년 이상'},{v:6,label:'3년 이상'},{v:4,label:'1년 이상'},{v:2,label:'1년 미만'}
+  ]},
+  { key:'effort', name:'노력도·구체성', max:10, options:[
+    {v:10,label:'매우 크다'},{v:8,label:'다소 크다'},{v:6,label:'보통이다'},{v:4,label:'약간 있다'},{v:2,label:'없다'}
+  ]}
+];
+
+var _judgeCode = null;
+var _judgeInfo = null;
+var _judgeItems = [];
+var _selectedJudgeIdx = null;
+
+function judgeLogin() {
+  var code = (document.getElementById('judge-code').value || '').trim().toUpperCase();
+  var name = (document.getElementById('judge-name').value || '').trim();
+  var err  = document.getElementById('judge-login-err');
+  if (!code) { err.textContent = '코드를 입력해주세요.'; err.style.display = 'block'; return; }
+  if (!name) { err.textContent = '본인 성명을 입력해주세요.'; err.style.display = 'block'; return; }
+  err.style.display = 'none';
+  showLoadingOverlay('인증 중...');
+  apiPost({ action: 'dreamJudgeLogin', code: code }).then(function(res) {
+    hideLoadingOverlay();
+    if (!res || !res.ok) { err.textContent = (res && res.error) || '로그인 실패'; err.style.display = 'block'; return; }
+    _judgeCode = code;
+    _judgeInfo = { name: name };
+    loadJudgeItems();
+  }).catch(function(e) {
+    hideLoadingOverlay();
+    err.textContent = '서버 오류: ' + e.message;
+    err.style.display = 'block';
+  });
+}
+
+function loadJudgeItems() {
+  showLoadingOverlay('제안 목록 로드 중...');
+  apiPost({ action: 'dreamGetJudgeItems', code: _judgeCode, judgeName: _judgeInfo.name }).then(function(res) {
+    hideLoadingOverlay();
+    if (!res || !res.ok) { alert('목록 로드 실패: ' + ((res && res.error) || '')); return; }
+    _judgeItems = res.items || [];
+    renderJudgeWork();
+  }).catch(function(e) {
+    hideLoadingOverlay();
+    alert('서버 오류: ' + e.message);
+  });
+}
+
+function renderJudgeWork() {
+  document.getElementById('judge-login-card').style.display = 'none';
+  document.getElementById('judge-work').style.display = 'block';
+  document.getElementById('tjd-name').textContent = _judgeInfo.name;
+  var doneCnt = _judgeItems.filter(function(it){ return it.myStatus === '제출완료'; }).length;
+  document.getElementById('tjd-done-cnt').textContent = doneCnt;
+  document.getElementById('tjd-total-cnt').textContent = _judgeItems.length;
+
+  var html = '';
+  if (!_judgeItems.length) {
+    html = '<p class="mine-empty">심사 대상 제안이 없습니다.<br><span style="font-size:12px;color:#bbb">모든 담당부서 검토가 완료된 제안만 표시됩니다.</span></p>';
+  } else {
+    _judgeItems.forEach(function(it, idx) {
+      var statusClass = it.myStatus === '제출완료' ? 'completed' : (it.myStatus === '임시저장' ? 'draft' : 'pending');
+      var statusLabel = it.myStatus === '제출완료' ? '제출완료' : (it.myStatus === '임시저장' ? '임시저장' : '대기');
+      html += '<div class="rv-proposal-card" data-tjd-idx="'+idx+'">' +
+        '<div class="rv-proposal-head" onclick="toggleJudgeItem('+idx+')">' +
+          '<span class="rv-proposal-no">'+esc(it.receiptNo)+'</span>' +
+          '<span class="rv-proposal-title">'+esc(it.title)+'</span>' +
+          '<span class="rv-proposal-status '+statusClass+'">'+statusLabel+'</span>' +
+        '</div>' +
+        '<div class="rv-proposal-body">' +
+          '<div class="rv-pb-row"><div class="rv-pb-label">제안부문</div><div class="rv-pb-text">'+esc(it.category)+'</div></div>' +
+          '<div class="rv-pb-row"><div class="rv-pb-label">제안사유 (원인분석)</div><div class="rv-pb-text">'+esc(it.reason||'')+'</div></div>' +
+          '<div class="rv-pb-row"><div class="rv-pb-label">실시방법 (개선방향)</div><div class="rv-pb-text">'+esc(it.method||'')+'</div></div>' +
+          (it.effect ? '<div class="rv-pb-row"><div class="rv-pb-label">기대효과</div><div class="rv-pb-text">'+esc(it.effect)+'</div></div>' : '') +
+          (it.anonymousUrl ? '<div class="rv-pb-row"><a href="'+esc(it.anonymousUrl)+'" target="_blank" style="font-size:12px;color:var(--blue);font-weight:600">📄 익명 PDF 열기 (새 창)</a></div>' : '') +
+          (it.reviews && it.reviews.length > 0 ? renderJudgeReviewSummary(it.reviews) : '') +
+        '</div>' +
+        '</div>';
+    });
+  }
+  document.getElementById('tjd-list').innerHTML = html;
+
+  if (_selectedJudgeIdx !== null && _judgeItems[_selectedJudgeIdx]) {
+    var card = document.querySelector('#tjd-list .rv-proposal-card[data-tjd-idx="'+_selectedJudgeIdx+'"]');
+    if (card) { card.classList.add('expanded'); card.classList.add('selected'); }
+    renderScorePanel(_selectedJudgeIdx);
+  } else {
+    renderScorePanelEmpty();
+  }
+}
+
+function renderJudgeReviewSummary(reviews) {
+  var html = '<div class="tjd-review-summary"><div class="tjd-review-summary-title">💬 검토부서 의견</div>';
+  reviews.forEach(function(r) {
+    html += '<div class="tjd-review-item-small"><b>'+esc(r.dept)+'</b> — '+esc(r.opinion||'')+'</div>';
+  });
+  html += '</div>';
+  return html;
+}
+
+function toggleJudgeItem(idx) {
+  var same = _selectedJudgeIdx === idx;
+  document.querySelectorAll('#tjd-list .rv-proposal-card').forEach(function(c) {
+    c.classList.remove('expanded');
+    c.classList.remove('selected');
+  });
+  if (same) {
+    _selectedJudgeIdx = null;
+    renderScorePanelEmpty();
+    return;
+  }
+  var card = document.querySelector('#tjd-list .rv-proposal-card[data-tjd-idx="'+idx+'"]');
+  if (card) { card.classList.add('expanded'); card.classList.add('selected'); }
+  _selectedJudgeIdx = idx;
+  renderScorePanel(idx);
+}
+
+function renderScorePanel(idx) {
+  var item = _judgeItems[idx];
+  var locked = item.myStatus === '제출완료';
+  var myScores = item.myScores || {};
+  var myOpinion = item.myOpinion || '';
+
+  var html = '<div class="rv-opinion-receipt">접수번호 <b>'+esc(item.receiptNo)+'</b></div>' +
+    '<div class="rv-opinion-title">'+esc(item.title)+'</div>';
+
+  DREAM_SCORE_DEF.forEach(function(def) {
+    html += '<div class="tjd-score-group">' +
+      '<div class="tjd-score-head">' +
+        '<span class="tjd-score-name">'+def.name+'</span>' +
+        '<span class="tjd-score-max">'+def.max+'점</span>' +
+      '</div>' +
+      '<div class="tjd-score-options">';
+    def.options.forEach(function(opt) {
+      var isChecked = myScores[def.key] === opt.v;
+      html += '<label class="' + (isChecked ? 'checked' : '') + '">' +
+        '<input type="radio" name="tjd-' + def.key + '" value="'+opt.v+'"' + (isChecked ? ' checked' : '') + (locked ? ' disabled' : '') + ' onchange="onScoreChange(\''+def.key+'\')">' +
+        '<span class="tjd-score-points">'+opt.v+'</span>' +
+        '<span class="tjd-score-label">'+opt.label+'</span>' +
+      '</label>';
+    });
+    html += '</div></div>';
+  });
+
+  html += '<div class="tjd-total-bar">' +
+    '<span class="tjd-total-label">합 계</span>' +
+    '<span class="tjd-total-value"><span id="tjd-total">0</span> / 100점</span>' +
+  '</div>';
+
+  html += '<div class="sf-field full" style="margin-bottom:0">' +
+    '<label>심사의견 <span class="lbl-hint">(선택)</span></label>' +
+    '<textarea id="tjd-opinion-input" rows="4"' + (locked ? ' readonly' : '') + ' placeholder="심사 결과에 대한 의견을 자유롭게 작성하세요" style="width:100%;border:1.5px solid #d5dbe8;border-radius:8px;padding:10px 12px;font-family:inherit;font-size:13px;line-height:1.6;background:#fafbfd;resize:vertical;box-sizing:border-box">'+esc(myOpinion)+'</textarea>' +
+  '</div>';
+
+  if (locked) {
+    html += '<div class="rv-locked-notice done" style="margin-top:14px">✅ 심사 제출 완료 상태입니다. 수정이 필요하면 관리자에게 문의하세요.</div>';
+  } else {
+    html += '<div class="rv-opinion-btns" style="margin-top:14px">' +
+      '<button class="rv-btn-draft" onclick="dreamSaveJudgeScore(\'임시저장\')">임시저장</button>' +
+      '<button class="rv-btn-submit" onclick="dreamSaveJudgeScore(\'제출완료\')">제출 완료</button>' +
+    '</div>';
+  }
+
+  document.getElementById('tjd-score-area').innerHTML = html;
+  updateJudgeTotal();
+}
+
+function renderScorePanelEmpty() {
+  document.getElementById('tjd-score-area').innerHTML = '<p class="mine-empty">왼쪽 목록에서 제안을 선택하세요.</p>';
+}
+
+function onScoreChange(key) {
+  // 같은 그룹의 다른 label에서 .checked 제거, 선택된 거에 추가
+  document.querySelectorAll('input[name="tjd-'+key+'"]').forEach(function(input) {
+    var label = input.parentElement;
+    if (label) label.classList.toggle('checked', input.checked);
+  });
+  updateJudgeTotal();
+}
+
+function updateJudgeTotal() {
+  var total = 0;
+  DREAM_SCORE_DEF.forEach(function(def) {
+    var checked = document.querySelector('input[name="tjd-'+def.key+'"]:checked');
+    if (checked) total += parseInt(checked.value, 10) || 0;
+  });
+  var el = document.getElementById('tjd-total');
+  if (el) el.textContent = total;
+}
+
+function dreamSaveJudgeScore(status) {
+  if (_selectedJudgeIdx === null || !_judgeItems[_selectedJudgeIdx]) return alert('제안을 선택하세요.');
+  var scores = {};
+  var total = 0;
+  var allFilled = true;
+  DREAM_SCORE_DEF.forEach(function(def) {
+    var checked = document.querySelector('input[name="tjd-'+def.key+'"]:checked');
+    if (!checked) { allFilled = false; scores[def.key] = 0; }
+    else { scores[def.key] = parseInt(checked.value, 10) || 0; total += scores[def.key]; }
+  });
+  if (status === '제출완료' && !allFilled) return alert('7개 항목 모두 채점해주세요.');
+  if (status === '제출완료' && !confirm('제출 후에는 수정할 수 없습니다. 진행하시겠습니까?')) return;
+
+  var opinion = (document.getElementById('tjd-opinion-input').value || '').trim();
+
+  showLoadingOverlay(status === '제출완료' ? '제출 중...' : '저장 중...');
+  apiPost({
+    action: 'dreamSaveScore',
+    code: _judgeCode,
+    judgeName: _judgeInfo.name,
+    receiptNo: _judgeItems[_selectedJudgeIdx].receiptNo,
+    scores: scores,
+    total: total,
+    opinion: opinion,
+    status: status
+  }).then(function(res) {
+    hideLoadingOverlay();
+    if (!res || !res.ok) { alert('저장 실패: ' + ((res && res.error) || '')); return; }
+    showToast(status === '제출완료' ? '✅ 심사 제출 완료' : '✅ 임시저장됨', 'ok');
+    loadJudgeItems();
+  }).catch(function(e) {
+    hideLoadingOverlay();
+    alert('서버 오류: ' + e.message);
+  });
+}
+
+function judgeLogout() {
+  _judgeCode = null;
+  _judgeInfo = null;
+  _judgeItems = [];
+  _selectedJudgeIdx = null;
+  document.getElementById('judge-login-card').style.display = 'block';
+  document.getElementById('judge-work').style.display = 'none';
+  document.getElementById('judge-code').value = '';
+  document.getElementById('judge-name').value = '';
+  document.getElementById('judge-login-err').style.display = 'none';
+}
+
+// ══════════════════════════════════════════════════════════
 // ██  검토·심사 탭 (기존 - 관리자 패널 내부)  ██
 // ══════════════════════════════════════════════════════════
 
