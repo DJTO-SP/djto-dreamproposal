@@ -1598,8 +1598,10 @@ var _selectedReviewIdx = null;
 
 function reviewLogin() {
   var code = (document.getElementById('review-code').value || '').trim().toUpperCase();
+  var name = (document.getElementById('review-name').value || '').trim();
   var err  = document.getElementById('review-login-err');
   if (!code) { err.textContent = '코드를 입력해주세요.'; err.style.display = 'block'; return; }
+  if (!name) { err.textContent = '본인 성명을 입력해주세요.'; err.style.display = 'block'; return; }
   err.style.display = 'none';
   showLoadingOverlay('인증 중...');
   apiPost({ action: 'dreamReviewLogin', code: code }).then(function(res) {
@@ -1610,7 +1612,8 @@ function reviewLogin() {
       return;
     }
     _reviewCode = code;
-    _reviewerInfo = res.reviewer;
+    // 사용자가 입력한 이름을 검토자명으로 사용 (위원 시트의 이름 컬럼은 무시)
+    _reviewerInfo = { name: name, dept: res.reviewer.dept };
     loadReviewItems();
   }).catch(function(e) {
     hideLoadingOverlay();
@@ -1745,6 +1748,7 @@ function dreamSaveReviewOpinion(status) {
   apiPost({
     action: 'dreamSaveReview',
     code: _reviewCode,
+    reviewerName: _reviewerInfo.name,
     receiptNo: _reviewItems[_selectedReviewIdx].receiptNo,
     opinion: opinion,
     status: status
@@ -1767,6 +1771,7 @@ function reviewLogout() {
   document.getElementById('review-login-card').style.display = 'block';
   document.getElementById('review-work').style.display = 'none';
   document.getElementById('review-code').value = '';
+  document.getElementById('review-name').value = '';
   document.getElementById('review-login-err').style.display = 'none';
 }
 

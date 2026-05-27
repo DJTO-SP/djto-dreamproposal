@@ -131,11 +131,16 @@ function dreamGetReviewItems(data) {
 }
 
 // ── 검토 의견 저장 (신규 추가 or 업데이트) ───────────
+//   ※ 검토자 이름은 위원 시트가 아니라 클라이언트가 보낸 reviewerName을 사용
+//     (팀당 1코드 + 작성자가 매번 본인 이름 입력하는 모델)
 function dreamSaveReview(data) {
   try {
     if (!data || !data.code || !data.receiptNo) throw new Error('필수 데이터 누락');
     var info = dreamFindReviewer_(data.code);
     if (!info || info.role !== '검토위원') return { ok: false, error: '권한 없음' };
+
+    var reviewerName = String(data.reviewerName || '').trim();
+    if (!reviewerName) return { ok: false, error: '검토자 이름이 누락되었습니다.' };
 
     var ss = SpreadsheetApp.openById(DREAM_SHEET_ID);
     var rSheet = ss.getSheetByName('검토');
@@ -146,7 +151,7 @@ function dreamSaveReview(data) {
     var status = String(data.status || '작성중'); // 작성중 or 완료
     var now = Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyy-MM-dd HH:mm:ss');
 
-    // 본인 부서 검토 행 찾기
+    // 부서별 검토 행 찾기 (한 부서 = 1행)
     var existingRow = -1;
     if (rSheet.getLastRow() > 1) {
       var rows = rSheet.getRange(2, 1, rSheet.getLastRow() - 1, 8).getValues();
@@ -163,17 +168,17 @@ function dreamSaveReview(data) {
 
     if (existingRow > 0) {
       // 기존 행 update
-      rSheet.getRange(existingRow, 4).setValue(info.name);   // D 검토자
-      rSheet.getRange(existingRow, 5).setValue(now);          // E 검토일시
-      rSheet.getRange(existingRow, 6).setValue(opinion);      // F 검토의견
-      rSheet.getRange(existingRow, 7).setValue(status);       // G 상태
+      rSheet.getRange(existingRow, 4).setValue(reviewerName);  // D 검토자 (클라이언트 입력)
+      rSheet.getRange(existingRow, 5).setValue(now);            // E 검토일시
+      rSheet.getRange(existingRow, 6).setValue(opinion);        // F 검토의견
+      rSheet.getRange(existingRow, 7).setValue(status);         // G 상태
     } else {
       // 신규 행 추가
       rSheet.appendRow([
         'RV-' + receiptNo + '-' + info.dept,  // A 검토ID
         receiptNo,                              // B 접수번호
         info.dept,                              // C 검토부서
-        info.name,                              // D 검토자
+        reviewerName,                           // D 검토자 (클라이언트 입력)
         now,                                    // E 검토일시
         opinion,                                // F 검토의견
         status,                                 // G 상태

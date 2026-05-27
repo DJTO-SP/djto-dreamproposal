@@ -465,12 +465,16 @@
         <div><h2 class="section-title-text">검토위원 로그인</h2></div>
       </div>
       <p style="font-size:13px;color:#64748b;margin-bottom:20px;line-height:1.7">
-        관리자로부터 받은 <b>검토위원 코드</b>를 입력해주세요.<br>
-        코드 인증 후 본인 부서가 담당으로 지정된 제안 목록이 표시됩니다.
+        팀에 부여된 <b>검토위원 코드</b>와 <b>본인 성명</b>을 입력해주세요.<br>
+        한 팀 안에서 누구나 검토 가능하며, 입력하신 성명이 검토자로 기록됩니다.
       </p>
-      <div class="sf-field full" style="margin-bottom:18px">
+      <div class="sf-field full" style="margin-bottom:14px">
         <label>검토위원 코드 <span class="field-req">*</span></label>
-        <input id="review-code" placeholder="예: RV-K7Q3" style="font-family:'Exo 2','Noto Sans KR',sans-serif;letter-spacing:2px;text-transform:uppercase" onkeydown="if(event.key==='Enter')reviewLogin()">
+        <input id="review-code" placeholder="예: RV-K7Q3" style="font-family:'Exo 2','Noto Sans KR',sans-serif;letter-spacing:2px;text-transform:uppercase">
+      </div>
+      <div class="sf-field full" style="margin-bottom:18px">
+        <label>본인 성명 <span class="field-req">*</span></label>
+        <input id="review-name" placeholder="홍길동" onkeydown="if(event.key==='Enter')reviewLogin()">
       </div>
       <button class="btn-submit-full" onclick="reviewLogin()">로그인</button>
       <p id="review-login-err" style="display:none;margin-top:12px;padding:10px 14px;background:#fee2e2;border:1px solid #fca5a5;border-radius:8px;color:#991b1b;font-size:13px;text-align:center"></p>
