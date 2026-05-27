@@ -2366,6 +2366,127 @@ function saveAdminResult(receiptNo) {
   });
 }
 
+// ── 관리자 엑셀 다운로드 (총괄 + 제안서별 상세) ──────
+function downloadAdminExcel() {
+  if (!_adminItems || _adminItems.length === 0) {
+    return alert('다운로드할 데이터가 없습니다. 먼저 접수현황을 불러와주세요.');
+  }
+  if (typeof XLSX === 'undefined') {
+    return alert('엑셀 라이브러리 로드 실패. 페이지 새로고침 후 다시 시도해주세요.');
+  }
+
+  var wb = XLSX.utils.book_new();
+
+  // ───── 시트 1: 총괄 ─────
+  var summaryHeader = [
+    '접수번호','제목','제안자','소속','분류','담당부서','상태','결과','심사위원수',
+    '실시가능성(20)','창의성(15)','효과성(15)','효율성(15)','적용범위(15)','지속성(10)','노력도구체성(10)','합계(100)'
+  ];
+  var summaryData = [summaryHeader];
+
+  _adminItems.forEach(function(item) {
+    var validScores = (item.scores || []).filter(function(s) { return s.status === '제출완료'; });
+    var n = validScores.length;
+    var avg = function(key) {
+      if (n === 0) return '';
+      var sum = 0;
+      validScores.forEach(function(s) { sum += Number(s[key] || 0); });
+      return Math.round((sum / n) * 10) / 10;  // 소수 1자리
+    };
+    summaryData.push([
+      item.receiptNo,
+      item.title,
+      item.name,
+      item.dept,
+      item.category,
+      item.targetDepts.join(', '),
+      item.status,
+      item.result || '',
+      n,
+      avg('feasibility'),
+      avg('creativity'),
+      avg('effect'),
+      avg('efficiency'),
+      avg('scope'),
+      avg('sustain'),
+      avg('effort'),
+      avg('total')
+    ]);
+  });
+
+  var summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
+  // 컬럼 너비 자동
+  summarySheet['!cols'] = [
+    {wch:14},{wch:30},{wch:10},{wch:14},{wch:14},{wch:18},{wch:10},{wch:10},{wch:8},
+    {wch:9},{wch:9},{wch:9},{wch:9},{wch:9},{wch:9},{wch:9},{wch:11}
+  ];
+  XLSX.utils.book_append_sheet(wb, summarySheet, '총괄');
+
+  // ───── 시트 N: 제안서별 상세 (심사완료된 위원 1명 이상만) ─────
+  _adminItems.forEach(function(item) {
+    var validScores = (item.scores || []).filter(function(s) { return s.status === '제출완료'; });
+    if (validScores.length === 0) return;
+
+    var detail = [];
+    // 제안 정보 (상단 박스)
+    detail.push(['접수번호', item.receiptNo, '', '제목',     item.title]);
+    detail.push(['제안자',   item.name,      '', '소속',     item.dept]);
+    detail.push(['분류',     item.category,  '', '담당부서', item.targetDepts.join(', ')]);
+    detail.push(['접수일시', item.submittedAt, '', '상태',    item.status]);
+    detail.push([]);
+    // 점수 표 헤더
+    detail.push(['심사위원','실시가능성(20)','창의성(15)','효과성(15)','효율성(15)','적용범위(15)','지속성(10)','노력도구체성(10)','합계(100)']);
+    // 위원별 점수
+    validScores.forEach(function(s) {
+      detail.push([
+        s.judge, s.feasibility, s.creativity, s.effect,
+        s.efficiency, s.scope, s.sustain, s.effort, s.total
+      ]);
+    });
+    // 평균 행
+    var n = validScores.length;
+    var avg = function(key) {
+      var sum = 0;
+      validScores.forEach(function(s) { sum += Number(s[key] || 0); });
+      return Math.round((sum / n) * 10) / 10;
+    };
+    detail.push([
+      '평균',
+      avg('feasibility'), avg('creativity'), avg('effect'),
+      avg('efficiency'), avg('scope'), avg('sustain'), avg('effort'), avg('total')
+    ]);
+    // 심사위원 의견
+    var opinions = validScores.filter(function(s){ return s.opinion; });
+    if (opinions.length > 0) {
+      detail.push([]);
+      detail.push(['심사위원 의견']);
+      opinions.forEach(function(s) { detail.push([s.judge, s.opinion]); });
+    }
+    // 검토부서 의견 (참고용)
+    var completedReviews = (item.reviews || []).filter(function(r){ return r.status === '완료'; });
+    if (completedReviews.length > 0) {
+      detail.push([]);
+      detail.push(['검토부서 의견']);
+      completedReviews.forEach(function(r) { detail.push([r.dept, r.opinion]); });
+    }
+
+    var sheet = XLSX.utils.aoa_to_sheet(detail);
+    sheet['!cols'] = [
+      {wch:14},{wch:14},{wch:11},{wch:11},{wch:11},{wch:11},{wch:11},{wch:14},{wch:11}
+    ];
+    // 시트 이름 (엑셀 31자 제한, 특수문자 X — 접수번호는 안전)
+    XLSX.utils.book_append_sheet(wb, sheet, item.receiptNo);
+  });
+
+  // 파일명
+  var now = new Date();
+  var pad = function(n) { return String(n).padStart(2, '0'); };
+  var fileName = '혁신드림제안_심사결과_' + now.getFullYear() + pad(now.getMonth()+1) + pad(now.getDate()) + '.xlsx';
+
+  XLSX.writeFile(wb, fileName);
+  showToast('✅ 엑셀 다운로드 완료', 'ok');
+}
+
 // 기존 함수 호환성 유지
 function verifyCode() { manageLogin(); }
 function exitReview() { manageLogout(); }
