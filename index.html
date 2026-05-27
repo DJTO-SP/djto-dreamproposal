@@ -354,11 +354,32 @@
 
           <button class="btn-submit-full" onclick="submitProposal()">제안서 접수</button>
 
-          <div id="submit-done" style="display:none;text-align:center;padding:30px 0;">
-            <div style="font-size:48px;margin-bottom:14px">🎉</div>
-            <h3 style="font-size:18px;font-weight:800;color:var(--navy);margin-bottom:8px">제안이 접수되었습니다!</h3>
-            <p style="font-size:14px;color:#888;line-height:1.7;margin-bottom:20px">담당부서 검토 후 심사가 진행됩니다.</p>
-            <button class="btn-save" onclick="clearSubmitForm();document.getElementById('submit-done').style.display='none';document.querySelectorAll('#tab-submit .card > *:not(#submit-done)').forEach(function(e){e.style.display='';})">새로 제안하기</button>
+          <div id="submit-done" style="display:none;text-align:center;padding:40px 30px;">
+            <div style="font-size:56px;margin-bottom:18px">🎉</div>
+            <h3 style="font-size:22px;font-weight:800;color:var(--navy);margin-bottom:8px">제안이 정상 접수되었습니다</h3>
+            <p style="font-size:14px;color:#888;margin-bottom:24px">담당부서 검토 후 심사가 진행됩니다.</p>
+
+            <div class="done-info-box">
+              <div class="done-row">
+                <span class="done-label">접수번호</span>
+                <span class="done-value done-receipt" id="done-receipt-no">—</span>
+              </div>
+              <div class="done-row">
+                <span class="done-label">제 안 자</span>
+                <span class="done-value" id="done-proposer-name">—</span>
+              </div>
+            </div>
+
+            <div class="done-notice">
+              ⚠️ <b>접수번호를 반드시 메모해 주세요.</b><br>
+              <span style="color:#666">[내 제안] 메뉴에서 본인 이름 + 접수번호로<br>
+              검토 진행상황과 심사결과를 확인하실 수 있습니다.</span>
+            </div>
+
+            <div class="done-btns">
+              <button class="btn-cancel" onclick="initSubmitTab()">새 제안 작성</button>
+              <button class="btn-submit-full" style="width:auto;padding:10px 28px" onclick="switchTab('mine', document.querySelectorAll('.nav-btn')[1])">내 제안 확인하러 가기</button>
+            </div>
           </div>
         </div>
       </div>

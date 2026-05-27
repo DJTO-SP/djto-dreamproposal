@@ -1139,11 +1139,16 @@ function extractKeywords(text) {
 // (유사검색 기능 삭제됨)
 
 function initSubmitTab() {
-  var dateEl = document.getElementById('sf-date');
-  if (dateEl && !dateEl.value) {
-    dateEl.value = new Date().toISOString().split('T')[0];
+  // 제안일자 필드는 제거됨 (서버에서 자동 기록)
+  // 완료 화면 숨기고 폼 표시 (재진입 대비)
+  var done = document.getElementById('submit-done');
+  if (done) done.style.display = 'none';
+  document.querySelectorAll('#tab-submit .card > *:not(#submit-done)').forEach(function(e) {
+    e.style.display = '';
+  });
+  if (typeof renderSubmitList === 'function') {
+    try { renderSubmitList(); } catch(e) {}
   }
-  renderSubmitList();
 }
 
 function renderSubmitList() {
@@ -1186,102 +1191,94 @@ function showPickedFile() {
 }
 
 function clearSubmitForm() {
-  ['sf-name','sf-dept','sf-title','sf-reason','sf-method','sf-save','sf-revenue','sf-effect','sf-target-dept'].forEach(function(id) {
+  ['sf-name','sf-title','sf-reason','sf-method','sf-effect','sf-save','sf-revenue'].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.value = '';
   });
-  document.getElementById('sf-category').selectedIndex = 0;
-  document.getElementById('sf-date').value = new Date().toISOString().split('T')[0];
-  document.getElementById('sf-file').value = '';
+  var deptSel = document.getElementById('sf-dept');
+  if (deptSel) deptSel.selectedIndex = 0;
+  var catSel = document.getElementById('sf-category');
+  if (catSel) catSel.selectedIndex = 0;
+  document.querySelectorAll('#sf-target-depts input[type="checkbox"]').forEach(function(cb) {
+    cb.checked = false;
+  });
+  var fileEl = document.getElementById('sf-file');
+  if (fileEl) fileEl.value = '';
   var picked = document.getElementById('sf-picked');
   if (picked) picked.textContent = '';
 }
 
 function submitProposal() {
-  var name = document.getElementById('sf-name').value.trim();
-  var dept = document.getElementById('sf-dept').value.trim();
-  var cat = document.getElementById('sf-category').value;
-  var title = document.getElementById('sf-title').value.trim();
-  var reason = document.getElementById('sf-reason').value.trim();
-  var method = document.getElementById('sf-method').value.trim();
+  // 1) 필드 수집
+  var name   = (document.getElementById('sf-name').value   || '').trim();
+  var dept   = (document.getElementById('sf-dept').value   || '').trim();
+  var cat    = document.getElementById('sf-category').value;
+  var title  = (document.getElementById('sf-title').value  || '').trim();
+  var reason = (document.getElementById('sf-reason').value || '').trim();
+  var method = (document.getElementById('sf-method').value || '').trim();
+  var effect = (document.getElementById('sf-effect').value || '').trim();
+  var targetDepts = Array.prototype.slice.call(
+    document.querySelectorAll('#sf-target-depts input[type="checkbox"]:checked')
+  ).map(function(cb) { return cb.value; });
   var fileInput = document.getElementById('sf-file');
   var file = fileInput && fileInput.files && fileInput.files[0];
-  if (!name) return alert('성명을 입력해주세요.');
-  if (!dept) return alert('소속을 입력해주세요.');
-  if (!cat) return alert('제안부문을 선택해주세요.');
-  if (!title) return alert('제목을 입력해주세요.');
-  if (!file) return alert('제안서 PDF 파일을 첨부해주세요.');
-  if (file && !file.name.toLowerCase().endsWith('.pdf')) return alert('PDF 파일만 접수 가능합니다.');
-  var effect = [
-    document.getElementById('sf-save').value ? '예산절감: ' + document.getElementById('sf-save').value : '',
-    document.getElementById('sf-revenue').value ? '수입증대: ' + document.getElementById('sf-revenue').value : '',
-    document.getElementById('sf-effect').value || ''
-  ].filter(Boolean).join(' / ');
-  var summary = '● ' + reason.split('\n').filter(Boolean).join('\n● ') +
-    '\n● ' + method.split('\n').filter(Boolean).join('\n● ');
-  if (effect) summary += '\n● 기대효과: ' + effect;
-  var now = new Date();
-  var yr = now.getFullYear().toString();
-  var half = now.getMonth() < 6 ? '상반기' : '하반기';
-  var keywords = extractKeywords(title + ' ' + reason).slice(0, 5).map(function(k){return '#'+k;}).join(' ');
-  var dateVal = document.getElementById('sf-date').value || yr + '-01-01';
-  var targetDept = document.getElementById('sf-target-dept').value || '';
 
-  // Apps Script 모드
-  if (SCRIPT_URL) {
-    var btn = document.querySelector('#tab-submit .btn-submit-full');
-    if (btn) { btn.disabled = true; btn.textContent = '접수 중...'; }
-    showLoadingOverlay('제안서 접수 중...');
+  // 2) 필수 검증
+  if (!name)              return alert('성명을 입력해주세요.');
+  if (!dept)              return alert('소속을 선택해주세요.');
+  if (!cat)               return alert('제안부문을 선택해주세요.');
+  if (!targetDepts.length) return alert('담당부서를 1개 이상 선택해주세요.');
+  if (!title)             return alert('제목을 입력해주세요.');
+  if (!reason)            return alert('제안사유를 입력해주세요.');
+  if (!method)            return alert('실시방법을 입력해주세요.');
+  if (file && !file.name.toLowerCase().endsWith('.pdf')) return alert('PDF 파일만 첨부 가능합니다.');
+  if (file && file.size > 20 * 1024 * 1024) return alert('첨부 파일은 20MB 이하만 가능합니다.');
 
-    var doSubmit = function(fileData, fileName, fileType, fileSize) {
-      apiPost({
-        action: 'submitProposal',
-        title: title, proposer: name, dept: dept, date: dateVal,
-        category: cat, targetDept: targetDept,
-        reason: reason, method: method,
-        effectSave: document.getElementById('sf-save').value || '',
-        effectRevenue: document.getElementById('sf-revenue').value || '',
-        effectEtc: document.getElementById('sf-effect').value || '',
-        keywords: keywords,
-        fileData: fileData || '', fileName: fileName || '',
-        fileType: fileType || '', fileSize: fileSize || 0
-      }).then(function(res) {
-        hideLoadingOverlay();
-        if (btn) { btn.disabled = false; btn.textContent = '제안서 접수'; }
-        if (res.ok) {
-          alert('✅ 제안서가 접수되었습니다!\n제안번호: ' + res.id);
-          clearSubmitForm();
-          try { switchTab('list', document.querySelector('.nav-btn')); } catch(e) {}
-          try { loadFromSheet(); } catch(e) {}
-        } else {
-          alert('❌ 접수 실패: ' + (res.error || '알 수 없는 오류'));
-        }
-      }).catch(function(e) {
-        hideLoadingOverlay();
-        if (btn) { btn.disabled = false; btn.textContent = '제안서 접수'; }
-        alert('❌ 서버 오류: ' + e.message);
-      });
-    };
+  if (!SCRIPT_URL) return alert('Apps Script가 연결되지 않았습니다.');
 
-    if (file) {
-      toB64(file).then(function(b64) { doSubmit(b64, file.name, file.type, file.size); });
+  // 3) Apps Script 호출 (3b: 텍스트만. PDF·PII 검사는 3c에서)
+  var btn = document.querySelector('#tab-submit .btn-submit-full');
+  if (btn) { btn.disabled = true; btn.textContent = '접수 중...'; }
+  showLoadingOverlay('제안서 접수 중...');
+
+  apiPost({
+    action: 'dreamSubmit',
+    name: name,
+    dept: dept,
+    category: cat,
+    targetDepts: targetDepts,
+    title: title,
+    reason: reason,
+    method: method,
+    effect: effect
+  }).then(function(res) {
+    hideLoadingOverlay();
+    if (btn) { btn.disabled = false; btn.textContent = '제안서 접수'; }
+    if (res && res.ok && res.receiptNo) {
+      showSubmitDone(res.receiptNo, name);
     } else {
-      doSubmit();
+      alert('❌ 접수 실패: ' + ((res && res.error) || '알 수 없는 오류'));
     }
-    return;
-  }
+  }).catch(function(e) {
+    hideLoadingOverlay();
+    if (btn) { btn.disabled = false; btn.textContent = '제안서 접수'; }
+    alert('❌ 서버 오류: ' + e.message);
+  });
+}
 
-  // 폴백: 로컬 DATA에 추가
-  var d = {
-    id: 'sub_' + Date.now(), title: title, proposer: name, dept: dept,
-    period: yr + ' ' + half, category: cat, award: '심사중',
-    summary: summary, keywords: keywords, pdf: ''
-  };
-  DATA.push(d);
-  alert('✅ 제안서가 접수되었습니다!\n\n※ 현재 목록에 추가되었습니다.\n   서버 연동 후 자동 저장됩니다.');
-  renderAll();
+function showSubmitDone(receiptNo, name) {
+  // 폼 영역 숨기고 완료 화면 표시
+  document.querySelectorAll('#tab-submit .card > *:not(#submit-done)').forEach(function(e) {
+    e.style.display = 'none';
+  });
+  var noEl = document.getElementById('done-receipt-no');
+  var nmEl = document.getElementById('done-proposer-name');
+  if (noEl) noEl.textContent = receiptNo;
+  if (nmEl) nmEl.textContent = name;
+  var done = document.getElementById('submit-done');
+  if (done) done.style.display = 'block';
+  // 다음 접수를 위해 폼은 미리 초기화
   clearSubmitForm();
-  switchTab('list', document.querySelector('.nav-btn'));
 }
 
 // ══════════════════════════════════════════════════════════
