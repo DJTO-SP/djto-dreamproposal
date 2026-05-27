@@ -362,6 +362,11 @@ textarea.fi { resize:vertical; }
 /* textarea placeholder 줄바꿈 가독성 */
 .sf-field textarea::placeholder { color: #b8c0d0; line-height: 1.7; font-size: 13px; }
 
+/* 폼 섹션 구분 (기본정보 / 제안내용 구분용) */
+.form-section-divider { display: flex; align-items: center; gap: 12px; margin: 26px 0 14px; }
+.form-section-divider::after { content: ""; flex: 1; height: 1px; background: linear-gradient(to right, #d5dbe8, transparent); }
+.form-section-label { font-size: 13px; font-weight: 800; color: var(--navy); letter-spacing: -.3px; padding: 4px 12px; background: #eef3ff; border-radius: 6px; border-left: 3px solid var(--blue); }
+
 /* ══ 파일 드래그 드롭 ══ */
 .file-drop-zone { border: 2px dashed #d5dbe8; border-radius: 12px; padding: 24px; text-align: center; cursor: pointer; transition: all .2s; background: #fafbfd; }
 .file-drop-zone:hover, .file-drop-zone.dragover { border-color: var(--blue); background: #f0f5ff; }
