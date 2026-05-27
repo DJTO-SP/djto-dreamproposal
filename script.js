@@ -2545,31 +2545,46 @@ function downloadIntegratedPdf(receiptNo) {
 }
 
 function buildIntegratedPdf_(d) {
-  var pages = [buildAdminCoverHtml_(d)];
-  (d.targetDepts || []).forEach(function(dept) {
-    var review = (d.reviews || []).find(function(r) { return r.dept === dept; });
-    pages.push(buildReviewPageHtml_(d, dept, review));
-  });
+  var depts = d.targetDepts || [];
+  // 페이지 1: 좌측 제안서 + 우측 첫 2팀 (또는 더 적게)
+  var pages = [{ html: buildLandscapeMainHtml_(d, depts.slice(0, 2)), landscape: true }];
+  // 검토 부서 3개 이상이면 추가 페이지 (한 페이지에 2팀씩)
+  for (var i = 2; i < depts.length; i += 2) {
+    pages.push({ html: buildLandscapeExtraReviewHtml_(d, depts.slice(i, i + 2)), landscape: true });
+  }
 
   return PDFLib.PDFDocument.create().then(function(pdfDoc) {
-    return pages.reduce(function(p, html) {
-      return p.then(function() { return renderHtmlToPdfPage_(html, pdfDoc); });
+    return pages.reduce(function(p, item) {
+      return p.then(function() { return renderHtmlToPdfPage_(item.html, pdfDoc, item.landscape); });
     }, Promise.resolve()).then(function() { return pdfDoc; });
   });
 }
 
-function renderHtmlToPdfPage_(html, pdfDoc) {
+function renderHtmlToPdfPage_(html, pdfDoc, landscape) {
   var div = document.getElementById('pdfCoverHidden');
   if (!div) return Promise.reject(new Error('pdfCoverHidden div 없음'));
+  // 가로형은 div 너비 확장 + 여백 축소
+  if (landscape) {
+    div.style.width = '1123px';
+    div.style.padding = '20px';
+  } else {
+    div.style.width = '794px';
+    div.style.padding = '40px';
+  }
   div.innerHTML = html;
   return html2canvas(div, { scale: 2, backgroundColor: '#ffffff' }).then(function(canvas) {
+    // 원상복구
+    div.style.width = '794px';
+    div.style.padding = '40px';
     div.innerHTML = '';
     var dataUrl = canvas.toDataURL('image/png');
     var bin = atob(dataUrl.split(',')[1]);
     var pngBytes = new Uint8Array(bin.length);
     for (var i = 0; i < bin.length; i++) pngBytes[i] = bin.charCodeAt(i);
     return pdfDoc.embedPng(pngBytes).then(function(pngImg) {
-      var pageW = 595, pageH = 842;
+      // 페이지 크기: 가로형이면 842x595, 세로면 595x842
+      var pageW = landscape ? 842 : 595;
+      var pageH = landscape ? 595 : 842;
       var scale = Math.min(pageW / pngImg.width, pageH / pngImg.height);
       var w = pngImg.width * scale, h = pngImg.height * scale;
       var page = pdfDoc.addPage([pageW, pageH]);
@@ -2578,30 +2593,66 @@ function renderHtmlToPdfPage_(html, pdfDoc) {
   });
 }
 
-function buildAdminCoverHtml_(d) {
+// ── 가로형 메인 페이지: 좌측 제안서 + 우측 검토의견 ──
+function buildLandscapeMainHtml_(d, depts) {
   var safe = function(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
   var nl2br = function(s) { return safe(s).replace(/\n/g,'<br>'); };
-  return ''
-    + '<div style="text-align:center;font-size:28px;font-weight:900;letter-spacing:-1px;margin-bottom:24px;border-bottom:3px double #204473;padding-bottom:14px">혁신드림제안서</div>'
-    + '<table style="width:100%;border-collapse:collapse;margin-bottom:18px;font-size:13.5px">'
-    + '<tr><td style="background:#eef3ff;border:1px solid #d5dbe8;padding:8px 14px;font-weight:700;width:90px">접수번호</td><td style="border:1px solid #d5dbe8;padding:8px 14px;font-weight:600;color:#204473">' + safe(d.receiptNo) + '</td>'
-    + '<td style="background:#eef3ff;border:1px solid #d5dbe8;padding:8px 14px;font-weight:700;width:90px">접수일시</td><td style="border:1px solid #d5dbe8;padding:8px 14px">' + safe(d.submittedAt) + '</td></tr>'
-    + '<tr><td style="background:#eef3ff;border:1px solid #d5dbe8;padding:8px 14px;font-weight:700">제안부문</td><td style="border:1px solid #d5dbe8;padding:8px 14px" colspan="3">' + safe(d.category) + '</td></tr>'
-    + '<tr><td style="background:#eef3ff;border:1px solid #d5dbe8;padding:8px 14px;font-weight:700">성명</td><td style="border:1px solid #d5dbe8;padding:8px 14px">' + safe(d.name) + '</td>'
-    + '<td style="background:#eef3ff;border:1px solid #d5dbe8;padding:8px 14px;font-weight:700">소속</td><td style="border:1px solid #d5dbe8;padding:8px 14px">' + safe(d.dept) + '</td></tr>'
-    + '<tr><td style="background:#eef3ff;border:1px solid #d5dbe8;padding:8px 14px;font-weight:700">담당부서</td><td style="border:1px solid #d5dbe8;padding:8px 14px" colspan="3">' + safe((d.targetDepts||[]).join(', ')) + '</td></tr>'
-    + '<tr><td style="background:#eef3ff;border:1px solid #d5dbe8;padding:8px 14px;font-weight:700">제목</td><td style="border:1px solid #d5dbe8;padding:8px 14px;font-weight:700" colspan="3">' + safe(d.title) + '</td></tr>'
+
+  // 좌측: 제안서
+  var leftHtml = ''
+    + '<div style="text-align:center;font-size:18px;font-weight:900;letter-spacing:-1px;margin-bottom:10px;border-bottom:2px double #204473;padding-bottom:6px">혁신드림제안서</div>'
+    + '<table style="width:100%;border-collapse:collapse;margin-bottom:8px;font-size:11px">'
+    + '<tr><td style="background:#eef3ff;border:1px solid #d5dbe8;padding:4px 8px;font-weight:700;width:60px">접수번호</td><td style="border:1px solid #d5dbe8;padding:4px 8px;font-weight:700;color:#204473">' + safe(d.receiptNo) + '</td>'
+    + '<td style="background:#eef3ff;border:1px solid #d5dbe8;padding:4px 8px;font-weight:700;width:60px">접수일</td><td style="border:1px solid #d5dbe8;padding:4px 8px">' + safe((d.submittedAt||'').substring(0,16)) + '</td></tr>'
+    + '<tr><td style="background:#eef3ff;border:1px solid #d5dbe8;padding:4px 8px;font-weight:700">제안부문</td><td style="border:1px solid #d5dbe8;padding:4px 8px" colspan="3">' + safe(d.category) + '</td></tr>'
+    + '<tr><td style="background:#eef3ff;border:1px solid #d5dbe8;padding:4px 8px;font-weight:700">성명</td><td style="border:1px solid #d5dbe8;padding:4px 8px">' + safe(d.name) + '</td>'
+    + '<td style="background:#eef3ff;border:1px solid #d5dbe8;padding:4px 8px;font-weight:700">소속</td><td style="border:1px solid #d5dbe8;padding:4px 8px">' + safe(d.dept) + '</td></tr>'
+    + '<tr><td style="background:#eef3ff;border:1px solid #d5dbe8;padding:4px 8px;font-weight:700">담당부서</td><td style="border:1px solid #d5dbe8;padding:4px 8px;font-size:10.5px" colspan="3">' + safe((d.targetDepts||[]).join(', ')) + '</td></tr>'
+    + '<tr><td style="background:#eef3ff;border:1px solid #d5dbe8;padding:4px 8px;font-weight:700">제목</td><td style="border:1px solid #d5dbe8;padding:4px 8px;font-weight:700" colspan="3">' + safe(d.title) + '</td></tr>'
     + '</table>'
-    + '<div style="background:#f6f8fd;border-left:4px solid #204473;padding:8px 14px;font-weight:800;font-size:14px;margin-bottom:8px">제안사유 (원인분석)</div>'
-    + '<div style="padding:0 8px 16px;font-size:13px;line-height:1.75">' + nl2br(d.reason) + '</div>'
-    + '<div style="background:#f6f8fd;border-left:4px solid #204473;padding:8px 14px;font-weight:800;font-size:14px;margin-bottom:8px">실시방법 (개선방향)</div>'
-    + '<div style="padding:0 8px 16px;font-size:13px;line-height:1.75">' + nl2br(d.method) + '</div>'
+    + '<div style="background:#f6f8fd;border-left:3px solid #204473;padding:4px 10px;font-weight:800;font-size:11px;margin-bottom:4px">제안사유 (원인분석)</div>'
+    + '<div style="padding:0 6px 8px;font-size:10.5px;line-height:1.55">' + nl2br(d.reason) + '</div>'
+    + '<div style="background:#f6f8fd;border-left:3px solid #204473;padding:4px 10px;font-weight:800;font-size:11px;margin-bottom:4px">실시방법 (개선방향)</div>'
+    + '<div style="padding:0 6px 8px;font-size:10.5px;line-height:1.55">' + nl2br(d.method) + '</div>'
     + (d.effect
-        ? '<div style="background:#f6f8fd;border-left:4px solid #204473;padding:8px 14px;font-weight:800;font-size:14px;margin-bottom:8px">기대효과</div><div style="padding:0 8px 16px;font-size:13px;line-height:1.75">' + nl2br(d.effect) + '</div>'
+        ? '<div style="background:#f6f8fd;border-left:3px solid #204473;padding:4px 10px;font-weight:800;font-size:11px;margin-bottom:4px">기대효과</div><div style="padding:0 6px 8px;font-size:10.5px;line-height:1.55">' + nl2br(d.effect) + '</div>'
         : '');
+
+  // 우측: 검토의견 (0~2팀)
+  var rightHtml = ''
+    + '<div style="text-align:center;font-size:16px;font-weight:900;letter-spacing:-1px;margin-bottom:10px;border-bottom:2px double #204473;padding-bottom:6px">담당부서 검토의견</div>';
+  if (depts.length === 0) {
+    rightHtml += '<div style="text-align:center;color:#aaa;font-size:12px;padding:40px 0">담당부서가 지정되지 않았습니다.</div>';
+  } else {
+    depts.forEach(function(dept) {
+      var review = (d.reviews || []).find(function(r) { return r.dept === dept; });
+      rightHtml += buildReviewBoxHtml_(dept, review, depts.length);
+    });
+  }
+
+  return ''
+    + '<div style="display:flex;gap:14px;width:100%">'
+    +   '<div style="flex:1.05">' + leftHtml + '</div>'
+    +   '<div style="flex:0.95;display:flex;flex-direction:column;gap:8px">' + rightHtml + '</div>'
+    + '</div>';
 }
 
-function buildReviewPageHtml_(d, dept, review) {
+// 추가 페이지: 검토부서만 우측 위아래 (3+팀 처리용)
+function buildLandscapeExtraReviewHtml_(d, depts) {
+  var safe = function(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
+  var html = ''
+    + '<div style="text-align:center;font-size:18px;font-weight:900;letter-spacing:-1px;margin-bottom:8px;border-bottom:2px double #204473;padding-bottom:6px">담당부서 검토의견 (계속)</div>'
+    + '<div style="font-size:11px;color:#64748b;margin-bottom:10px;text-align:center">접수번호 <b style="color:#204473">' + safe(d.receiptNo) + '</b> · ' + safe(d.title) + '</div>'
+    + '<div style="display:flex;flex-direction:column;gap:8px">';
+  depts.forEach(function(dept) {
+    var review = (d.reviews || []).find(function(r) { return r.dept === dept; });
+    html += buildReviewBoxHtml_(dept, review, depts.length);
+  });
+  html += '</div>';
+  return html;
+}
+
+function buildReviewBoxHtml_(dept, review, deptCount) {
   var safe = function(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
   var nl2br = function(s) { return safe(s).replace(/\n/g,'<br>'); };
   var statusBg = '#fef3c7', statusFg = '#92400e', statusLabel = '검토 대기';
@@ -2609,20 +2660,19 @@ function buildReviewPageHtml_(d, dept, review) {
     if (review.status === '완료')      { statusBg = '#bbf7d0'; statusFg = '#166534'; statusLabel = '검토 완료'; }
     else if (review.status === '작성중') { statusBg = '#bfdbfe'; statusFg = '#1e40af'; statusLabel = '작성 중'; }
   }
+  // 부서가 2개면 작게, 1개면 크게
+  var minH = deptCount === 1 ? 360 : 200;
   return ''
-    + '<div style="text-align:center;font-size:24px;font-weight:900;letter-spacing:-1px;margin-bottom:14px;border-bottom:3px double #204473;padding-bottom:12px">담당부서 검토의견</div>'
-    + '<table style="width:100%;border-collapse:collapse;margin-bottom:18px;font-size:13px">'
-    + '<tr><td style="background:#eef3ff;border:1px solid #d5dbe8;padding:7px 12px;font-weight:700;width:90px">접수번호</td><td style="border:1px solid #d5dbe8;padding:7px 12px;color:#204473;font-weight:600">' + safe(d.receiptNo) + '</td>'
-    + '<td style="background:#eef3ff;border:1px solid #d5dbe8;padding:7px 12px;font-weight:700;width:90px">제목</td><td style="border:1px solid #d5dbe8;padding:7px 12px">' + safe(d.title) + '</td></tr>'
-    + '<tr><td style="background:#eef3ff;border:1px solid #d5dbe8;padding:7px 12px;font-weight:700">검토부서</td><td style="border:1px solid #d5dbe8;padding:7px 12px;font-weight:700">' + safe(dept) + '</td>'
-    + '<td style="background:#eef3ff;border:1px solid #d5dbe8;padding:7px 12px;font-weight:700">상태</td><td style="border:1px solid #d5dbe8;padding:7px 12px"><span style="background:'+statusBg+';color:'+statusFg+';padding:2px 10px;border-radius:8px;font-size:12px;font-weight:700">'+statusLabel+'</span></td></tr>'
-    + ((review && review.reviewer)
-        ? '<tr><td style="background:#eef3ff;border:1px solid #d5dbe8;padding:7px 12px;font-weight:700">검토자</td><td style="border:1px solid #d5dbe8;padding:7px 12px">' + safe(review.reviewer) + '</td><td style="background:#eef3ff;border:1px solid #d5dbe8;padding:7px 12px;font-weight:700">검토일</td><td style="border:1px solid #d5dbe8;padding:7px 12px">' + safe(review.date || '') + '</td></tr>'
-        : '')
-    + '</table>'
-    + '<div style="background:#f6f8fd;border-left:4px solid #204473;padding:8px 14px;font-weight:800;font-size:14px;margin-bottom:8px">검토 의견</div>'
-    + '<div style="padding:10px 12px;font-size:13px;line-height:1.85;min-height:400px;border:1px solid #e8edf5;border-radius:6px;background:#fff">'
-    + ((review && review.opinion) ? nl2br(review.opinion) : '<span style="color:#aaa;font-style:italic">아직 검토의견이 작성되지 않았습니다.</span>')
+    + '<div style="border:1.5px solid #d5dbe8;border-radius:6px;padding:8px 10px;background:#fafbfd">'
+    +   '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;border-bottom:1px solid #e8edf5;padding-bottom:5px">'
+    +     '<span style="font-size:12.5px;font-weight:800;color:#204473">' + safe(dept) + '</span>'
+    +     '<span style="background:'+statusBg+';color:'+statusFg+';padding:1px 7px;border-radius:8px;font-size:10px;font-weight:700">'+statusLabel+'</span>'
+    +     (review && review.reviewer ? '<span style="font-size:10.5px;color:#666">'+safe(review.reviewer)+'</span>' : '')
+    +     (review && review.date ? '<span style="font-size:10px;color:#888;margin-left:auto">'+safe(review.date)+'</span>' : '')
+    +   '</div>'
+    +   '<div style="font-size:10.5px;line-height:1.6;color:#1a2035;min-height:' + minH + 'px;white-space:pre-wrap">'
+    +     ((review && review.opinion) ? nl2br(review.opinion) : '<span style="color:#aaa;font-style:italic">아직 검토의견이 작성되지 않았습니다.</span>')
+    +   '</div>'
     + '</div>';
 }
 
