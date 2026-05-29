@@ -28,8 +28,8 @@ function dreamGetMyProposal(data) {
     var lastRow = sheet.getLastRow();
     if (lastRow < 2) return { ok: false, error: '조회 결과가 없습니다.' };
 
-    // 제안 시트 14컬럼 모두 가져오기
-    var rows = sheet.getRange(2, 1, lastRow - 1, 14).getValues();
+    // 제안 시트 15컬럼 모두 가져오기 (구성원 컬럼 포함)
+    var rows = sheet.getRange(2, 1, lastRow - 1, 15).getValues();
     var found = null;
     for (var i = 0; i < rows.length; i++) {
       if (String(rows[i][0]).trim() === receiptNo &&
@@ -96,7 +96,8 @@ function dreamGetMyProposal(data) {
         effect:      String(found[9] || ''),
         attachmentUrl: String(found[11] || ''),  // 익명링크 = 첨부 자료
         status:      String(found[12] || '접수완료'),
-        award:       String(found[13] || '심사중')
+        award:       String(found[13] || '심사중'),
+        members:     String(found[14] || '').split(',').map(function(s){return s.trim();}).filter(Boolean)
       },
       reviews: reviews,
       scores: scores

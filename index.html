@@ -264,13 +264,21 @@
             ② 본인 정보는 아래 양식에서만 받으며, <b>검토·심사위원에게는 익명으로 전달</b>됩니다.
           </div>
 
+          <div class="sf-field full">
+            <label>제안 유형</label>
+            <div class="proposal-type-toggle">
+              <label><input type="radio" name="sf-type" value="개인" checked onchange="toggleProposalType()"> 개인</label>
+              <label><input type="radio" name="sf-type" value="그룹" onchange="toggleProposalType()"> 그룹</label>
+              <span style="font-size:11px;color:#94a3b8;margin-left:auto">그룹 = 대표자 + 함께한 분들</span>
+            </div>
+          </div>
           <div class="sf-row">
             <div class="sf-field">
-              <label>성명 <span class="field-req">*</span></label>
+              <label id="sf-name-label">성명 <span class="field-req">*</span></label>
               <input id="sf-name" placeholder="홍길동">
             </div>
             <div class="sf-field">
-              <label>소속 <span class="field-req">*</span></label>
+              <label id="sf-dept-label">소속 <span class="field-req">*</span></label>
               <select id="sf-dept">
                 <option value="">-- 선택 --</option>
                 <option>안전감사팀</option><option>기획조정실</option><option>전략기획팀</option><option>인사노무팀</option>
@@ -280,6 +288,13 @@
                 <option>센터마케팅팀</option><option>전시기획팀</option><option>MICE뷰로팀</option>
               </select>
             </div>
+          </div>
+          <div class="sf-field full" id="sf-members-area" style="display:none">
+            <label>함께한 분들 <span class="field-req">*</span>
+              <span class="lbl-hint">(이름만 입력)</span>
+            </label>
+            <div id="sf-members-list"></div>
+            <button type="button" onclick="addMemberRow()" style="margin-top:6px;padding:8px 14px;background:#eef3ff;border:1.5px solid #bfdbfe;color:var(--blue);font-size:13px;font-weight:600;border-radius:7px;cursor:pointer;font-family:inherit">+ 멤버 추가</button>
           </div>
 
           <div class="sf-row">

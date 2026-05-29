@@ -1190,6 +1190,39 @@ function showPickedFile() {
   }
 }
 
+// 제안 유형 토글 (개인/그룹)
+function toggleProposalType() {
+  var sel = document.querySelector('input[name="sf-type"]:checked');
+  var type = sel ? sel.value : '개인';
+  var nameLabel = document.getElementById('sf-name-label');
+  var deptLabel = document.getElementById('sf-dept-label');
+  var membersArea = document.getElementById('sf-members-area');
+
+  if (type === '그룹') {
+    if (nameLabel) nameLabel.innerHTML = '대표자 성명 <span class="field-req">*</span>';
+    if (deptLabel) deptLabel.innerHTML = '대표자 소속 <span class="field-req">*</span>';
+    if (membersArea) {
+      membersArea.style.display = '';
+      // 최소 1개 멤버 행 자동 생성
+      if (!document.querySelector('#sf-members-list .sf-member-row')) addMemberRow();
+    }
+  } else {
+    if (nameLabel) nameLabel.innerHTML = '성명 <span class="field-req">*</span>';
+    if (deptLabel) deptLabel.innerHTML = '소속 <span class="field-req">*</span>';
+    if (membersArea) membersArea.style.display = 'none';
+  }
+}
+
+// 그룹 멤버 입력 행 추가
+function addMemberRow() {
+  var list = document.getElementById('sf-members-list');
+  if (!list) return;
+  var row = document.createElement('div');
+  row.className = 'sf-member-row';
+  row.innerHTML = '<input type="text" class="sf-member-name" placeholder="이름"><button type="button" onclick="this.parentElement.remove()">✕</button>';
+  list.appendChild(row);
+}
+
 // 담당부서 최대 2개 선택 제한
 function limitTargetDepts(cb) {
   var checked = document.querySelectorAll('#sf-target-depts input[type="checkbox"]:checked');
@@ -1211,6 +1244,12 @@ function clearSubmitForm() {
   document.querySelectorAll('#sf-target-depts input[type="checkbox"]').forEach(function(cb) {
     cb.checked = false;
   });
+  // 제안 유형 → 개인 리셋 + 멤버 비우기
+  var personalRadio = document.querySelector('input[name="sf-type"][value="개인"]');
+  if (personalRadio) personalRadio.checked = true;
+  var membersList = document.getElementById('sf-members-list');
+  if (membersList) membersList.innerHTML = '';
+  if (typeof toggleProposalType === 'function') toggleProposalType();
   var fileEl = document.getElementById('sf-file');
   if (fileEl) fileEl.value = '';
   var picked = document.getElementById('sf-picked');
@@ -1280,6 +1319,9 @@ function buildCoverHtml(receiptNo, d, includePII) {
     + '<tr><td style="background:#eef3ff;border:1px solid #d5dbe8;padding:8px 14px;font-weight:700">성명</td><td style="border:1px solid #d5dbe8;padding:8px 14px">' + name + '</td>'
     + '<td style="background:#eef3ff;border:1px solid #d5dbe8;padding:8px 14px;font-weight:700">소속</td><td style="border:1px solid #d5dbe8;padding:8px 14px">' + dept + '</td></tr>'
     + '<tr><td style="background:#eef3ff;border:1px solid #d5dbe8;padding:8px 14px;font-weight:700">담당부서</td><td style="border:1px solid #d5dbe8;padding:8px 14px" colspan="3">' + tDep + '</td></tr>'
+    + (includePII && d.members && d.members.length > 0
+        ? '<tr><td style="background:#eef3ff;border:1px solid #d5dbe8;padding:8px 14px;font-weight:700">구성원</td><td style="border:1px solid #d5dbe8;padding:8px 14px" colspan="3">' + esc(d.members.join(', ')) + '</td></tr>'
+        : '')
     + '<tr><td style="background:#eef3ff;border:1px solid #d5dbe8;padding:8px 14px;font-weight:700">제목</td><td style="border:1px solid #d5dbe8;padding:8px 14px;font-weight:700" colspan="3">' + esc(d.title) + '</td></tr>'
     + '</table>'
     + '<div style="background:#f6f8fd;border-left:4px solid #204473;padding:8px 14px;font-weight:800;font-size:14px;margin-bottom:8px">제안사유 (원인분석)</div>'
@@ -1391,6 +1433,8 @@ function createProposalPdf(receiptNo, d, attachFile, includePII) {
 
 function submitProposal() {
   // 1) 필드 수집
+  var typeSel = document.querySelector('input[name="sf-type"]:checked');
+  var type   = typeSel ? typeSel.value : '개인';
   var name   = (document.getElementById('sf-name').value   || '').trim();
   var dept   = (document.getElementById('sf-dept').value   || '').trim();
   var cat    = document.getElementById('sf-category').value;
@@ -1401,24 +1445,32 @@ function submitProposal() {
   var targetDepts = Array.prototype.slice.call(
     document.querySelectorAll('#sf-target-depts input[type="checkbox"]:checked')
   ).map(function(cb) { return cb.value; });
+  var members = [];
+  if (type === '그룹') {
+    members = Array.prototype.slice.call(document.querySelectorAll('#sf-members-list .sf-member-name'))
+      .map(function(inp){ return (inp.value || '').trim(); })
+      .filter(Boolean);
+  }
   var fileInput = document.getElementById('sf-file');
   var file = fileInput && fileInput.files && fileInput.files[0];
 
   // 2) 필수 검증
-  if (!name)              return alert('성명을 입력해주세요.');
-  if (!dept)              return alert('소속을 선택해주세요.');
+  if (!name)              return alert(type === '그룹' ? '대표자 성명을 입력해주세요.' : '성명을 입력해주세요.');
+  if (!dept)              return alert(type === '그룹' ? '대표자 소속을 선택해주세요.' : '소속을 선택해주세요.');
   if (!cat)               return alert('제안부문을 선택해주세요.');
   if (!targetDepts.length) return alert('담당부서를 1개 이상 선택해주세요.');
   if (!title)             return alert('제목을 입력해주세요.');
   if (!reason)            return alert('제안사유를 입력해주세요.');
   if (!method)            return alert('실시방법을 입력해주세요.');
+  if (type === '그룹' && members.length === 0) return alert('그룹 제안은 함께한 분을 1명 이상 입력해주세요.');
   if (file && !file.name.toLowerCase().endsWith('.pdf')) return alert('PDF 파일만 첨부 가능합니다.');
   if (file && file.size > 20 * 1024 * 1024) return alert('첨부 파일은 20MB 이하만 가능합니다.');
 
   if (!SCRIPT_URL) return alert('Apps Script가 연결되지 않았습니다.');
 
-  var formData = { name:name, dept:dept, cat:cat, targetDepts:targetDepts,
-                   title:title, reason:reason, method:method, effect:effect, file:file };
+  var formData = { type:type, name:name, dept:dept, cat:cat, targetDepts:targetDepts,
+                   title:title, reason:reason, method:method, effect:effect,
+                   members:members, file:file };
 
   // 3) 첨부가 있으면 PII 검사 → 경고 → 진행
   if (file) {
@@ -1453,7 +1505,8 @@ function doSubmitFlow(f) {
   apiPost({
     action: 'dreamSubmit',
     name: f.name, dept: f.dept, category: f.cat, targetDepts: f.targetDepts,
-    title: f.title, reason: f.reason, method: f.method, effect: f.effect
+    title: f.title, reason: f.reason, method: f.method, effect: f.effect,
+    members: f.members
   }).then(function(res) {
     if (!res || !res.ok || !res.receiptNo) throw new Error((res && res.error) || '접수 실패');
     var receiptNo = res.receiptNo;
@@ -1463,7 +1516,7 @@ function doSubmitFlow(f) {
     var submittedAt = new Date().toISOString().substring(0,16).replace('T',' ');
     var d = { name:f.name, dept:f.dept, category:f.cat, targetDepts:f.targetDepts,
               title:f.title, reason:f.reason, method:f.method, effect:f.effect,
-              submittedAt: submittedAt };
+              members: f.members, submittedAt: submittedAt };
     return Promise.all([
       createProposalPdf(receiptNo, d, f.file, true),   // 원본 (개인정보 포함)
       createProposalPdf(receiptNo, d, f.file, false)   // 익명
@@ -1559,13 +1612,18 @@ function renderMyProposal(res) {
     return '<span class="abadge a-'+esc(a)+'"><span class="adot"></span>'+esc(a)+'</span>';
   };
 
+  var nameLabel = (p.members && p.members.length > 0) ? '대표자' : '제 안 자';
+  var nameValue = esc(p.name) + ((p.members && p.members.length > 0) ? ' <span style="color:#64748b;font-size:12px;font-weight:500">(외 ' + p.members.length + '명)</span>' : '');
   document.getElementById('mine-info').innerHTML =
-    '<div class="mine-cell"><div class="mine-cell-label">제 안 자</div><div class="mine-cell-value">'+esc(p.name)+'</div></div>' +
+    '<div class="mine-cell"><div class="mine-cell-label">'+nameLabel+'</div><div class="mine-cell-value">'+nameValue+'</div></div>' +
     '<div class="mine-cell"><div class="mine-cell-label">소  속</div><div class="mine-cell-value">'+esc(p.dept)+'</div></div>' +
     '<div class="mine-cell"><div class="mine-cell-label">접수일시</div><div class="mine-cell-value">'+esc(p.submittedAt)+'</div></div>' +
     '<div class="mine-cell"><div class="mine-cell-label">제안부문</div><div class="mine-cell-value">'+esc(p.category)+'</div></div>' +
     '<div class="mine-cell full"><div class="mine-cell-label">제   목</div><div class="mine-cell-value" style="font-weight:700">'+esc(p.title)+'</div></div>' +
     '<div class="mine-cell full"><div class="mine-cell-label">담당부서</div><div class="mine-cell-value">'+p.targetDepts.map(esc).join(', ')+'</div></div>' +
+    ((p.members && p.members.length > 0)
+      ? '<div class="mine-cell full"><div class="mine-cell-label">구성원</div><div class="mine-cell-value">'+p.members.map(esc).join(', ')+'</div></div>'
+      : '') +
     '<div class="mine-cell"><div class="mine-cell-label">상   태</div><div class="mine-cell-value">'+statusBadge(p.status)+'</div></div>' +
     '<div class="mine-cell"><div class="mine-cell-label">결   과</div><div class="mine-cell-value">'+awardBadge2(p.award)+'</div></div>';
 
@@ -2428,10 +2486,13 @@ function openInboxDetail(receiptNo, rowEl) {
   document.getElementById('inbox-detail-area').innerHTML = html;
 
   // 우측 — 정보 + 결과 입력
+  var memberArr = (d.members || '').split(',').map(function(s){return s.trim();}).filter(Boolean);
+  var nameRowLabel = memberArr.length > 0 ? '대표자' : '제안자';
   var infoHtml =
     '<div class="info-item"><span class="info-label">접수번호</span><span style="font-weight:700;color:var(--blue);font-family:\'Exo 2\',sans-serif">' + esc(d.receiptNo) + '</span></div>' +
-    '<div class="info-item"><span class="info-label">제안자</span><span>' + esc(d.name) + '</span></div>' +
+    '<div class="info-item"><span class="info-label">'+nameRowLabel+'</span><span>' + esc(d.name) + '</span></div>' +
     '<div class="info-item"><span class="info-label">소속</span><span>' + esc(d.dept) + '</span></div>' +
+    (memberArr.length > 0 ? '<div class="info-item"><span class="info-label">구성원</span><span style="font-size:12px;text-align:right">' + esc(memberArr.join(', ')) + '</span></div>' : '') +
     '<div class="info-item"><span class="info-label">접수일시</span><span style="font-size:12px">' + esc(d.submittedAt) + '</span></div>' +
     '<div class="info-item"><span class="info-label">제안부문</span><span>' + esc(d.category) + '</span></div>' +
     '<div class="info-item"><span class="info-label">담당부서</span><span style="font-size:12px;text-align:right">' + esc(d.targetDepts.join(', ')) + '</span></div>' +
@@ -2661,6 +2722,10 @@ function downloadIntegratedPdf(receiptNo) {
 }
 
 function buildIntegratedPdf_(d) {
+  // members가 문자열로 들어올 수 있음 (관리자 PDF용) → 배열로 정규화
+  if (typeof d.members === 'string') {
+    d.members = d.members.split(',').map(function(s){return s.trim();}).filter(Boolean);
+  }
   var depts = d.targetDepts || [];
   // 페이지 1: 좌측 제안서 + 우측 첫 2팀 (또는 더 적게)
   var pages = [{ html: buildLandscapeMainHtml_(d, depts.slice(0, 2)), landscape: true }];
@@ -2724,6 +2789,9 @@ function buildLandscapeMainHtml_(d, depts) {
     + '<tr><td style="background:#eef3ff;border:1px solid #d5dbe8;padding:4px 8px;font-weight:700">성명</td><td style="border:1px solid #d5dbe8;padding:4px 8px">' + safe(d.name) + '</td>'
     + '<td style="background:#eef3ff;border:1px solid #d5dbe8;padding:4px 8px;font-weight:700">소속</td><td style="border:1px solid #d5dbe8;padding:4px 8px">' + safe(d.dept) + '</td></tr>'
     + '<tr><td style="background:#eef3ff;border:1px solid #d5dbe8;padding:4px 8px;font-weight:700">담당부서</td><td style="border:1px solid #d5dbe8;padding:4px 8px;font-size:10.5px" colspan="3">' + safe((d.targetDepts||[]).join(', ')) + '</td></tr>'
+    + (d.members && d.members.length > 0
+        ? '<tr><td style="background:#eef3ff;border:1px solid #d5dbe8;padding:4px 8px;font-weight:700">구성원</td><td style="border:1px solid #d5dbe8;padding:4px 8px;font-size:10.5px" colspan="3">' + safe(d.members.join(', ')) + '</td></tr>'
+        : '')
     + '<tr><td style="background:#eef3ff;border:1px solid #d5dbe8;padding:4px 8px;font-weight:700">제목</td><td style="border:1px solid #d5dbe8;padding:4px 8px;font-weight:700" colspan="3">' + safe(d.title) + '</td></tr>'
     + '</table>'
     + '<div style="background:#f6f8fd;border-left:3px solid #204473;padding:4px 10px;font-weight:800;font-size:11px;margin-bottom:4px">제안사유 (원인분석)</div>'

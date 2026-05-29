@@ -353,6 +353,18 @@ textarea.fi { resize:vertical; }
 .field-req { color: var(--rose); }
 .lbl-hint { font-size: 12px; font-weight: 500; color: #94a3b8; margin-left: 4px; }
 
+/* 개인/그룹 토글 */
+.proposal-type-toggle { display: flex; align-items: center; gap: 18px; padding: 10px 14px; background: #fafbfd; border: 1.5px solid #d5dbe8; border-radius: 8px; }
+.proposal-type-toggle label { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--navy); }
+.proposal-type-toggle input[type="radio"] { width: 15px; height: 15px; cursor: pointer; accent-color: var(--blue); margin: 0; }
+
+/* 그룹 멤버 행 */
+.sf-member-row { display: flex; gap: 6px; margin-bottom: 6px; align-items: center; }
+.sf-member-row input { flex: 1; border: 1.5px solid #d5dbe8; border-radius: 6px; padding: 8px 10px; font-family: inherit; font-size: 13px; background: #fafbfd; }
+.sf-member-row input:focus { border-color: var(--blue); background: #fff; outline: none; }
+.sf-member-row button { padding: 6px 10px; border: 1.5px solid #fca5a5; background: #fff; color: #dc2626; border-radius: 6px; cursor: pointer; font-size: 12px; font-family: inherit; }
+.sf-member-row button:hover { background: #fee2e2; }
+
 /* 다중부서 체크박스 그리드 */
 .dept-checkbox-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px 12px; padding: 12px 14px; border: 1.5px solid #d5dbe8; border-radius: 8px; background: #fafbfd; }
 .dept-checkbox-grid label { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; color: #1a2035; cursor: pointer; padding: 4px 0; user-select: none; }
