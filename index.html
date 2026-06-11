@@ -435,7 +435,6 @@
         <table>
           <thead>
             <tr>
-              <th>접수번호</th>
               <th>제목</th>
               <th>분류</th>
               <th>상태</th>
@@ -443,7 +442,7 @@
             </tr>
           </thead>
           <tbody id="mine-list-body">
-            <tr><td colspan="5" style="text-align:center;color:#aaa;padding:40px">불러오는 중...</td></tr>
+            <tr><td colspan="4" style="text-align:center;color:#aaa;padding:40px">불러오는 중...</td></tr>
           </tbody>
         </table>
       </div>
@@ -455,13 +454,15 @@
         <div class="section-title-icon">🔍</div>
         <div><h2 class="section-title-text">제안 확인</h2></div>
       </div>
-      <div style="background:#eef3ff;border-radius:8px;padding:14px 18px;margin-bottom:20px;font-size:13px;line-height:1.8">
-        <div style="color:#64748b;font-size:11px;margin-bottom:2px">선택한 제안</div>
-        <div id="mine-auth-title" style="font-size:14px;font-weight:700;color:var(--navy);margin-bottom:8px">—</div>
-        <div style="color:#64748b;font-size:11px;margin-bottom:2px">접수번호</div>
-        <div id="mine-auth-receipt" style="font-size:16px;font-weight:700;color:var(--blue);font-family:'Exo 2','Noto Sans KR',sans-serif;letter-spacing:.5px">—</div>
+      <div style="background:#eef3ff;border-radius:8px;padding:14px 18px;margin-bottom:20px;font-size:13px;line-height:1.6">
+        <div style="color:#64748b;font-size:11px;margin-bottom:4px">선택한 제안</div>
+        <div id="mine-auth-title" style="font-size:14px;font-weight:700;color:var(--navy)">—</div>
       </div>
-      <p style="font-size:13px;color:#64748b;margin-bottom:14px;line-height:1.6">본인이 작성한 제안이면 <b>본인 성명</b>을 입력해주세요.</p>
+      <p style="font-size:13px;color:#64748b;margin-bottom:14px;line-height:1.6">접수 시 발급받은 <b>접수번호</b>와 <b>본인 성명</b>을 입력해주세요.</p>
+      <div class="sf-field full" style="margin-bottom:14px">
+        <label>접수번호 <span class="field-req">*</span></label>
+        <input id="mine-receipt-input" placeholder="예: 2026-H1-001" style="font-family:'Exo 2','Noto Sans KR',sans-serif;letter-spacing:.5px">
+      </div>
       <div class="sf-field full" style="margin-bottom:18px">
         <label>본인 성명 <span class="field-req">*</span></label>
         <input id="mine-name" placeholder="홍길동" onkeydown="if(event.key==='Enter')lookupMyProposal()">

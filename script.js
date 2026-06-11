@@ -1569,7 +1569,6 @@ function showSubmitDone(receiptNo, name) {
 // ══════════════════════════════════════════════════════════
 
 var _mineAllItems = [];
-var _mineSelectedReceiptNo = null;
 
 // [제안 확인] 탭 진입 시 자동 호출
 function initMineTab() {
@@ -1581,16 +1580,16 @@ function initMineTab() {
 
 function loadMineList() {
   var body = document.getElementById('mine-list-body');
-  if (body) body.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#aaa;padding:40px">불러오는 중...</td></tr>';
+  if (body) body.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#aaa;padding:40px">불러오는 중...</td></tr>';
   apiPost({ action: 'dreamGetAllTitles' }).then(function(res) {
     if (!res || !res.ok) {
-      body.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--rose);padding:40px">' + esc((res && res.error) || '조회 실패') + '</td></tr>';
+      body.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--rose);padding:40px">' + esc((res && res.error) || '조회 실패') + '</td></tr>';
       return;
     }
     _mineAllItems = res.items || [];
     renderMineList();
   }).catch(function(e) {
-    body.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--rose);padding:40px">서버 오류: ' + esc(e.message) + '</td></tr>';
+    body.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--rose);padding:40px">서버 오류: ' + esc(e.message) + '</td></tr>';
   });
 }
 
@@ -1611,15 +1610,15 @@ function renderMineList() {
 
   var body = document.getElementById('mine-list-body');
   if (!items.length) {
-    body.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#aaa;padding:40px">조건에 맞는 제안이 없습니다.</td></tr>';
+    body.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#aaa;padding:40px">조건에 맞는 제안이 없습니다.</td></tr>';
     return;
   }
 
   var html = '';
   items.forEach(function(it) {
     var titleSafe = esc(it.title).replace(/'/g, "&#39;");
-    html += '<tr onclick="openMineAuth(\'' + esc(it.receiptNo) + '\', \'' + titleSafe + '\')" style="cursor:pointer">' +
-      '<td style="font-family:\'Exo 2\',\'Noto Sans KR\',sans-serif;font-weight:700;color:var(--blue);white-space:nowrap">' + esc(it.receiptNo) + '</td>' +
+    // 접수번호는 클라이언트에서도 노출하지 않음 — 사용자가 직접 입력
+    html += '<tr onclick="openMineAuth(\'' + titleSafe + '\')" style="cursor:pointer">' +
       '<td class="title-main">' + esc(it.title) + '</td>' +
       '<td>' + catBadge(it.category) + '</td>' +
       '<td>' + mineStatusBadge(it.status) + '</td>' +
@@ -1637,18 +1636,17 @@ function mineStatusBadge(s) {
   return '<span style="background:'+c+';color:#fff;padding:2px 9px;border-radius:10px;font-size:11px;font-weight:700;white-space:nowrap">' + esc(s||'-') + '</span>';
 }
 
-function openMineAuth(receiptNo, title) {
-  _mineSelectedReceiptNo = receiptNo;
+function openMineAuth(title) {
   document.getElementById('mine-list-card').style.display = 'none';
   document.getElementById('mine-result').style.display = 'none';
   document.getElementById('mine-auth-card').style.display = '';
   document.getElementById('mine-auth-title').textContent = title;
-  document.getElementById('mine-auth-receipt').textContent = receiptNo;
+  var rcpt = document.getElementById('mine-receipt-input');
+  if (rcpt) rcpt.value = '';
   document.getElementById('mine-name').value = '';
   document.getElementById('mine-error').style.display = 'none';
   setTimeout(function() {
-    var inp = document.getElementById('mine-name');
-    if (inp) inp.focus();
+    if (rcpt) rcpt.focus();
   }, 100);
 }
 
@@ -1656,17 +1654,16 @@ function backToMineList() {
   document.getElementById('mine-auth-card').style.display = 'none';
   document.getElementById('mine-result').style.display = 'none';
   document.getElementById('mine-list-card').style.display = '';
-  _mineSelectedReceiptNo = null;
   loadMineList(); // 새 접수 반영
 }
 
 function lookupMyProposal() {
-  var no   = _mineSelectedReceiptNo;
+  var no   = (document.getElementById('mine-receipt-input').value || '').trim();
   var name = (document.getElementById('mine-name').value || '').trim();
   var err  = document.getElementById('mine-error');
 
   if (!no) {
-    err.textContent = '먼저 목록에서 제안을 선택해주세요.';
+    err.textContent = '접수번호를 입력해주세요.';
     err.style.display = 'block';
     return;
   }
