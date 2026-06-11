@@ -44,7 +44,7 @@
       </div>
       <span style="width:1px;height:24px;background:#3a5a8e;margin:0 6px"></span>
       <button class="nav-btn nav-accent" onclick="switchTab('submit',this)"><span class="nav-icon">✏️</span> 접수</button>
-      <button class="nav-btn" onclick="switchTab('mine',this)"><span class="nav-icon">🔍</span> 내 제안</button>
+      <button class="nav-btn" onclick="switchTab('mine',this)"><span class="nav-icon">🔍</span> 제안 확인</button>
       <button class="nav-btn" onclick="switchTab('review',this)"><span class="nav-icon">📝</span> 검토</button>
       <button class="nav-btn" onclick="switchTab('judge',this)"><span class="nav-icon">⚖️</span> 심사</button>
       <span style="width:1px;height:24px;background:#3a5a8e;margin:0 6px"></span>
@@ -404,38 +404,83 @@
     </div>
   </div>
 
-  <!-- ===== 내 제안 확인 ===== -->
+  <!-- ===== 제안 확인 ===== -->
   <div class="tab-content" id="tab-mine">
-    <!-- 조회 폼 -->
-    <div class="card" id="mine-login-card" style="padding:40px 32px;max-width:480px;margin:24px auto">
+    <!-- 1. 제안 제목 목록 -->
+    <div class="card" id="mine-list-card">
+      <div class="filter-bar">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input id="mine-list-search" type="text" placeholder="제목 검색…" oninput="filterMineList()">
+        </div>
+        <select id="mine-list-cat" onchange="filterMineList()">
+          <option value="">전체 분류</option>
+          <option>관광아이디어발굴</option>
+          <option>조직혁신</option>
+          <option>사회적가치실현</option>
+        </select>
+        <select id="mine-list-status" onchange="filterMineList()">
+          <option value="">전체 상태</option>
+          <option>접수완료</option>
+          <option>검토중</option>
+          <option>심사중</option>
+          <option>심사완료</option>
+        </select>
+        <span class="count-lbl" id="mine-list-cnt"></span>
+      </div>
+      <div style="padding:10px 20px;background:#fff8e6;border-bottom:1px solid #fde68a;font-size:12px;color:#6b4a00;line-height:1.6">
+        💡 본인이 작성한 제안의 <b>제목</b>을 클릭하면 진행 상황을 확인할 수 있습니다. (접수번호 + 성명 인증 필요)
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>접수번호</th>
+              <th>제목</th>
+              <th>분류</th>
+              <th>상태</th>
+              <th>결과</th>
+            </tr>
+          </thead>
+          <tbody id="mine-list-body">
+            <tr><td colspan="5" style="text-align:center;color:#aaa;padding:40px">불러오는 중...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 2. 본인 인증 (제목 클릭 시) -->
+    <div class="card" id="mine-auth-card" style="display:none;padding:40px 32px;max-width:480px;margin:24px auto">
       <div class="section-title-bar">
         <div class="section-title-icon">🔍</div>
-        <div><h2 class="section-title-text">내 제안 확인</h2></div>
+        <div><h2 class="section-title-text">제안 확인</h2></div>
       </div>
-      <p style="font-size:13px;color:#64748b;margin-bottom:20px;line-height:1.7">
-        접수 시 발급받은 <b>접수번호</b>와 <b>본인 성명</b>을 입력하시면<br>
-        검토 진행상황과 심사 결과를 확인할 수 있습니다.
-      </p>
-      <div class="sf-field full" style="margin-bottom:14px">
-        <label>접수번호 <span class="field-req">*</span></label>
-        <input id="mine-receipt-no" placeholder="예: 2026-H1-001" style="font-family:'Exo 2','Noto Sans KR',sans-serif;letter-spacing:1px">
+      <div style="background:#eef3ff;border-radius:8px;padding:14px 18px;margin-bottom:20px;font-size:13px;line-height:1.8">
+        <div style="color:#64748b;font-size:11px;margin-bottom:2px">선택한 제안</div>
+        <div id="mine-auth-title" style="font-size:14px;font-weight:700;color:var(--navy);margin-bottom:8px">—</div>
+        <div style="color:#64748b;font-size:11px;margin-bottom:2px">접수번호</div>
+        <div id="mine-auth-receipt" style="font-size:16px;font-weight:700;color:var(--blue);font-family:'Exo 2','Noto Sans KR',sans-serif;letter-spacing:.5px">—</div>
       </div>
+      <p style="font-size:13px;color:#64748b;margin-bottom:14px;line-height:1.6">본인이 작성한 제안이면 <b>본인 성명</b>을 입력해주세요.</p>
       <div class="sf-field full" style="margin-bottom:18px">
         <label>본인 성명 <span class="field-req">*</span></label>
         <input id="mine-name" placeholder="홍길동" onkeydown="if(event.key==='Enter')lookupMyProposal()">
       </div>
-      <button class="btn-submit-full" onclick="lookupMyProposal()">조회하기</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn-cancel" onclick="backToMineList()" style="flex:1;padding:11px">← 목록으로</button>
+        <button class="btn-submit-full" onclick="lookupMyProposal()" style="flex:1;width:auto;margin-top:0;padding:11px">확인</button>
+      </div>
       <p id="mine-error" style="display:none;margin-top:12px;padding:10px 14px;background:#fee2e2;border:1px solid #fca5a5;border-radius:8px;color:#991b1b;font-size:13px;text-align:center"></p>
     </div>
 
-    <!-- 조회 결과 -->
+    <!-- 3. 진행 상황 상세 (인증 후) -->
     <div id="mine-result" style="display:none">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding:0 4px">
         <div style="display:flex;align-items:center;gap:10px">
           <span style="font-size:13px;color:#64748b">접수번호</span>
           <span id="mine-r-no" style="font-size:18px;font-weight:800;color:var(--blue);font-family:'Exo 2','Noto Sans KR',sans-serif;letter-spacing:1px">—</span>
         </div>
-        <button class="btn-cancel" onclick="resetMyProposal()" style="padding:6px 16px;font-size:12px">다시 조회</button>
+        <button class="btn-cancel" onclick="backToMineList()" style="padding:6px 16px;font-size:12px">← 목록으로</button>
       </div>
 
       <div class="card" style="padding:24px 28px;margin-bottom:14px">

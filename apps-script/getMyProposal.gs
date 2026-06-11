@@ -108,6 +108,42 @@ function dreamGetMyProposal(data) {
 }
 
 /**
+ * 모든 제안의 제목 목록 (익명) — 누구나 조회 가능
+ *   접수번호/제안일시/제안부문/제목/상태/결과만 반환
+ *   성명·소속·내용은 절대 반환 X
+ *
+ * [Code.gs doPost switch에 추가할 한 줄]
+ *   case 'dreamGetAllTitles': result = dreamGetAllTitles(d); break;
+ */
+function dreamGetAllTitles(data) {
+  try {
+    var ss = SpreadsheetApp.openById(DREAM_SHEET_ID);
+    var sheet = ss.getSheetByName('제안');
+    if (!sheet) throw new Error('"제안" 시트가 없습니다.');
+    if (sheet.getLastRow() < 2) return { ok: true, items: [] };
+
+    var rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, 14).getValues();
+    var items = rows.map(function(p) {
+      return {
+        receiptNo:   String(p[0] || ''),
+        submittedAt: dreamFmtDate_(p[3]),
+        category:    String(p[4] || ''),
+        title:       String(p[6] || ''),
+        status:      String(p[12] || ''),
+        result:      String(p[13] || '')
+      };
+    });
+
+    // 최신순 (접수번호 내림차순)
+    items.sort(function(a, b) { return a.receiptNo < b.receiptNo ? 1 : -1; });
+
+    return { ok: true, items: items };
+  } catch (err) {
+    return { ok: false, error: String(err.message || err) };
+  }
+}
+
+/**
  * 날짜 포맷 헬퍼 (Date 객체든 문자열이든 yyyy-MM-dd HH:mm으로)
  */
 function dreamFmtDate_(v) {

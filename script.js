@@ -292,7 +292,8 @@ function switchTab(name, btn, dropItem) {
   if (name==='tracking') renderTracking();
   if (name==='stats')    renderStats2();
   if (name==='submit')   initSubmitTab();
-  // 'mine' / 'review' / 'judge' — 4~6단계에서 핸들러 추가
+  if (name==='mine')     initMineTab();
+  // 'review' / 'judge' — 자체 로그인 화면에서 진입
 }
 
 // ── 관리자 ───────────────────────────────────────────
@@ -1567,13 +1568,110 @@ function showSubmitDone(receiptNo, name) {
 // ██  내 제안 확인  ██
 // ══════════════════════════════════════════════════════════
 
+var _mineAllItems = [];
+var _mineSelectedReceiptNo = null;
+
+// [제안 확인] 탭 진입 시 자동 호출
+function initMineTab() {
+  document.getElementById('mine-list-card').style.display = '';
+  document.getElementById('mine-auth-card').style.display = 'none';
+  document.getElementById('mine-result').style.display = 'none';
+  loadMineList();
+}
+
+function loadMineList() {
+  var body = document.getElementById('mine-list-body');
+  if (body) body.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#aaa;padding:40px">불러오는 중...</td></tr>';
+  apiPost({ action: 'dreamGetAllTitles' }).then(function(res) {
+    if (!res || !res.ok) {
+      body.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--rose);padding:40px">' + esc((res && res.error) || '조회 실패') + '</td></tr>';
+      return;
+    }
+    _mineAllItems = res.items || [];
+    renderMineList();
+  }).catch(function(e) {
+    body.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--rose);padding:40px">서버 오류: ' + esc(e.message) + '</td></tr>';
+  });
+}
+
+function renderMineList() {
+  var search = ((document.getElementById('mine-list-search') || {}).value || '').toLowerCase().trim();
+  var cat    = (document.getElementById('mine-list-cat') || {}).value || '';
+  var status = (document.getElementById('mine-list-status') || {}).value || '';
+
+  var items = _mineAllItems.filter(function(it) {
+    if (search && it.title.toLowerCase().indexOf(search) < 0) return false;
+    if (cat && it.category !== cat) return false;
+    if (status && it.status !== status) return false;
+    return true;
+  });
+
+  var cntEl = document.getElementById('mine-list-cnt');
+  if (cntEl) cntEl.textContent = items.length + ' 건';
+
+  var body = document.getElementById('mine-list-body');
+  if (!items.length) {
+    body.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#aaa;padding:40px">조건에 맞는 제안이 없습니다.</td></tr>';
+    return;
+  }
+
+  var html = '';
+  items.forEach(function(it) {
+    var titleSafe = esc(it.title).replace(/'/g, "&#39;");
+    html += '<tr onclick="openMineAuth(\'' + esc(it.receiptNo) + '\', \'' + titleSafe + '\')" style="cursor:pointer">' +
+      '<td style="font-family:\'Exo 2\',\'Noto Sans KR\',sans-serif;font-weight:700;color:var(--blue);white-space:nowrap">' + esc(it.receiptNo) + '</td>' +
+      '<td class="title-main">' + esc(it.title) + '</td>' +
+      '<td>' + catBadge(it.category) + '</td>' +
+      '<td>' + mineStatusBadge(it.status) + '</td>' +
+      '<td>' + ((it.result && it.result !== '심사중') ? awardBadge(it.result) : '<span style="color:#bbb;font-size:12px">—</span>') + '</td>' +
+    '</tr>';
+  });
+  body.innerHTML = html;
+}
+
+function filterMineList() { renderMineList(); }
+
+function mineStatusBadge(s) {
+  var map = { '접수완료':'#fbbf24', '검토중':'#3b82f6', '심사중':'#a855f7', '심사완료':'#22c55e' };
+  var c = map[s] || '#94a3b8';
+  return '<span style="background:'+c+';color:#fff;padding:2px 9px;border-radius:10px;font-size:11px;font-weight:700;white-space:nowrap">' + esc(s||'-') + '</span>';
+}
+
+function openMineAuth(receiptNo, title) {
+  _mineSelectedReceiptNo = receiptNo;
+  document.getElementById('mine-list-card').style.display = 'none';
+  document.getElementById('mine-result').style.display = 'none';
+  document.getElementById('mine-auth-card').style.display = '';
+  document.getElementById('mine-auth-title').textContent = title;
+  document.getElementById('mine-auth-receipt').textContent = receiptNo;
+  document.getElementById('mine-name').value = '';
+  document.getElementById('mine-error').style.display = 'none';
+  setTimeout(function() {
+    var inp = document.getElementById('mine-name');
+    if (inp) inp.focus();
+  }, 100);
+}
+
+function backToMineList() {
+  document.getElementById('mine-auth-card').style.display = 'none';
+  document.getElementById('mine-result').style.display = 'none';
+  document.getElementById('mine-list-card').style.display = '';
+  _mineSelectedReceiptNo = null;
+  loadMineList(); // 새 접수 반영
+}
+
 function lookupMyProposal() {
-  var no   = (document.getElementById('mine-receipt-no').value || '').trim();
+  var no   = _mineSelectedReceiptNo;
   var name = (document.getElementById('mine-name').value || '').trim();
   var err  = document.getElementById('mine-error');
 
-  if (!no || !name) {
-    err.textContent = '접수번호와 본인 성명을 모두 입력해주세요.';
+  if (!no) {
+    err.textContent = '먼저 목록에서 제안을 선택해주세요.';
+    err.style.display = 'block';
+    return;
+  }
+  if (!name) {
+    err.textContent = '본인 성명을 입력해주세요.';
     err.style.display = 'block';
     return;
   }
@@ -1598,7 +1696,8 @@ function lookupMyProposal() {
 
 function renderMyProposal(res) {
   var p = res.proposal;
-  document.getElementById('mine-login-card').style.display = 'none';
+  document.getElementById('mine-list-card').style.display = 'none';
+  document.getElementById('mine-auth-card').style.display = 'none';
   document.getElementById('mine-result').style.display = 'block';
   document.getElementById('mine-r-no').textContent = p.receiptNo;
 
@@ -1697,13 +1796,8 @@ function renderMyProposal(res) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-function resetMyProposal() {
-  document.getElementById('mine-login-card').style.display = 'block';
-  document.getElementById('mine-result').style.display = 'none';
-  document.getElementById('mine-receipt-no').value = '';
-  document.getElementById('mine-name').value = '';
-  document.getElementById('mine-error').style.display = 'none';
-}
+// 호환용 — 외부에서 호출돼도 backToMineList로 위임
+function resetMyProposal() { backToMineList(); }
 
 // ══════════════════════════════════════════════════════════
 // ██  검토 페이지 (위원 코드 로그인)  ██
