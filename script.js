@@ -1578,6 +1578,16 @@ function initMineTab() {
   loadMineList();
 }
 
+// Fisher-Yates 셔플 (원본 배열 변경 X)
+function shuffleArray_(arr) {
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var t = a[i]; a[i] = a[j]; a[j] = t;
+  }
+  return a;
+}
+
 function loadMineList() {
   var body = document.getElementById('mine-list-body');
   if (body) body.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#aaa;padding:40px">불러오는 중...</td></tr>';
@@ -1586,7 +1596,8 @@ function loadMineList() {
       body.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--rose);padding:40px">' + esc((res && res.error) || '조회 실패') + '</td></tr>';
       return;
     }
-    _mineAllItems = res.items || [];
+    // 익명성 강화: 매 진입마다 랜덤 순서로 표시
+    _mineAllItems = shuffleArray_(res.items || []);
     renderMineList();
   }).catch(function(e) {
     body.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--rose);padding:40px">서버 오류: ' + esc(e.message) + '</td></tr>';
