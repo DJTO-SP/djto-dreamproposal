@@ -2953,7 +2953,6 @@ function buildReviewBoxHtml_(dept, review, deptCount) {
     +   '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;border-bottom:1px solid #e8edf5;padding-bottom:5px">'
     +     '<span style="font-size:12.5px;font-weight:800;color:#204473">' + safe(dept) + '</span>'
     +     '<span style="background:'+statusBg+';color:'+statusFg+';padding:1px 7px;border-radius:8px;font-size:10px;font-weight:700">'+statusLabel+'</span>'
-    +     (review && review.reviewer ? '<span style="font-size:10.5px;color:#666">'+safe(review.reviewer)+'</span>' : '')
     +     (review && review.date ? '<span style="font-size:10px;color:#888;margin-left:auto">'+safe(review.date)+'</span>' : '')
     +   '</div>'
     +   '<div style="font-size:10.5px;line-height:1.6;color:#1a2035;min-height:' + minH + 'px;white-space:pre-wrap">'
