@@ -230,4 +230,14 @@ function dreamUpdateProposalStatus_(receiptNo) {
   var allDone = targetDepts.every(function(d) { return completedDepts.indexOf(d) >= 0; });
   var newStatus = allDone ? '심사중' : '검토중';
   pSheet.getRange(targetRow, 13).setValue(newStatus); // M 상태
+
+  // 모든 부서 검토 완료 → 통합 PDF(원본/익명) 자동 저장 (autoReviewPdf.gs)
+  // 실패해도 검토 저장 자체는 성공 처리 (PDF는 나중에 dreamBackfillReviewPdfs로 보완 가능)
+  if (allDone) {
+    try {
+      dreamAutoSaveReviewPdfs(receiptNo);
+    } catch (e) {
+      Logger.log('⚠️ 통합 PDF 자동 저장 실패 (' + receiptNo + '): ' + e);
+    }
+  }
 }

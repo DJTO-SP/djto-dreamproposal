@@ -2621,6 +2621,8 @@ function openInboxDetail(receiptNo, rowEl) {
 
   // 통합 PDF 다운로드 (제안서 + 검토의견 + 첨부)
   infoHtml += '<button class="btn-submit-full" style="background:#0f9d58;padding:10px;font-size:13px;margin-top:8px" onclick="downloadIntegratedPdf(\'' + esc(d.receiptNo) + '\')">📥 통합 PDF 다운로드</button>';
+  // 통합 PDF 원본/익명 2종을 Drive 02_검토의견 폴더에 저장
+  infoHtml += '<button class="btn-submit-full" style="background:#204473;padding:10px;font-size:13px;margin-top:8px" onclick="saveReviewPdfsToDrive(\'' + esc(d.receiptNo) + '\')">☁️ Drive에 저장 (원본+익명)</button>';
 
   document.getElementById('inbox-info-area').innerHTML = infoHtml;
   split.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -2779,32 +2781,8 @@ function downloadIntegratedPdf(receiptNo) {
 
   showLoadingOverlay('PDF 생성 중... (잠시만 기다려주세요)');
 
-  buildIntegratedPdf_(d).then(function(pdfDoc) {
-    if (!d.anonymousUrl) return pdfDoc.save();
-    showLoadingOverlay('첨부 자료 합치는 중...');
-    return apiPost({
-      action: 'dreamGetPdfBase64',
-      pw: ADMIN_PW,
-      receiptNo: d.receiptNo,
-      type: 'anonymous'
-    }).then(function(res) {
-      if (!res || !res.ok || !res.base64) {
-        console.warn('첨부 가져오기 실패:', res && res.error);
-        return pdfDoc.save();
-      }
-      var bin = atob(res.base64);
-      var bytes = new Uint8Array(bin.length);
-      for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-      return PDFLib.PDFDocument.load(bytes, { ignoreEncryption: true }).then(function(attDoc) {
-        return pdfDoc.copyPages(attDoc, attDoc.getPageIndices()).then(function(pages) {
-          pages.forEach(function(p) { pdfDoc.addPage(p); });
-          return pdfDoc.save();
-        });
-      }).catch(function(err) {
-        console.warn('첨부 병합 실패:', err);
-        return pdfDoc.save();
-      });
-    });
+  fetchAttachmentBase64_(d).then(function(attBase64) {
+    return buildIntegratedPdfBytes_(d, false, attBase64);
   }).then(function(pdfBytes) {
     var blob = new Blob([pdfBytes], { type: 'application/pdf' });
     var url = URL.createObjectURL(blob);
@@ -2823,10 +2801,98 @@ function downloadIntegratedPdf(receiptNo) {
   });
 }
 
-function buildIntegratedPdf_(d) {
+// ── 통합 PDF 2종(원본/익명)을 Drive 02_검토의견 폴더에 저장 ─────
+function saveReviewPdfsToDrive(receiptNo) {
+  var d = _adminItems.find(function(x) { return String(x.receiptNo) === String(receiptNo); });
+  if (!d) return alert('제안 정보를 찾을 수 없습니다.');
+  if (typeof PDFLib === 'undefined' || typeof html2canvas === 'undefined') {
+    return alert('PDF 라이브러리 로드 실패. 새로고침 후 다시 시도하세요.');
+  }
+  if (!confirm('통합 PDF(제안서+검토의견) 2종을 Drive의 [02_검토의견] 폴더에 저장합니다.\n\n  • ' + d.receiptNo + '_검토의견_원본.pdf (제안자 표시)\n  • ' + d.receiptNo + '_검토의견_익명.pdf (제안자 비공개)\n\n이미 저장된 파일이 있으면 새 파일로 교체됩니다. 계속할까요?')) return;
+
+  showLoadingOverlay('첨부 자료 불러오는 중...');
+  fetchAttachmentBase64_(d).then(function(attBase64) {
+    showLoadingOverlay('원본 PDF 생성 중... (1/2)');
+    return buildIntegratedPdfBytes_(d, false, attBase64).then(function(origBytes) {
+      showLoadingOverlay('익명 PDF 생성 중... (2/2)');
+      return buildIntegratedPdfBytes_(d, true, attBase64).then(function(anonBytes) {
+        showLoadingOverlay('Drive에 저장 중...');
+        return apiPost({
+          action: 'dreamSaveReviewPdfs',
+          pw: ADMIN_PW,
+          receiptNo: d.receiptNo,
+          originalPdf: pdfBytesToBase64_(origBytes),
+          anonymousPdf: pdfBytesToBase64_(anonBytes)
+        });
+      });
+    });
+  }).then(function(res) {
+    hideLoadingOverlay();
+    if (!res || !res.ok) return alert('Drive 저장 실패: ' + ((res && res.error) || '알 수 없는 오류'));
+    showToast('✅ Drive [02_검토의견] 폴더에 원본/익명 PDF 저장 완료', 'ok');
+  }).catch(function(e) {
+    hideLoadingOverlay();
+    alert('오류: ' + e.message);
+  });
+}
+
+// 첨부자료(익명 PDF)를 base64로 가져오기 — 없거나 실패하면 null
+function fetchAttachmentBase64_(d) {
+  if (!d.anonymousUrl) return Promise.resolve(null);
+  return apiPost({
+    action: 'dreamGetPdfBase64',
+    pw: ADMIN_PW,
+    receiptNo: d.receiptNo,
+    type: 'anonymous'
+  }).then(function(res) {
+    if (!res || !res.ok || !res.base64) {
+      console.warn('첨부 가져오기 실패:', res && res.error);
+      return null;
+    }
+    return res.base64;
+  }).catch(function(err) {
+    console.warn('첨부 가져오기 실패:', err);
+    return null;
+  });
+}
+
+// 통합 PDF 생성 + 첨부 병합 → Uint8Array 반환
+function buildIntegratedPdfBytes_(d, anonymize, attBase64) {
+  return buildIntegratedPdf_(d, anonymize).then(function(pdfDoc) {
+    if (!attBase64) return pdfDoc.save();
+    var bin = atob(attBase64);
+    var bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return PDFLib.PDFDocument.load(bytes, { ignoreEncryption: true }).then(function(attDoc) {
+      return pdfDoc.copyPages(attDoc, attDoc.getPageIndices()).then(function(pages) {
+        pages.forEach(function(p) { pdfDoc.addPage(p); });
+        return pdfDoc.save();
+      });
+    }).catch(function(err) {
+      console.warn('첨부 병합 실패:', err);
+      return pdfDoc.save();
+    });
+  });
+}
+
+function pdfBytesToBase64_(pdfBytes) {
+  var bytes = new Uint8Array(pdfBytes);
+  var binary = '';
+  var chunk = 8192;
+  for (var i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+  }
+  return btoa(binary);
+}
+
+function buildIntegratedPdf_(d, anonymize) {
   // members가 문자열로 들어올 수 있음 (관리자 PDF용) → 배열로 정규화
   if (typeof d.members === 'string') {
     d.members = d.members.split(',').map(function(s){return s.trim();}).filter(Boolean);
+  }
+  // 익명 버전: 제안자 성명/소속/구성원 비공개 처리
+  if (anonymize) {
+    d = Object.assign({}, d, { name: '비공개', dept: '비공개', members: [] });
   }
   var depts = d.targetDepts || [];
   // 페이지 1: 좌측 제안서 + 우측 첫 2팀 (또는 더 적게)
