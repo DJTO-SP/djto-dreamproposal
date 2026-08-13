@@ -12,7 +12,7 @@
 
 const SHEET_ID        = '1TzKHf4QxH8XqB05duVSXlSdM42_ThGJuy0C1Qewvywo';
 const DRIVE_FOLDER_ID = '1BRJcpuVzIX-f0EOiYM0sAD7b8SZI9kSy';
-const ADMIN_PW        = 'alsk0118**';
+const ADMIN_PW        = PropertiesService.getScriptProperties().getProperty('ADMIN_PW');
 
 const S_PROPOSAL = '제안';
 const S_REVIEW   = '검토';
@@ -55,6 +55,20 @@ function doPost(e) {
   try {
     switch (d.action) {
       case 'submitProposal':  result = submitProposal(d); break;
+      case 'dreamSubmit':     result = dreamAddProposal(d); break;
+      case 'dreamSavePdfs':   result = dreamSavePdfs(d); break;
+      case 'dreamGetMyProposal':  result = dreamGetMyProposal(d); break;
+      case 'dreamGetAllTitles':   result = dreamGetAllTitles(d); break;
+      case 'dreamReviewLogin':    result = dreamReviewLogin(d); break;
+      case 'dreamGetReviewItems': result = dreamGetReviewItems(d); break;
+      case 'dreamSaveReview':     result = dreamSaveReview(d); break;
+      case 'dreamJudgeLogin':     result = dreamJudgeLogin(d); break;
+      case 'dreamGetJudgeItems':  result = dreamGetJudgeItems(d); break;
+      case 'dreamSaveScore':      result = dreamSaveScore(d); break;
+      case 'dreamFinalizeJudge':    result = dreamFinalizeJudge(d); break;
+      case 'dreamGetAdminProposals': result = dreamGetAdminProposals(d); break;
+      case 'dreamSetResult':         result = dreamSetResult(d); break;
+      case 'dreamGetPdfBase64':      result = dreamGetPdfBase64(d); break;
       case 'saveReview':      result = saveReview(d); break;
       case 'saveScore':       result = saveScore(d); break;
       case 'updateProposal':  result = checkAdmin(d.pw) ? updateProposal(d) : {error:'권한 없음'}; break;
@@ -63,6 +77,7 @@ function doPost(e) {
       case 'updateAward':     result = checkAdmin(d.pw) ? updateAward(d) : {error:'권한 없음'}; break;
       case 'bulkUpdateAward': result = checkAdmin(d.pw) ? bulkUpdateAward(d) : {error:'권한 없음'}; break;
       case 'saveTracking':    result = saveTracking(d); break;
+      case 'dreamSaveReviewPdfs': result = dreamSaveReviewPdfs(d); break;
       case 'saveNotice':      result = checkAdmin(d.pw) ? saveNotice(d) : {error:'권한 없음'}; break;
       case 'deleteTracking':  result = checkAdmin(d.pw) ? deleteTracking(d.id) : {error:'권한 없음'}; break;
       default:                result = {error: 'Unknown action'};
