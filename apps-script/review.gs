@@ -58,7 +58,7 @@ function dreamGetReviewItems(data) {
     if (!pSheet) throw new Error('제안 시트 없음');
     if (pSheet.getLastRow() < 2) return { ok: true, items: [] };
 
-    var pRows = pSheet.getRange(2, 1, pSheet.getLastRow() - 1, 14).getValues();
+    var pRows = pSheet.getRange(2, 1, pSheet.getLastRow() - 1, 17).getValues();
 
     // 검토 시트 매핑 (key: 접수번호|부서 → review)
     var reviewMap = {};
@@ -103,6 +103,8 @@ function dreamGetReviewItems(data) {
         receiptNo: receiptNo,
         title: String(p[6]),
         category: String(p[4]),
+        mainTask: String(p[15] || ''),
+        deptRelevance: String(p[16] || ''),
         targetDepts: targetDepts,
         reason: String(p[7]),
         method: String(p[8]),

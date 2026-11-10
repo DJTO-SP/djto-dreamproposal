@@ -48,6 +48,12 @@ function dreamAddProposal(data) {
     var sheet = ss.getSheetByName('제안');
     if (!sheet) throw new Error('"제안" 시트가 없습니다. setup() 먼저 실행하세요.');
 
+    // P·Q 헤더가 없는 기존 시트면 자동 추가 (2026 하반기 서식 개편)
+    if (!String(sheet.getRange(1, 16).getValue() || '').trim()) {
+      sheet.getRange(1, 16, 1, 2).setValues([['주요과제', '업무관련성']])
+        .setBackground(DREAM_HEADER_BG).setFontColor(DREAM_HEADER_FG).setFontWeight('bold');
+    }
+
     // 접수번호 발급
     var receiptNo = dreamIssueReceiptNo_(sheet);
 
@@ -59,7 +65,7 @@ function dreamAddProposal(data) {
       ? data.members.map(function(m){ return String(m).trim(); }).filter(Boolean)
       : [];
 
-    // 시트에 행 추가 (15개 컬럼)
+    // 시트에 행 추가 (17개 컬럼)
     sheet.appendRow([
       receiptNo,                         // A 접수번호
       String(data.name).trim(),          // B 성명 (개인=본인, 그룹=대표자)
@@ -75,7 +81,9 @@ function dreamAddProposal(data) {
       '',                                // L 익명링크
       '접수완료',                        // M 상태
       '',                                // N 결과
-      members.join(', ')                 // O 구성원 (그룹원 이름, 빈값=개인)
+      members.join(', '),                // O 구성원 (그룹원 이름, 빈값=개인)
+      String(data.mainTask || '').trim(),       // P 주요과제 (2026 하반기~)
+      String(data.deptRelevance || '').trim()   // Q 담당부서 업무 관련성 (2026 하반기~)
     ]);
 
     return { ok: true, receiptNo: receiptNo };

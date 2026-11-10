@@ -299,10 +299,16 @@
 
           <div class="sf-row">
             <div class="sf-field">
-              <label>제안부문 <span class="field-req">*</span></label>
-              <select id="sf-category">
+              <label>제안 테마 <span class="field-req">*</span></label>
+              <select id="sf-category" onchange="onCategoryChange()">
                 <option value="">-- 선택 --</option>
                 <option>관광아이디어발굴</option><option>조직혁신</option><option>사회적가치실현</option>
+              </select>
+            </div>
+            <div class="sf-field">
+              <label>주요과제 <span class="field-req">*</span></label>
+              <select id="sf-task" disabled>
+                <option value="">-- 테마를 먼저 선택 --</option>
               </select>
             </div>
           </div>
@@ -330,6 +336,13 @@
             </div>
           </div>
 
+          <div class="sf-field full">
+            <label>담당부서 업무 관련성 <span class="field-req">*</span>
+              <span class="lbl-hint">(선택한 담당부서의 어떤 업무와 관련되는지 작성)</span>
+            </label>
+            <textarea id="sf-dept-rel" rows="3" placeholder="○ 선택한 담당부서별로, 해당 부서의 어떤 업무와 관련되어 검토가 필요한지 적어주세요&#10;  예) 홍보마케팅팀 — SNS 채널 운영 및 콘텐츠 제작 업무&#10;  예) 총무회계팀 — 기념품 구매·계약 업무"></textarea>
+          </div>
+
           <div class="form-section-divider">
             <span class="form-section-label">📝 제안 내용</span>
           </div>
@@ -351,11 +364,39 @@
           </div>
 
           <div class="sf-field full">
-            <label>기대효과 <span class="lbl-hint">(선택)</span></label>
-            <textarea id="sf-effect" rows="4" placeholder="○ 예산절감액: 예) 연 OO만원&#10;○ 수입증대액: 예) 연 OO만원&#10;○ 개선효과: 예) 관광객 만족도 향상, 안내 응대 시간 단축 등"></textarea>
+            <label>기대효과 <span class="field-req">*</span></label>
+            <div class="effect-box">
+              <div class="effect-row">
+                <div class="effect-row-title">① 효과유형 <span class="lbl-hint">(복수 선택 가능)</span></div>
+                <div class="effect-opts" id="sf-eff-types">
+                  <label><input type="checkbox" value="예산절감"> 예산절감</label>
+                  <label><input type="checkbox" value="시간·인력절감"> 시간·인력절감</label>
+                  <label><input type="checkbox" value="수입증대"> 수입증대</label>
+                  <label><input type="checkbox" value="시민만족"> 시민만족</label>
+                  <label><input type="checkbox" value="조직문화"> 조직문화</label>
+                  <label><input type="checkbox" value="기타"> 기타</label>
+                </div>
+              </div>
+              <div class="effect-row">
+                <div class="effect-row-title">② 정량 또는 정성효과 <span class="lbl-hint">(둘 중 하나 이상 작성)</span></div>
+                <input id="sf-eff-quant" placeholder="정량효과 예) 연 00만원 절감 예상, 처리시간 00% 단축">
+                <textarea id="sf-eff-qual" rows="3" placeholder="정성효과 (서술형) 예) 관광객 만족도 향상, 직원 업무 부담 완화" style="margin-top:6px"></textarea>
+              </div>
+              <div class="effect-row">
+                <div class="effect-row-title">③ 적용범위 <span class="lbl-hint">(택 1)</span></div>
+                <div class="effect-opts" id="sf-eff-scope">
+                  <label><input type="radio" name="sf-eff-scope" value="전사"> 전사</label>
+                  <label><input type="radio" name="sf-eff-scope" value="일부부서"> 일부부서</label>
+                  <label><input type="radio" name="sf-eff-scope" value="특정사업"> 특정사업</label>
+                  <label><input type="radio" name="sf-eff-scope" value="시민"> 시민</label>
+                  <label><input type="radio" name="sf-eff-scope" value="기타"> 기타</label>
+                </div>
+                <input id="sf-eff-scale" placeholder="예상 적용 규모 예) 전 직원 약 200명 / 연 12회 행사 / 방문객 연 30만명" style="margin-top:6px">
+              </div>
+            </div>
           </div>
 
-          <input id="sf-save" type="hidden"><input id="sf-revenue" type="hidden">
+          <input id="sf-effect" type="hidden"><input id="sf-save" type="hidden"><input id="sf-revenue" type="hidden">
 
           <div class="sf-field full">
             <label>참고자료 첨부 <span class="lbl-hint">(PDF 1개, 선택)</span></label>
@@ -461,7 +502,7 @@
       <p style="font-size:13px;color:#64748b;margin-bottom:14px;line-height:1.6">접수 시 발급받은 <b>접수번호</b>와 <b>본인 성명</b>을 입력해주세요.</p>
       <div class="sf-field full" style="margin-bottom:14px">
         <label>접수번호 <span class="field-req">*</span></label>
-        <input id="mine-receipt-input" placeholder="예: 2026-H1-001" style="font-family:'Exo 2','Noto Sans KR',sans-serif;letter-spacing:.5px">
+        <input id="mine-receipt-input" placeholder="예: 2026-H2-001" style="font-family:'Exo 2','Noto Sans KR',sans-serif;letter-spacing:.5px">
       </div>
       <div class="sf-field full" style="margin-bottom:18px">
         <label>본인 성명 <span class="field-req">*</span></label>
@@ -607,19 +648,24 @@
           <button class="btn-cancel" onclick="judgeLogout()" style="padding:6px 14px;font-size:12px">로그아웃</button>
         </div>
       </div>
-      <div class="rv-split">
-        <div class="rv-left">
-          <div class="card" style="padding:20px 24px">
-            <div class="mine-section-title">🏆 심사 대상 제안</div>
-            <div id="tjd-list"></div>
-          </div>
+      <!-- 제안 번호 내비게이션 -->
+      <div class="tjd-nav">
+        <button type="button" class="tjd-navbtn" onclick="judgeStep(-1)">◀ 이전</button>
+        <div class="tjd-chips" id="tjd-nav-chips"></div>
+        <span class="tjd-pos" id="tjd-pos"></span>
+        <button type="button" class="tjd-navbtn" onclick="judgeStep(1)">다음 ▶</button>
+        <button type="button" class="tjd-navbtn accent" onclick="judgeNextUnscored()">미채점 ▶▶</button>
+        <span class="tjd-legend"><i class="pending"></i>미채점 <i class="draft"></i>저장 <i class="completed"></i>완료</span>
+      </div>
+      <!-- 좌: 제안 내용/PDF · 우: 배점표 (나란히, 각자 스크롤) -->
+      <div class="tjd-split">
+        <div class="card tjd-left">
+          <div id="tjd-view"></div>
         </div>
-        <div class="rv-right">
-          <div class="card" style="padding:20px 24px">
-            <div class="mine-section-title">📊 배점표 채점</div>
-            <div id="tjd-score-area">
-              <p class="mine-empty">왼쪽 목록에서 제안을 선택하세요.</p>
-            </div>
+        <div class="card tjd-right">
+          <div class="mine-section-title">📊 배점표 채점</div>
+          <div id="tjd-score-area">
+            <p class="mine-empty">제안을 선택하세요.</p>
           </div>
         </div>
       </div>
@@ -772,7 +818,7 @@
           </div>
           <div style="font-size:13px;color:#64748b;margin-bottom:16px">배너 옆 말풍선에 표시되는 공지 메시지를 설정합니다. 비워두면 말풍선이 숨겨집니다.</div>
           <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px">
-            <input class="fi" id="mg-notice-input" placeholder="예: 2026년 상반기 접수 중" style="flex:1;font-size:14px" oninput="updateNoticePreview(this.value)">
+            <input class="fi" id="mg-notice-input" placeholder="예: 2026년 하반기 접수 중" style="flex:1;font-size:14px" oninput="updateNoticePreview(this.value)">
             <button class="btn-submit-full" style="width:auto;padding:10px 24px;white-space:nowrap" onclick="saveNoticeAdmin()">저장</button>
           </div>
           <div id="mg-notice-preview" style="display:none;background:#f6f8fd;border-radius:10px;padding:16px;text-align:center">

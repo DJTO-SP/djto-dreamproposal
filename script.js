@@ -1224,6 +1224,37 @@ function addMemberRow() {
   list.appendChild(row);
 }
 
+// 테마별 주요과제 (2026 하반기 개편)
+var THEME_TASKS = {
+  '관광아이디어발굴': ['꿈씨패밀리 IP 활용', '관광콘텐츠 관련', '친환경 관광 아이디어'],
+  '조직혁신':         ['AI 디지털 업무혁신'],
+  '사회적가치실현':   ['지역상권 연계', '관광 편의 개선(서비스 인프라 관련)', '사회적 가치 실현 관련(지역현안 해결방안 관련)']
+};
+
+function onCategoryChange() {
+  var cat = document.getElementById('sf-category').value;
+  var sel = document.getElementById('sf-task');
+  var tasks = THEME_TASKS[cat] || [];
+  if (!tasks.length) {
+    sel.innerHTML = '<option value="">-- 테마를 먼저 선택 --</option>';
+    sel.disabled = true;
+    return;
+  }
+  sel.innerHTML = '<option value="">-- 선택 --</option>' +
+    tasks.map(function(t) { return '<option>' + t + '</option>'; }).join('');
+  sel.disabled = false;
+  if (tasks.length === 1) sel.value = tasks[0];   // 과제가 1개뿐이면 자동 선택
+}
+
+// 기대효과(세분화 입력) → 시트 '기대효과' 칸에 저장할 서식 문자열
+function buildEffectText(types, quant, qual, scope, scale) {
+  var lines = ['① 효과유형: ' + types.join(', ')];
+  if (quant) lines.push('② 정량효과: ' + quant);
+  if (qual)  lines.push((quant ? '   ' : '② ') + '정성효과: ' + qual.replace(/\n/g, '\n      '));
+  lines.push('③ 적용범위: ' + scope + (scale ? ' (예상 적용 규모: ' + scale + ')' : ''));
+  return lines.join('\n');
+}
+
 // 담당부서 최대 2개 선택 제한
 function limitTargetDepts(cb) {
   var checked = document.querySelectorAll('#sf-target-depts input[type="checkbox"]:checked');
@@ -1234,14 +1265,17 @@ function limitTargetDepts(cb) {
 }
 
 function clearSubmitForm() {
-  ['sf-name','sf-title','sf-reason','sf-method','sf-effect','sf-save','sf-revenue'].forEach(function(id) {
+  ['sf-name','sf-title','sf-reason','sf-method','sf-effect','sf-save','sf-revenue',
+   'sf-dept-rel','sf-eff-quant','sf-eff-qual','sf-eff-scale'].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.value = '';
   });
+  document.querySelectorAll('#sf-eff-types input, #sf-eff-scope input').forEach(function(cb) { cb.checked = false; });
   var deptSel = document.getElementById('sf-dept');
   if (deptSel) deptSel.selectedIndex = 0;
   var catSel = document.getElementById('sf-category');
   if (catSel) catSel.selectedIndex = 0;
+  if (typeof onCategoryChange === 'function') onCategoryChange();
   document.querySelectorAll('#sf-target-depts input[type="checkbox"]').forEach(function(cb) {
     cb.checked = false;
   });
@@ -1316,10 +1350,13 @@ function buildCoverHtml(receiptNo, d, includePII) {
     + '<table style="width:100%;border-collapse:collapse;margin-bottom:18px;font-size:13.5px">'
     + '<tr><td style="background:#eef3ff;border:1px solid #d5dbe8;padding:8px 14px;font-weight:700;width:90px">접수번호</td><td style="border:1px solid #d5dbe8;padding:8px 14px;font-weight:600;color:#204473">' + esc(receiptNo) + '</td>'
     + '<td style="background:#eef3ff;border:1px solid #d5dbe8;padding:8px 14px;font-weight:700;width:90px">접수일시</td><td style="border:1px solid #d5dbe8;padding:8px 14px">' + esc(d.submittedAt) + '</td></tr>'
-    + '<tr><td style="background:#eef3ff;border:1px solid #d5dbe8;padding:8px 14px;font-weight:700">제안부문</td><td style="border:1px solid #d5dbe8;padding:8px 14px" colspan="3">' + esc(d.category) + '</td></tr>'
+    + '<tr><td style="background:#eef3ff;border:1px solid #d5dbe8;padding:8px 14px;font-weight:700">제안 테마</td><td style="border:1px solid #d5dbe8;padding:8px 14px" colspan="3">' + esc(d.category) + (d.mainTask ? ' &gt; ' + esc(d.mainTask) : '') + '</td></tr>'
     + '<tr><td style="background:#eef3ff;border:1px solid #d5dbe8;padding:8px 14px;font-weight:700">성명</td><td style="border:1px solid #d5dbe8;padding:8px 14px">' + name + '</td>'
     + '<td style="background:#eef3ff;border:1px solid #d5dbe8;padding:8px 14px;font-weight:700">소속</td><td style="border:1px solid #d5dbe8;padding:8px 14px">' + dept + '</td></tr>'
     + '<tr><td style="background:#eef3ff;border:1px solid #d5dbe8;padding:8px 14px;font-weight:700">담당부서</td><td style="border:1px solid #d5dbe8;padding:8px 14px" colspan="3">' + tDep + '</td></tr>'
+    + (d.deptRelevance
+        ? '<tr><td style="background:#eef3ff;border:1px solid #d5dbe8;padding:8px 14px;font-weight:700">업무 관련성</td><td style="border:1px solid #d5dbe8;padding:8px 14px;white-space:pre-wrap" colspan="3">' + esc(d.deptRelevance) + '</td></tr>'
+        : '')
     + (includePII && d.members && d.members.length > 0
         ? '<tr><td style="background:#eef3ff;border:1px solid #d5dbe8;padding:8px 14px;font-weight:700">구성원</td><td style="border:1px solid #d5dbe8;padding:8px 14px" colspan="3">' + esc(d.members.join(', ')) + '</td></tr>'
         : '')
@@ -1442,7 +1479,15 @@ function submitProposal() {
   var title  = (document.getElementById('sf-title').value  || '').trim();
   var reason = (document.getElementById('sf-reason').value || '').trim();
   var method = (document.getElementById('sf-method').value || '').trim();
-  var effect = (document.getElementById('sf-effect').value || '').trim();
+  var task   = document.getElementById('sf-task').value;
+  var deptRel = (document.getElementById('sf-dept-rel').value || '').trim();
+  var effTypes = Array.prototype.slice.call(document.querySelectorAll('#sf-eff-types input:checked'))
+    .map(function(cb) { return cb.value; });
+  var effQuant = (document.getElementById('sf-eff-quant').value || '').trim();
+  var effQual  = (document.getElementById('sf-eff-qual').value  || '').trim();
+  var scopeEl  = document.querySelector('input[name="sf-eff-scope"]:checked');
+  var effScope = scopeEl ? scopeEl.value : '';
+  var effScale = (document.getElementById('sf-eff-scale').value || '').trim();
   var targetDepts = Array.prototype.slice.call(
     document.querySelectorAll('#sf-target-depts input[type="checkbox"]:checked')
   ).map(function(cb) { return cb.value; });
@@ -1458,18 +1503,25 @@ function submitProposal() {
   // 2) 필수 검증
   if (!name)              return alert(type === '그룹' ? '대표자 성명을 입력해주세요.' : '성명을 입력해주세요.');
   if (!dept)              return alert(type === '그룹' ? '대표자 소속을 선택해주세요.' : '소속을 선택해주세요.');
-  if (!cat)               return alert('제안부문을 선택해주세요.');
+  if (!cat)               return alert('제안 테마를 선택해주세요.');
+  if (!task)              return alert('주요과제를 선택해주세요.');
   if (!targetDepts.length) return alert('담당부서를 1개 이상 선택해주세요.');
+  if (!deptRel)           return alert('담당부서 업무 관련성을 입력해주세요.');
   if (!title)             return alert('제목을 입력해주세요.');
   if (!reason)            return alert('제안사유를 입력해주세요.');
   if (!method)            return alert('실시방법을 입력해주세요.');
+  if (!effTypes.length)   return alert('기대효과의 효과유형을 1개 이상 선택해주세요.');
+  if (!effQuant && !effQual) return alert('기대효과의 정량효과 또는 정성효과 중 하나 이상 작성해주세요.');
+  if (!effScope)          return alert('기대효과의 적용범위를 선택해주세요.');
+  if (!effScale)          return alert('기대효과의 예상 적용 규모를 입력해주세요.');
+  var effect = buildEffectText(effTypes, effQuant, effQual, effScope, effScale);
   if (type === '그룹' && members.length === 0) return alert('그룹 제안은 함께한 분을 1명 이상 입력해주세요.');
   if (file && !file.name.toLowerCase().endsWith('.pdf')) return alert('PDF 파일만 첨부 가능합니다.');
   if (file && file.size > 20 * 1024 * 1024) return alert('첨부 파일은 20MB 이하만 가능합니다.');
 
   if (!SCRIPT_URL) return alert('Apps Script가 연결되지 않았습니다.');
 
-  var formData = { type:type, name:name, dept:dept, cat:cat, targetDepts:targetDepts,
+  var formData = { type:type, name:name, dept:dept, cat:cat, task:task, deptRel:deptRel, targetDepts:targetDepts,
                    title:title, reason:reason, method:method, effect:effect,
                    members:members, file:file };
 
@@ -1505,7 +1557,8 @@ function doSubmitFlow(f) {
   // 단계 1: 시트 행 추가 + 접수번호 발급
   apiPost({
     action: 'dreamSubmit',
-    name: f.name, dept: f.dept, category: f.cat, targetDepts: f.targetDepts,
+    name: f.name, dept: f.dept, category: f.cat, mainTask: f.task, deptRelevance: f.deptRel,
+    targetDepts: f.targetDepts,
     title: f.title, reason: f.reason, method: f.method, effect: f.effect,
     members: f.members
   }).then(function(res) {
@@ -1515,7 +1568,7 @@ function doSubmitFlow(f) {
     // 단계 2: PDF 두 개 생성
     showLoadingOverlay('PDF 생성 중... (잠시만요)');
     var submittedAt = new Date().toISOString().substring(0,16).replace('T',' ');
-    var d = { name:f.name, dept:f.dept, category:f.cat, targetDepts:f.targetDepts,
+    var d = { name:f.name, dept:f.dept, category:f.cat, mainTask:f.task, deptRelevance:f.deptRel, targetDepts:f.targetDepts,
               title:f.title, reason:f.reason, method:f.method, effect:f.effect,
               members: f.members, submittedAt: submittedAt };
     return Promise.all([
@@ -1725,7 +1778,7 @@ function renderMyProposal(res) {
     '<div class="mine-cell"><div class="mine-cell-label">'+nameLabel+'</div><div class="mine-cell-value">'+nameValue+'</div></div>' +
     '<div class="mine-cell"><div class="mine-cell-label">소  속</div><div class="mine-cell-value">'+esc(p.dept)+'</div></div>' +
     '<div class="mine-cell"><div class="mine-cell-label">접수일시</div><div class="mine-cell-value">'+esc(p.submittedAt)+'</div></div>' +
-    '<div class="mine-cell"><div class="mine-cell-label">제안부문</div><div class="mine-cell-value">'+esc(p.category)+'</div></div>' +
+    '<div class="mine-cell"><div class="mine-cell-label">제안 테마</div><div class="mine-cell-value">'+esc(p.category)+(p.mainTask ? ' &gt; '+esc(p.mainTask) : '')+'</div></div>' +
     '<div class="mine-cell full"><div class="mine-cell-label">제   목</div><div class="mine-cell-value" style="font-weight:700">'+esc(p.title)+'</div></div>' +
     '<div class="mine-cell full"><div class="mine-cell-label">담당부서</div><div class="mine-cell-value">'+p.targetDepts.map(esc).join(', ')+'</div></div>' +
     ((p.members && p.members.length > 0)
@@ -1879,7 +1932,8 @@ function renderReviewWork() {
           '<span class="rv-proposal-status '+statusClass+'">'+statusLabel+'</span>' +
         '</div>' +
         '<div class="rv-proposal-body">' +
-          '<div class="rv-pb-row"><div class="rv-pb-label">제안부문</div><div class="rv-pb-text">'+esc(it.category)+'</div></div>' +
+          '<div class="rv-pb-row"><div class="rv-pb-label">제안 테마</div><div class="rv-pb-text">'+esc(it.category)+(it.mainTask ? ' &gt; '+esc(it.mainTask) : '')+'</div></div>' +
+          (it.deptRelevance ? '<div class="rv-pb-row"><div class="rv-pb-label">담당부서 업무 관련성</div><div class="rv-pb-text">'+esc(it.deptRelevance)+'</div></div>' : '') +
           '<div class="rv-pb-row"><div class="rv-pb-label">제안사유 (원인분석)</div><div class="rv-pb-text">'+esc(it.reason||'')+'</div></div>' +
           '<div class="rv-pb-row"><div class="rv-pb-label">실시방법 (개선방향)</div><div class="rv-pb-text">'+esc(it.method||'')+'</div></div>' +
           (it.effect ? '<div class="rv-pb-row"><div class="rv-pb-label">기대효과</div><div class="rv-pb-text">'+esc(it.effect)+'</div></div>' : '') +
@@ -2062,6 +2116,7 @@ var _judgeCode = null;
 var _judgeInfo = null;
 var _judgeItems = [];
 var _selectedJudgeIdx = null;
+var _judgeAdvance = false;   // 저장 후 다음 미채점 제안으로 이동할지
 
 function judgeLogin() {
   var code = (document.getElementById('judge-code').value || '').trim().toUpperCase();
@@ -2093,6 +2148,11 @@ function loadJudgeItems() {
     hideLoadingOverlay();
     if (!res || !res.ok) { alert('목록 로드 실패: ' + ((res && res.error) || '')); return; }
     _judgeItems = res.items || [];
+    if (_judgeAdvance) {            // 저장 직후: 다음 미채점 제안으로 자동 이동
+      _judgeAdvance = false;
+      var nx = _judgeItems.length ? nextUnscoredIdx_(_selectedJudgeIdx === null ? -1 : _selectedJudgeIdx) : -1;
+      if (nx >= 0) _selectedJudgeIdx = nx;
+    }
     renderJudgeWork();
   }).catch(function(e) {
     hideLoadingOverlay();
@@ -2147,48 +2207,28 @@ function renderJudgeWork() {
     }
   }
 
-  var html = '';
   if (!_judgeItems.length) {
-    html = '<p class="mine-empty">심사 대상 제안이 없습니다.<br><span style="font-size:12px;color:#bbb">모든 담당부서 검토가 완료된 제안만 표시됩니다.</span></p>';
-  } else {
-    _judgeItems.forEach(function(it, idx) {
-      var statusClass, statusLabel;
-      if (it.myStatus === '제출완료') {
-        statusClass = 'completed';
-        statusLabel = '완료 · ' + (it.myTotal || 0) + '점';
-      } else if (it.myStatus === '임시저장') {
-        statusClass = 'draft';
-        statusLabel = '저장 · ' + (it.myTotal || 0) + '점';
-      } else {
-        statusClass = 'pending';
-        statusLabel = '대기';
-      }
-      html += '<div class="rv-proposal-card" data-tjd-idx="'+idx+'">' +
-        '<div class="rv-proposal-head" onclick="toggleJudgeItem('+idx+')">' +
-          '<span class="rv-proposal-no">'+esc(it.receiptNo)+'</span>' +
-          '<span class="rv-proposal-title">'+esc(it.title)+'</span>' +
-          '<span class="rv-proposal-status '+statusClass+'">'+statusLabel+'</span>' +
-        '</div>' +
-        '<div class="rv-proposal-body">' +
-          '<div class="rv-pb-row"><div class="rv-pb-label">제안부문</div><div class="rv-pb-text">'+esc(it.category)+'</div></div>' +
-          '<div class="rv-pb-row"><div class="rv-pb-label">제안사유 (원인분석)</div><div class="rv-pb-text">'+esc(it.reason||'')+'</div></div>' +
-          '<div class="rv-pb-row"><div class="rv-pb-label">실시방법 (개선방향)</div><div class="rv-pb-text">'+esc(it.method||'')+'</div></div>' +
-          (it.effect ? '<div class="rv-pb-row"><div class="rv-pb-label">기대효과</div><div class="rv-pb-text">'+esc(it.effect)+'</div></div>' : '') +
-          (it.anonymousUrl ? '<div class="rv-pb-row"><a href="'+esc(it.anonymousUrl)+'" target="_blank" style="font-size:12px;color:var(--blue);font-weight:600">📎 첨부 자료 보기 (새 창)</a></div>' : '') +
-          (it.reviews && it.reviews.length > 0 ? renderJudgeReviewSummary(it.reviews) : '') +
-        '</div>' +
-        '</div>';
-    });
-  }
-  document.getElementById('tjd-list').innerHTML = html;
-
-  if (_selectedJudgeIdx !== null && _judgeItems[_selectedJudgeIdx]) {
-    var card = document.querySelector('#tjd-list .rv-proposal-card[data-tjd-idx="'+_selectedJudgeIdx+'"]');
-    if (card) { card.classList.add('expanded'); card.classList.add('selected'); }
-    renderScorePanel(_selectedJudgeIdx);
-  } else {
+    document.getElementById('tjd-nav-chips').innerHTML = '';
+    document.getElementById('tjd-pos').textContent = '';
+    document.getElementById('tjd-view').innerHTML = '<p class="mine-empty">심사 대상 제안이 없습니다.</p>';
     renderScorePanelEmpty();
+    return;
   }
+
+  // 제안 번호 칩 (색: 미채점 / 저장 / 완료)
+  var chips = '';
+  _judgeItems.forEach(function(it, idx) {
+    var cls = it.myStatus === '제출완료' ? 'completed' : it.myStatus === '임시저장' ? 'draft' : 'pending';
+    var tip = it.receiptNo + ' · ' + it.title + (cls === 'pending' ? ' (미채점)' : ' (' + (it.myTotal || 0) + '점)');
+    chips += '<button type="button" class="tjd-chip ' + cls + '" data-tjd-idx="' + idx + '" title="' + esc(tip) + '" onclick="selectJudgeItem(' + idx + ')">' + (idx + 1) + '</button>';
+  });
+  document.getElementById('tjd-nav-chips').innerHTML = chips;
+
+  if (_selectedJudgeIdx === null || !_judgeItems[_selectedJudgeIdx]) {
+    var first = nextUnscoredIdx_(-1);
+    _selectedJudgeIdx = first >= 0 ? first : 0;
+  }
+  selectJudgeItem(_selectedJudgeIdx);
 }
 
 function renderJudgeReviewSummary(reviews) {
@@ -2200,21 +2240,91 @@ function renderJudgeReviewSummary(reviews) {
   return html;
 }
 
-function toggleJudgeItem(idx) {
-  var same = _selectedJudgeIdx === idx;
-  document.querySelectorAll('#tjd-list .rv-proposal-card').forEach(function(c) {
-    c.classList.remove('expanded');
-    c.classList.remove('selected');
-  });
-  if (same) {
-    _selectedJudgeIdx = null;
-    renderScorePanelEmpty();
-    return;
-  }
-  var card = document.querySelector('#tjd-list .rv-proposal-card[data-tjd-idx="'+idx+'"]');
-  if (card) { card.classList.add('expanded'); card.classList.add('selected'); }
+function selectJudgeItem(idx) {
+  if (!_judgeItems[idx]) return;
   _selectedJudgeIdx = idx;
+  document.querySelectorAll('#tjd-nav-chips .tjd-chip').forEach(function(c) {
+    var on = Number(c.getAttribute('data-tjd-idx')) === idx;
+    c.classList.toggle('active', on);
+    if (on && c.scrollIntoView) c.scrollIntoView({ block: 'nearest', inline: 'center' });
+  });
+  var pos = document.getElementById('tjd-pos');
+  if (pos) pos.textContent = (idx + 1) + ' / ' + _judgeItems.length;
+  renderJudgeView(idx);
   renderScorePanel(idx);
+  var l = document.querySelector('#tab-judge .tjd-view-body'); if (l) l.scrollTop = 0;
+  var r = document.querySelector('#tab-judge .tjd-right'); if (r) r.scrollTop = 0;
+}
+
+function judgeStep(delta) {
+  if (_selectedJudgeIdx === null) return;
+  var n = _selectedJudgeIdx + delta;
+  if (n < 0 || n >= _judgeItems.length) return;
+  selectJudgeItem(n);
+}
+
+// 현재 위치 다음의 미채점(저장 전) 제안 번호. 없으면 -1
+function nextUnscoredIdx_(from) {
+  var n = _judgeItems.length;
+  for (var k = 1; k <= n; k++) {
+    var i = (from + k) % n;
+    var st = _judgeItems[i].myStatus;
+    if (st !== '임시저장' && st !== '제출완료') return i;
+  }
+  return -1;
+}
+
+function judgeNextUnscored() {
+  var i = nextUnscoredIdx_(_selectedJudgeIdx === null ? -1 : _selectedJudgeIdx);
+  if (i < 0) return showToast('모든 제안이 채점·저장되었습니다.', 'ok');
+  selectJudgeItem(i);
+}
+
+var _judgeTab = 'text';   // 좌측 패널: 'text'(제안 내용) | 'pdf'(첨부 PDF)
+function setJudgeTab(tab) {
+  _judgeTab = tab;
+  if (_selectedJudgeIdx !== null) renderJudgeView(_selectedJudgeIdx);
+}
+
+function driveFileId_(url) {
+  var m = String(url || '').match(/\/d\/([A-Za-z0-9_-]+)/) || String(url || '').match(/[?&]id=([A-Za-z0-9_-]+)/);
+  return m ? m[1] : '';
+}
+
+// 좌측: 선택한 제안의 전체 내용(또는 첨부 PDF) — 우측 배점표와 나란히 표시
+function renderJudgeView(idx) {
+  var it = _judgeItems[idx];
+  var pdfId = driveFileId_(it.anonymousUrl);
+  if (_judgeTab === 'pdf' && !pdfId) _judgeTab = 'text';
+
+  var html = '<div class="tjd-view-head"><span class="rv-proposal-no">' + esc(it.receiptNo) + '</span>' +
+    '<span class="tjd-view-title">' + esc(it.title) + '</span></div>';
+
+  html += '<div class="tjd-tabs">' +
+    '<button type="button" class="tjd-tab' + (_judgeTab === 'text' ? ' on' : '') + '" onclick="setJudgeTab(\'text\')">📝 제안 내용</button>';
+  if (pdfId) {
+    html += '<button type="button" class="tjd-tab' + (_judgeTab === 'pdf' ? ' on' : '') + '" onclick="setJudgeTab(\'pdf\')">📎 첨부 PDF</button>' +
+      '<a class="tjd-newwin" href="' + esc(it.anonymousUrl) + '" target="_blank">↗ 새 창에서 열기</a>';
+  } else if (it.anonymousUrl) {
+    html += '<a class="tjd-newwin" href="' + esc(it.anonymousUrl) + '" target="_blank">📎 첨부 자료 (새 창)</a>';
+  } else {
+    html += '<span class="tjd-nopdf">첨부 PDF 없음</span>';
+  }
+  html += '</div>';
+
+  if (_judgeTab === 'pdf' && pdfId) {
+    html += '<div class="tjd-view-body pdf"><iframe src="https://drive.google.com/file/d/' + pdfId + '/preview" allow="autoplay"></iframe></div>';
+  } else {
+    html += '<div class="tjd-view-body">' +
+      '<div class="rv-pb-row"><div class="rv-pb-label">제안 테마</div><div class="rv-pb-text">' + esc(it.category) + (it.mainTask ? ' &gt; ' + esc(it.mainTask) : '') + '</div></div>' +
+      (it.deptRelevance ? '<div class="rv-pb-row"><div class="rv-pb-label">담당부서 업무 관련성</div><div class="rv-pb-text">' + esc(it.deptRelevance) + '</div></div>' : '') +
+      '<div class="rv-pb-row"><div class="rv-pb-label">제안사유 (원인분석)</div><div class="rv-pb-text">' + esc(it.reason || '') + '</div></div>' +
+      '<div class="rv-pb-row"><div class="rv-pb-label">실시방법 (개선방향)</div><div class="rv-pb-text">' + esc(it.method || '') + '</div></div>' +
+      (it.effect ? '<div class="rv-pb-row"><div class="rv-pb-label">기대효과</div><div class="rv-pb-text">' + esc(it.effect) + '</div></div>' : '') +
+      (it.reviews && it.reviews.length > 0 ? renderJudgeReviewSummary(it.reviews) : '') +
+      '</div>';
+  }
+  document.getElementById('tjd-view').innerHTML = html;
 }
 
 function renderScorePanel(idx) {
@@ -2223,8 +2333,8 @@ function renderScorePanel(idx) {
   var myScores = item.myScores || {};
   var myOpinion = item.myOpinion || '';
 
-  var html = '<div class="rv-opinion-receipt">접수번호 <b>'+esc(item.receiptNo)+'</b></div>' +
-    '<div class="rv-opinion-title">'+esc(item.title)+'</div>';
+  var html = '<div class="rv-opinion-receipt">접수번호 <b>'+esc(item.receiptNo)+'</b>' +
+    (item.myStatus === '임시저장' ? ' <span class="tjd-saved-tag">저장됨 · 수정 후 다시 저장 가능</span>' : '') + '</div>';
 
   html += '<table class="tjd-score-table"><tbody>';
   DREAM_SCORE_DEF.forEach(function(def) {
@@ -2245,14 +2355,14 @@ function renderScorePanel(idx) {
 
   html += '<div class="sf-field full" style="margin-bottom:0">' +
     '<label>심사의견 <span class="lbl-hint">(선택)</span></label>' +
-    '<textarea id="tjd-opinion-input" rows="4"' + (locked ? ' readonly' : '') + ' placeholder="심사 결과에 대한 의견을 자유롭게 작성하세요" style="width:100%;border:1.5px solid #d5dbe8;border-radius:8px;padding:10px 12px;font-family:inherit;font-size:13px;line-height:1.6;background:#fafbfd;resize:vertical;box-sizing:border-box">'+esc(myOpinion)+'</textarea>' +
+    '<textarea id="tjd-opinion-input" rows="3"' + (locked ? ' readonly' : '') + ' placeholder="심사 결과에 대한 의견을 자유롭게 작성하세요" style="width:100%;border:1.5px solid #d5dbe8;border-radius:8px;padding:10px 12px;font-family:inherit;font-size:13px;line-height:1.6;background:#fafbfd;resize:vertical;box-sizing:border-box">'+esc(myOpinion)+'</textarea>' +
   '</div>';
 
   if (locked) {
     html += '<div class="rv-locked-notice done" style="margin-top:14px">✅ 최종 심사 완료 상태입니다. 수정이 필요하면 관리자에게 문의하세요.</div>';
   } else {
     html += '<div class="rv-opinion-btns" style="margin-top:14px">' +
-      '<button class="rv-btn-submit" onclick="dreamSaveJudgeScore()">💾 저장</button>' +
+      '<button class="rv-btn-submit" onclick="dreamSaveJudgeScore()">💾 저장 후 다음 제안</button>' +
     '</div>';
   }
 
@@ -2311,6 +2421,7 @@ function dreamSaveJudgeScore() {
     hideLoadingOverlay();
     if (!res || !res.ok) { alert('저장 실패: ' + ((res && res.error) || '')); return; }
     showToast('✅ ' + total + '점 저장됨', 'ok');
+    _judgeAdvance = true;
     loadJudgeItems();
   }).catch(function(e) {
     hideLoadingOverlay();
@@ -2580,6 +2691,8 @@ function openInboxDetail(receiptNo, rowEl) {
 
   // 제안 내용
   html += '<div class="adm-block"><div class="adm-block-title">📝 제안 내용</div>' +
+    (d.mainTask ? '<div class="adm-content-row"><div class="adm-content-label">주요과제</div><div class="adm-content-text">' + esc(d.mainTask) + '</div></div>' : '') +
+    (d.deptRelevance ? '<div class="adm-content-row"><div class="adm-content-label">담당부서 업무 관련성</div><div class="adm-content-text">' + esc(d.deptRelevance) + '</div></div>' : '') +
     '<div class="adm-content-row"><div class="adm-content-label">제안사유 (원인분석)</div><div class="adm-content-text">' + esc(d.reason || '') + '</div></div>' +
     '<div class="adm-content-row"><div class="adm-content-label">실시방법 (개선방향)</div><div class="adm-content-text">' + esc(d.method || '') + '</div></div>' +
     (d.effect ? '<div class="adm-content-row"><div class="adm-content-label">기대효과</div><div class="adm-content-text">' + esc(d.effect) + '</div></div>' : '') +
@@ -2953,7 +3066,8 @@ function buildLandscapeMainHtml_(d, depts) {
     + '<table style="width:100%;border-collapse:collapse;margin-bottom:8px;font-size:11px">'
     + '<tr><td style="background:#eef3ff;border:1px solid #d5dbe8;padding:4px 8px;font-weight:700;width:60px">접수번호</td><td style="border:1px solid #d5dbe8;padding:4px 8px;font-weight:700;color:#204473">' + safe(d.receiptNo) + '</td>'
     + '<td style="background:#eef3ff;border:1px solid #d5dbe8;padding:4px 8px;font-weight:700;width:60px">접수일</td><td style="border:1px solid #d5dbe8;padding:4px 8px">' + safe((d.submittedAt||'').substring(0,16)) + '</td></tr>'
-    + '<tr><td style="background:#eef3ff;border:1px solid #d5dbe8;padding:4px 8px;font-weight:700">제안부문</td><td style="border:1px solid #d5dbe8;padding:4px 8px" colspan="3">' + safe(d.category) + '</td></tr>'
+    + '<tr><td style="background:#eef3ff;border:1px solid #d5dbe8;padding:4px 8px;font-weight:700">제안 테마</td><td style="border:1px solid #d5dbe8;padding:4px 8px" colspan="3">' + safe(d.category) + (d.mainTask ? ' &gt; ' + safe(d.mainTask) : '') + '</td></tr>'
+    + (d.deptRelevance ? '<tr><td style="background:#eef3ff;border:1px solid #d5dbe8;padding:4px 8px;font-weight:700">업무 관련성</td><td style="border:1px solid #d5dbe8;padding:4px 8px;font-size:10.5px;white-space:pre-wrap" colspan="3">' + safe(d.deptRelevance) + '</td></tr>' : '')
     + '<tr><td style="background:#eef3ff;border:1px solid #d5dbe8;padding:4px 8px;font-weight:700">성명</td><td style="border:1px solid #d5dbe8;padding:4px 8px">' + safe(d.name) + '</td>'
     + '<td style="background:#eef3ff;border:1px solid #d5dbe8;padding:4px 8px;font-weight:700">소속</td><td style="border:1px solid #d5dbe8;padding:4px 8px">' + safe(d.dept) + '</td></tr>'
     + '<tr><td style="background:#eef3ff;border:1px solid #d5dbe8;padding:4px 8px;font-weight:700">담당부서</td><td style="border:1px solid #d5dbe8;padding:4px 8px;font-size:10.5px" colspan="3">' + safe((d.targetDepts||[]).join(', ')) + '</td></tr>'

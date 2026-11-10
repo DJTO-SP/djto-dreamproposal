@@ -16,7 +16,7 @@ function dreamGetAdminProposals(data) {
     if (!pSheet) return { ok: false, error: '제안 시트 없음' };
     if (pSheet.getLastRow() < 2) return { ok: true, items: [] };
 
-    var pRows = pSheet.getRange(2, 1, pSheet.getLastRow() - 1, 15).getValues();
+    var pRows = pSheet.getRange(2, 1, pSheet.getLastRow() - 1, 17).getValues();
 
     // 검토 매핑 (접수번호별 의견들)
     var reviewsByReceipt = {};
@@ -84,6 +84,8 @@ function dreamGetAdminProposals(data) {
         status: String(p[12] || ''),
         result: String(p[13] || ''),
         members: String(p[14] || ''),
+        mainTask: String(p[15] || ''),
+        deptRelevance: String(p[16] || ''),
         reviewDone: doneDepts,
         reviewTotal: targetDepts.length,
         reviews: revs,

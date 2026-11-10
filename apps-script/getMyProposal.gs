@@ -29,7 +29,7 @@ function dreamGetMyProposal(data) {
     if (lastRow < 2) return { ok: false, error: '조회 결과가 없습니다.' };
 
     // 제안 시트 15컬럼 모두 가져오기 (구성원 컬럼 포함)
-    var rows = sheet.getRange(2, 1, lastRow - 1, 15).getValues();
+    var rows = sheet.getRange(2, 1, lastRow - 1, 17).getValues();
     var found = null;
     for (var i = 0; i < rows.length; i++) {
       if (String(rows[i][0]).trim() === receiptNo &&
@@ -89,6 +89,8 @@ function dreamGetMyProposal(data) {
         dept:        String(found[2]),
         submittedAt: dreamFmtDate_(found[3]),
         category:    String(found[4]),
+        mainTask:    String(found[15] || ''),
+        deptRelevance: String(found[16] || ''),
         targetDepts: targetDepts,
         title:       String(found[6]),
         reason:      String(found[7]),

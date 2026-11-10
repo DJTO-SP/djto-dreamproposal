@@ -379,6 +379,16 @@ textarea.fi { resize:vertical; }
 .form-section-divider::after { content: ""; flex: 1; height: 1px; background: linear-gradient(to right, #d5dbe8, transparent); }
 .form-section-label { font-size: 13px; font-weight: 800; color: var(--navy); letter-spacing: -.3px; padding: 4px 12px; background: #eef3ff; border-radius: 6px; border-left: 3px solid var(--blue); }
 
+/* 접수 서식 — 기대효과 세분화 */
+.effect-box { border: 1.5px solid #d5dbe8; border-radius: 10px; background: #fafbfd; padding: 4px 16px; }
+.effect-row { padding: 12px 0; border-bottom: 1px dashed #e0e6f0; }
+.effect-row:last-child { border-bottom: none; }
+.effect-row-title { font-size: 13px; font-weight: 800; color: var(--navy); margin-bottom: 8px; }
+.effect-opts { display: flex; flex-wrap: wrap; gap: 8px 18px; }
+.effect-opts label { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: #1a2035; cursor: pointer; font-weight: 500; }
+.effect-opts input { width: 16px; height: 16px; accent-color: var(--blue); margin: 0; cursor: pointer; }
+.effect-box input[type="text"], .effect-box input:not([type]), .effect-box textarea { width: 100%; box-sizing: border-box; }
+
 /* 관리자 접수현황 - 새 운영시트 연동 */
 .adm-block { margin-bottom: 16px; padding: 14px 16px; background: #f8fafc; border-radius: 10px; border: 1px solid #e8edf5; }
 .adm-block-title { font-size: 13px; font-weight: 800; color: var(--navy); margin-bottom: 10px; letter-spacing: -.3px; }
@@ -400,7 +410,38 @@ textarea.fi { resize:vertical; }
 .inbox-row.active-row td { background: #eef3ff !important; }
 
 /* 심사 페이지 배점표 (표 형식) */
-#tab-judge .rv-right .card { position: sticky; top: 64px; }
+/* 심사 화면: 제안(좌) · 배점표(우) 나란히 — 각 패널 독립 스크롤 */
+.tjd-nav { display: flex; align-items: center; gap: 8px; background: #fff; border: 1.5px solid #e8edf5; border-radius: 10px; padding: 8px 12px; margin-bottom: 12px; }
+.tjd-navbtn { padding: 7px 12px; font-size: 12.5px; font-weight: 700; border: 1.5px solid #d5dbe8; border-radius: 8px; background: #fff; color: var(--navy); cursor: pointer; font-family: inherit; white-space: nowrap; }
+.tjd-navbtn:hover { background: #eef3ff; border-color: var(--blue); }
+.tjd-navbtn.accent { background: var(--blue); color: #fff; border-color: var(--blue); }
+.tjd-navbtn.accent:hover { filter: brightness(1.08); }
+.tjd-chips { flex: 1; display: flex; flex-wrap: wrap; gap: 4px; min-width: 0; max-height: 64px; overflow-y: auto; }
+.tjd-chip { min-width: 30px; height: 28px; padding: 0 6px; border-radius: 7px; font-size: 12px; font-weight: 800; cursor: pointer; font-family: 'Exo 2','Noto Sans KR',sans-serif; border: 1.5px solid transparent; }
+.tjd-chip.pending { background: #fff8e6; color: #92400e; border-color: #fde68a; }
+.tjd-chip.draft { background: #dbeafe; color: #1e40af; border-color: #bfdbfe; }
+.tjd-chip.completed { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
+.tjd-chip.active { box-shadow: 0 0 0 2px var(--navy); transform: translateY(-1px); }
+.tjd-pos { font-size: 13px; font-weight: 800; color: var(--navy); font-family: 'Exo 2','Noto Sans KR',sans-serif; white-space: nowrap; min-width: 52px; text-align: center; }
+.tjd-legend { font-size: 11px; color: #64748b; white-space: nowrap; margin-left: 4px; }
+.tjd-legend i { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin: 0 3px 0 8px; vertical-align: -1px; }
+.tjd-legend i.pending { background: #fde68a; } .tjd-legend i.draft { background: #93c5fd; } .tjd-legend i.completed { background: #86efac; }
+
+.tjd-split { display: grid; grid-template-columns: minmax(0, 55fr) minmax(0, 45fr); gap: 14px; height: calc(100vh - 250px); min-height: 540px; align-items: stretch; }
+.tjd-left, .tjd-right { padding: 0; overflow: hidden; display: flex; flex-direction: column; min-height: 0; }
+.tjd-left > #tjd-view { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+.tjd-right { padding: 16px 20px; overflow-y: auto; display: block; }
+.tjd-view-head { display: flex; align-items: center; gap: 10px; padding: 14px 20px 10px; }
+.tjd-view-title { flex: 1; font-size: 15px; font-weight: 800; color: var(--navy); line-height: 1.4; }
+.tjd-tabs { display: flex; align-items: center; gap: 6px; padding: 0 20px 10px; border-bottom: 2px solid #e8edf5; }
+.tjd-tab { padding: 7px 14px; font-size: 13px; font-weight: 700; border: 1.5px solid #d5dbe8; border-radius: 8px; background: #fff; color: #64748b; cursor: pointer; font-family: inherit; }
+.tjd-tab.on { background: var(--navy); color: #fff; border-color: var(--navy); }
+.tjd-newwin { margin-left: auto; font-size: 12px; font-weight: 600; color: var(--blue); text-decoration: none; }
+.tjd-nopdf { margin-left: auto; font-size: 12px; color: #94a3b8; }
+.tjd-view-body { flex: 1; min-height: 0; overflow-y: auto; padding: 16px 20px; font-size: 13.5px; line-height: 1.75; }
+.tjd-view-body.pdf { padding: 0; overflow: hidden; }
+.tjd-view-body.pdf iframe { width: 100%; height: 100%; border: 0; display: block; }
+.tjd-saved-tag { margin-left: 8px; font-size: 11px; font-weight: 700; color: #1e40af; background: #dbeafe; padding: 2px 8px; border-radius: 8px; }
 .tjd-score-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 8px; }
 .tjd-score-table th, .tjd-score-table td { border: 1px solid #d5dbe8; vertical-align: middle; }
 .tjd-score-table th { background: #f6f8fd; padding: 8px 10px; font-weight: 800; color: var(--navy); text-align: left; white-space: nowrap; font-size: 13px; }
