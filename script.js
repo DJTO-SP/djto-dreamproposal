@@ -293,6 +293,7 @@ function switchTab(name, btn, dropItem) {
   if (name==='stats')    renderStats2();
   if (name==='submit')   initSubmitTab();
   if (name==='mine')     initMineTab();
+  if (name==='exec' && typeof initExecTab === 'function') initExecTab();
   // 'review' / 'judge' — 자체 로그인 화면에서 진입
 }
 
