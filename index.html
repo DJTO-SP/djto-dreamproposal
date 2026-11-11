@@ -45,6 +45,7 @@
       <span style="width:1px;height:24px;background:#3a5a8e;margin:0 6px"></span>
       <button class="nav-btn nav-accent" onclick="switchTab('submit',this)"><span class="nav-icon">✏️</span> 접수</button>
       <button class="nav-btn" onclick="switchTab('mine',this)"><span class="nav-icon">🔍</span> 제안 확인</button>
+      <button class="nav-btn nav-accent" onclick="switchTab('exec',this)"><span class="nav-icon">🚀</span> 실행상 접수</button>
       <button class="nav-btn" onclick="switchTab('review',this)"><span class="nav-icon">📝</span> 검토</button>
       <button class="nav-btn" onclick="switchTab('judge',this)"><span class="nav-icon">⚖️</span> 심사</button>
       <span style="width:1px;height:24px;background:#3a5a8e;margin:0 6px"></span>
@@ -438,6 +439,135 @@
             <div class="done-btns">
               <button class="btn-cancel" onclick="initSubmitTab()">새 제안 작성</button>
               <button class="btn-submit-full" onclick="switchTab('mine', document.querySelectorAll('.nav-btn')[1])">내 제안 확인하러 가기</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 제안실행상 접수 ===== -->
+  <div class="tab-content" id="tab-exec">
+    <div class="submit-wrap">
+      <div class="submit-form-area">
+        <div class="card" style="padding:28px 32px">
+          <div class="section-title-bar">
+            <div class="section-title-icon">🚀</div>
+            <div>
+              <h2 class="section-title-text">제안실행상 접수</h2>
+              <div class="section-title-sub">제안을 실제로 추진한 결과를 제출합니다 · 우수 제안실행 최대 3건 선정</div>
+            </div>
+          </div>
+          <div class="info-box-amber" id="ex-guide">
+            ✔ <b>대상:</b> 2025년 하반기·2026년 상반기 제안 중 <b>사업 추진이 진행 중이거나 완료된 건</b><br>
+            ✔ <b>신청:</b> 개인 또는 그룹(부서·동아리 등)으로 제출할 수 있습니다.
+          </div>
+
+          <div class="form-section-divider"><span class="form-section-label">① 대상 제안</span></div>
+          <div class="sf-field full">
+            <label>실행한 제안 선택 <span class="field-req">*</span></label>
+            <select id="ex-proposal" onchange="onExecProposalChange()">
+              <option value="">-- 제안을 선택하세요 --</option>
+            </select>
+            <div id="ex-proposal-meta" class="lbl-hint" style="margin:4px 0 0"></div>
+          </div>
+
+          <div class="form-section-divider"><span class="form-section-label">② 제안실행자(팀)</span></div>
+          <div class="sf-field full">
+            <label>신청 유형</label>
+            <div class="proposal-type-toggle">
+              <label><input type="radio" name="ex-type" value="개인" checked onchange="toggleExecType()"> 개인</label>
+              <label><input type="radio" name="ex-type" value="그룹" onchange="toggleExecType()"> 그룹</label>
+              <span style="font-size:11px;color:#94a3b8;margin-left:auto">그룹 = 팀(부서·동아리 등) 대표자 + 함께한 분들</span>
+            </div>
+          </div>
+          <div class="sf-row">
+            <div class="sf-field">
+              <label id="ex-name-label">성명 <span class="field-req">*</span></label>
+              <input id="ex-name" placeholder="홍길동">
+            </div>
+            <div class="sf-field">
+              <label id="ex-dept-label">소속 <span class="field-req">*</span></label>
+              <select id="ex-dept">
+                <option value="">-- 선택 --</option>
+                <option>안전감사팀</option><option>기획조정실</option><option>전략기획팀</option><option>인사노무팀</option>
+                <option>총무회계팀</option><option>관광사업단</option><option>관광사업팀</option><option>융합사업팀</option>
+                <option>홍보마케팅팀</option><option>축제행사팀</option><option>관광개발사업단</option><option>관광개발팀</option>
+                <option>시설운영팀</option><option>시민광장팀</option><option>MICE사업단</option><option>운영지원팀</option>
+                <option>센터마케팅팀</option><option>전시기획팀</option><option>MICE뷰로팀</option>
+              </select>
+            </div>
+          </div>
+          <div id="ex-group-area" style="display:none">
+            <div class="sf-field full">
+              <label>팀명 <span class="lbl-hint">(부서·동아리 등 팀을 부르는 이름, 선택)</span></label>
+              <input id="ex-team" placeholder="예) ○○팀 TF, ○○ 학습동아리">
+            </div>
+            <div class="sf-field full">
+              <label>함께한 분들 <span class="field-req">*</span> <span class="lbl-hint">(이름만 입력)</span></label>
+              <div id="ex-members-list"></div>
+              <button type="button" onclick="addExecMemberRow()" style="margin-top:6px;padding:8px 14px;background:#eef3ff;border:1.5px solid #bfdbfe;color:var(--blue);font-size:13px;font-weight:600;border-radius:7px;cursor:pointer;font-family:inherit">+ 멤버 추가</button>
+            </div>
+          </div>
+
+          <div class="form-section-divider"><span class="form-section-label">③ 실행 개요</span></div>
+          <div class="sf-field full">
+            <label>추진 상태 <span class="field-req">*</span></label>
+            <div class="proposal-type-toggle">
+              <label><input type="radio" name="ex-status" value="진행중" onchange="onExecStatusChange()"> 진행 중</label>
+              <label><input type="radio" name="ex-status" value="완료" onchange="onExecStatusChange()"> 완료</label>
+            </div>
+          </div>
+          <div class="sf-row">
+            <div class="sf-field">
+              <label>추진 시작일 <span class="field-req">*</span> <span class="lbl-hint">(연도-월)</span></label>
+              <input id="ex-start" type="month" placeholder="연도-월">
+            </div>
+            <div class="sf-field">
+              <label id="ex-end-label">종료(예정)일 <span class="field-req">*</span> <span class="lbl-hint">(연도-월)</span></label>
+              <input id="ex-end" type="month" placeholder="연도-월">
+            </div>
+          </div>
+          <div class="sf-field full">
+            <label>실행 개요 <span class="field-req">*</span></label>
+            <textarea id="ex-summary" rows="6" placeholder="○ 제안을 어떻게 실행했는지 추진 내용 중심으로 작성&#10;  예) 1월 사내 공유마켓 시범 운영 → 3월 전 부서 확대&#10;○ 추진 과정의 주요 단계, 협업 부서, 어려웠던 점과 극복 방법&#10;○ 앞으로의 운영 계획 (진행 중인 경우 향후 일정 포함)"></textarea>
+          </div>
+          <div class="sf-field full">
+            <label>주요 성과 <span class="field-req">*</span> <span class="lbl-hint">(정량·정성 모두 작성, 진행 중이면 현재까지의 성과)</span></label>
+            <textarea id="ex-result" rows="5" placeholder="○ 정량 성과 예) 연 00만원 절감, 처리시간 00% 단축, 이용자 00명&#10;○ 정성 성과 예) 직원 만족도 향상, 부서 간 협업 문화 확산&#10;○ 제안 당시 기대효과 대비 달성 정도"></textarea>
+          </div>
+
+          <div class="form-section-divider"><span class="form-section-label">④ 증빙 자료</span></div>
+          <div class="info-box-amber" style="margin-bottom:14px">
+            모든 파일 형식 첨부 가능 (실행, 스크립트 파일 제외) · 파일당 최대 15MB (전체 40MB)
+          </div>
+          <div class="sf-field full">
+            <label>증빙자료 첨부 <span class="field-req">*</span>
+              <span class="lbl-hint">(사업계획서, 결과보고서, 기타 증빙자료 등 / 여러 파일 첨부 가능)</span></label>
+            <input type="file" id="ex-files" multiple onchange="showExecPicked()">
+            <div id="ex-picked" class="lbl-hint" style="margin:4px 0 0;line-height:1.7"></div>          </div>
+          <div class="sf-field full">
+            <label>증빙 링크 <span class="lbl-hint">(파일이 크면 Drive·유튜브 등 링크로 대체, 선택)</span></label>
+            <input id="ex-link" type="text" placeholder="https://...">
+          </div>
+
+          <button class="btn-submit-full" id="ex-submit-btn" onclick="submitExecution()">제안실행상 접수</button>
+
+          <div id="exec-done" style="display:none;text-align:center;padding:40px 30px;">
+            <div style="font-size:56px;margin-bottom:18px">🎉</div>
+            <h3 style="font-size:22px;font-weight:800;color:var(--navy);margin-bottom:8px">제안실행상이 접수되었습니다</h3>
+            <p style="font-size:14px;color:#888;margin-bottom:24px">제출하신 증빙자료를 바탕으로 우수 제안실행을 심사합니다.</p>
+            <div class="done-info-box">
+              <div class="done-row"><span class="done-label">접수번호</span><span class="done-value done-receipt" id="ex-done-no">—</span></div>
+              <div class="done-row"><span class="done-label">대상 제안</span><span class="done-value" id="ex-done-title" style="font-size:13px;text-align:right">—</span></div>
+              <div class="done-row"><span class="done-label">실행자</span><span class="done-value" id="ex-done-name">—</span></div>
+            </div>
+            <div class="done-notice">
+              ⚠️ <b>접수번호를 메모해 두세요.</b><br>
+              <span style="color:#666">증빙자료를 보완해야 할 때 담당자에게 접수번호를 알려주세요.</span>
+            </div>
+            <div class="done-btns">
+              <button class="btn-cancel" onclick="initExecTab()">다른 제안 실행 접수</button>
             </div>
           </div>
         </div>
@@ -851,4 +981,5 @@
 <div id="pdfCoverHidden" style="position:fixed;left:-9999px;top:0;width:794px;background:#fff;padding:40px;font-family:'Noto Sans KR','Malgun Gothic',sans-serif;color:#1a2035;box-sizing:border-box"></div>
 
 <script src="script.js"></script>
+<script src="exec.js"></script>
 </html>
