@@ -359,7 +359,7 @@ function showMineSub(which) {
 
 // 접수 완료 화면 등에서 바로 실행상 현황으로 이동
 function goExecStatus() {
-  switchTab('mine', document.querySelectorAll('.nav-btn')[2]);
+  switchTab('mine', document.querySelectorAll('.nav-btn')[3]);
   showMineSub('exec');
 }
 
