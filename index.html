@@ -44,7 +44,7 @@
       </div>
       <span style="width:1px;height:24px;background:#3a5a8e;margin:0 6px"></span>
       <button class="nav-btn nav-accent" onclick="switchTab('submit',this)"><span class="nav-icon">✏️</span> 접수</button>
-      <button class="nav-btn" onclick="switchTab('mine',this)"><span class="nav-icon">🔍</span> 제안 확인</button>
+      <button class="nav-btn" onclick="switchTab('mine',this)"><span class="nav-icon">🔍</span> 접수 확인</button>
       <button class="nav-btn nav-accent" onclick="switchTab('exec',this)"><span class="nav-icon">🚀</span> 실행상 접수</button>
       <button class="nav-btn" onclick="switchTab('review',this)"><span class="nav-icon">📝</span> 검토</button>
       <button class="nav-btn" onclick="switchTab('judge',this)"><span class="nav-icon">⚖️</span> 심사</button>
@@ -432,13 +432,13 @@
 
             <div class="done-notice">
               ⚠️ <b>접수번호를 반드시 메모해 주세요.</b><br>
-              <span style="color:#666">[내 제안] 메뉴에서 본인 이름 + 접수번호로<br>
+              <span style="color:#666">[접수 확인] 메뉴에서 본인 이름 + 접수번호로<br>
               검토 진행상황과 심사결과를 확인하실 수 있습니다.</span>
             </div>
 
             <div class="done-btns">
               <button class="btn-cancel" onclick="initSubmitTab()">새 제안 작성</button>
-              <button class="btn-submit-full" onclick="switchTab('mine', document.querySelectorAll('.nav-btn')[1])">내 제안 확인하러 가기</button>
+              <button class="btn-submit-full" onclick="switchTab('mine', document.querySelectorAll('.nav-btn')[2])">내 제안 확인하러 가기</button>
             </div>
           </div>
         </div>
@@ -568,6 +568,7 @@
             </div>
             <div class="done-btns">
               <button class="btn-cancel" onclick="initExecTab()">다른 제안 실행 접수</button>
+              <button class="btn-submit-full" onclick="goExecStatus()">실행상 접수 현황 보기</button>
             </div>
           </div>
         </div>
@@ -575,8 +576,48 @@
     </div>
   </div>
 
-  <!-- ===== 제안 확인 ===== -->
+  <!-- ===== 접수 확인 (제안 접수 확인 / 실행상 접수 확인) ===== -->
   <div class="tab-content" id="tab-mine">
+    <div class="sub-nav" id="mine-subnav">
+      <button type="button" class="sub-nav-btn on" id="mine-sub-proposal" onclick="showMineSub('proposal')">📝 제안 접수 확인</button>
+      <button type="button" class="sub-nav-btn" id="mine-sub-exec" onclick="showMineSub('exec')">🚀 실행상 접수 확인</button>
+    </div>
+
+    <!-- 실행상 접수 현황 (공개) -->
+    <div class="card" id="exec-status-card" style="display:none">
+      <div class="filter-bar">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input id="exec-st-search" type="text" placeholder="제안명, 실행자, 팀명 검색…" oninput="renderExecStatus()">
+        </div>
+        <select id="exec-st-progress" onchange="renderExecStatus()">
+          <option value="">전체 추진 상태</option>
+          <option>진행중</option>
+          <option>완료</option>
+        </select>
+        <select id="exec-st-state" onchange="renderExecStatus()">
+          <option value="">전체 심사 상태</option>
+          <option>접수완료</option>
+          <option>심사중</option>
+          <option>심사완료</option>
+        </select>
+        <span class="count-lbl" id="exec-st-cnt"></span>
+      </div>
+      <div style="padding:10px 20px;background:#fff8e6;border-bottom:1px solid #fde68a;font-size:12px;color:#6b4a00;line-height:1.6">
+        💡 행을 클릭하면 실행 개요와 주요 성과를 볼 수 있습니다.
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr><th>접수번호</th><th>대상 제안</th><th>제안실행자(팀)</th><th>추진 상태</th><th>접수일</th><th>심사</th><th>결과</th></tr>
+          </thead>
+          <tbody id="exec-status-body">
+            <tr><td colspan="7" style="text-align:center;color:#aaa;padding:40px">불러오는 중...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- 1. 제안 제목 목록 -->
     <div class="card" id="mine-list-card">
       <div class="filter-bar">
@@ -765,6 +806,12 @@
       <p id="judge-login-err" style="display:none;margin-top:12px;padding:10px 14px;background:#fee2e2;border:1px solid #fca5a5;border-radius:8px;color:#991b1b;font-size:13px;text-align:center"></p>
     </div>
 
+    <!-- 심사 종류 전환 (로그인 후 표시) -->
+    <div class="sub-nav" id="judge-mode-bar" style="display:none;margin-bottom:12px">
+      <button type="button" class="sub-nav-btn on" id="judge-mode-proposal" onclick="setJudgeMode('proposal')">📝 제안 심사</button>
+      <button type="button" class="sub-nav-btn" id="judge-mode-exec" onclick="setJudgeMode('exec')">🚀 우수실행상 심사</button>
+    </div>
+
     <!-- 심사 작업 화면 -->
     <div id="judge-work" style="display:none">
       <div class="rv-header" style="background:linear-gradient(135deg,var(--navy),#3a5a8e)">
@@ -796,6 +843,40 @@
           <div class="mine-section-title">📊 배점표 채점</div>
           <div id="tjd-score-area">
             <p class="mine-empty">제안을 선택하세요.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 실행상 심사 (우수 제안실행상) ── -->
+    <div id="judge-work-exec" style="display:none">
+      <div class="rv-header" style="background:linear-gradient(135deg,#7c3a1d,#c2662a)">
+        <div class="rv-hdr-info">
+          <div><span class="rv-hdr-label">심사위원</span><span class="rv-hdr-value" id="xjd-name">—</span></div>
+          <div><span class="rv-hdr-label">저장</span><span class="rv-hdr-value"><span id="xjd-done-cnt">0</span> / <span id="xjd-total-cnt">0</span></span></div>
+          <div><span class="rv-hdr-label">평균</span><span class="rv-hdr-value" id="xjd-avg">—</span></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <button id="xjd-finalize-btn" onclick="finalizeXjd()" disabled style="background:#cbd5e1;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:700;cursor:not-allowed;font-family:inherit;transition:all .15s">🏁 최종 심사 완료</button>
+          <button class="btn-cancel" onclick="judgeLogout()" style="padding:6px 14px;font-size:12px">로그아웃</button>
+        </div>
+      </div>
+      <div class="tjd-nav">
+        <button type="button" class="tjd-navbtn" onclick="xjdStep(-1)">◀ 이전</button>
+        <div class="tjd-chips" id="xjd-nav-chips"></div>
+        <span class="tjd-pos" id="xjd-pos"></span>
+        <button type="button" class="tjd-navbtn" onclick="xjdStep(1)">다음 ▶</button>
+        <button type="button" class="tjd-navbtn accent" onclick="xjdNextUnscored()">미채점 ▶▶</button>
+        <span class="tjd-legend"><i class="pending"></i>미채점 <i class="draft"></i>저장 <i class="completed"></i>완료</span>
+      </div>
+      <div class="tjd-split">
+        <div class="card tjd-left">
+          <div id="xjd-view"></div>
+        </div>
+        <div class="card tjd-right">
+          <div class="mine-section-title">📊 우수실행상 배점표 채점</div>
+          <div id="xjd-score-area">
+            <p class="mine-empty">접수 건을 선택하세요.</p>
           </div>
         </div>
       </div>
@@ -837,6 +918,7 @@
           <button class="admin-nav-btn active" onclick="showMgPanel('mg-inbox',this)">📋 접수현황</button>
           <button class="admin-nav-btn" onclick="showMgPanel('mg-proposals',this)">📝 제안관리</button>
           <button class="admin-nav-btn" onclick="showMgPanel('mg-tracking',this)">📌 추진현황</button>
+          <button class="admin-nav-btn" onclick="showMgPanel('mg-exec',this)">🚀 실행상</button>
           <button class="admin-nav-btn" onclick="showMgPanel('mg-notice',this)">📢 공지설정</button>
         </div>
         <button class="btn-cancel" onclick="manageLogout()">로그아웃</button>
@@ -885,6 +967,23 @@
             <h2 class="section-title-text" style="font-size:17px">전체 제안 관리</h2>
           </div>
           <p style="color:#888;font-size:13px">기존 목록 탭의 관리자 모드와 동일합니다. 목록 탭에서 관리하세요.</p>
+        </div>
+      </div>
+      <!-- 실행상 관리 (접수 · 증빙 · 심사 순위 · 우수 선정) -->
+      <div id="mg-exec" class="admin-panel">
+        <div class="card" style="padding:20px 24px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+            <div class="section-title-bar" style="margin:0;padding:0;border:none">
+              <div class="section-title-icon">🚀</div>
+              <h2 class="section-title-text" style="font-size:17px">우수 제안실행상 관리</h2>
+            </div>
+            <button class="btn-cancel" onclick="loadMgExec(true)" style="padding:6px 14px;font-size:12px">🔄 새로고침</button>
+          </div>
+          <p style="font-size:12.5px;color:#64748b;margin:0 0 12px;line-height:1.7">
+            심사위원이 채점한 점수의 평균(심사위원 5명 이상이면 최고·최저 제외)으로 순위를 매깁니다.
+            <b>우수 제안실행은 최대 3건</b>까지 선정할 수 있고, 선정 결과는 [접수 확인] 화면에 공개됩니다.
+          </p>
+          <div id="mgExecBody"><p style="text-align:center;color:#aaa;padding:20px">불러오는 중...</p></div>
         </div>
       </div>
       <!-- 추진현황 관리 -->

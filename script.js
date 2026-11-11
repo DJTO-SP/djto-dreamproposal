@@ -2166,6 +2166,7 @@ function loadJudgeItems() {
 function renderJudgeWork() {
   document.getElementById('judge-login-card').style.display = 'none';
   document.getElementById('judge-work').style.display = 'block';
+  if (typeof onJudgeLoggedIn_ === 'function') onJudgeLoggedIn_();   // 심사 종류 전환 바 표시 (exec.js)
   document.getElementById('tjd-name').textContent = _judgeInfo.name;
   // 저장 = 임시저장 + 제출완료 (둘 다 저장된 상태)
   var saved = _judgeItems.filter(function(it){
@@ -2466,6 +2467,7 @@ function judgeLogout() {
   document.getElementById('judge-login-card').style.display = 'block';
   document.getElementById('judge-work').style.display = 'none';
   document.getElementById('judge-code').value = '';
+  if (typeof onJudgeLoggedOut_ === 'function') onJudgeLoggedOut_();   // 실행상 심사 상태 초기화 (exec.js)
   document.getElementById('judge-login-err').style.display = 'none';
 }
 
@@ -2563,6 +2565,7 @@ function showMgPanel(id, btn) {
   if (id === 'mg-inbox') renderMgInbox();
   if (id === 'mg-tracking') { loadTracking().then(function() { initMgTracking(); }); }
   if (id === 'mg-notice') loadNoticeAdmin();
+  if (id === 'mg-exec' && typeof loadMgExec === 'function') loadMgExec(true);
 }
 
 // 관리자 접수현황 — 새 운영시트(제안/검토/심사) 통합 조회
