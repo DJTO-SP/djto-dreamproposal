@@ -707,3 +707,10 @@ textarea.fi { resize:vertical; }
 .xjd-file-open { font-size: 12px; font-weight: 600; color: var(--blue); text-decoration: none; white-space: nowrap; }
 .xjd-preview { margin-top: 10px; height: 78vh; min-height: 560px; border: 1.5px solid #d5dbe8; border-radius: 8px; overflow: hidden; }
 .xjd-preview iframe { width: 100%; height: 100%; border: 0; display: block; }
+/* 우수실행상 배점표: 점수 칸 폭 동일 + 항목 설명 칸 넓게 */
+.tjd-score-table.xjd-score-table { table-layout: fixed; }
+.xjd-score-table th:first-child { width: 42%; white-space: normal; }
+.xjd-score-table td { width: 11.6%; }
+.xjd-score-table .xjd-desc { max-width: none; }
+.xjd-score-table label { padding: 6px 2px; }
+.xjd-score-table .tjd-score-label { font-size: 11px; word-break: keep-all; }

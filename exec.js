@@ -627,14 +627,17 @@ function renderXjdView(idx) {
   html += '<div class="tjd-tabs">' +
     '<button type="button" class="tjd-tab' + (_xjdTab === 'text' ? ' on' : '') + '" onclick="setXjdTab(\'text\')">📝 실행 내용</button>' +
     '<button type="button" class="tjd-tab' + (_xjdTab === 'files' ? ' on' : '') + '" onclick="setXjdTab(\'files\')">📎 증빙자료 (' + nFiles + ')</button>' +
-    (origUrl ? '<button type="button" class="tjd-tab' + (_xjdTab === 'orig' ? ' on' : '') + '" onclick="setXjdTab(\'orig\')">📄 원 제안서</button>' : '') +
+    (origUrl ? '<button type="button" class="tjd-tab' + (_xjdTab === 'orig' ? ' on' : '') + '" onclick="setXjdTab(\'orig\')">📄 제안서 원본</button>' : '') +
+    (origUrl && _xjdTab === 'orig' ? '<a class="tjd-newwin" href="' + execEsc_(origUrl) + '" target="_blank" rel="noopener">↗ 새 창에서 크게 보기</a>' : '') +
     '</div>';
 
   if (_xjdTab === 'orig' && origUrl) {
-    html += '<div class="tjd-view-body pdf"><iframe src="' + execEsc_(origUrl) + '"></iframe></div>';
+    // #view=FitH : 가로 폭에 맞춰 크게 표시
+    html += '<div class="tjd-view-body pdf"><iframe src="' + execEsc_(origUrl) + '#view=FitH"></iframe></div>';
   } else if (_xjdTab === 'files') {
     html += '<div class="tjd-view-body">';
     if (!nFiles && !it.link) html += '<p class="mine-empty">제출된 증빙자료가 없습니다.</p>';
+    if (nFiles) html += '<div class="lbl-hint" style="margin:0 0 8px">파일명을 누르면 아래에 미리보기가 표시됩니다.</div>';
     (it.files || []).forEach(function(f, i) {
       html += '<div class="xjd-file' + (i === _xjdFile ? ' on' : '') + '">' +
         '<button type="button" class="xjd-file-btn" onclick="pickXjdFile(' + i + ')">📄 ' + execEsc_(f.name) + '</button>' +
@@ -645,8 +648,6 @@ function renderXjdView(idx) {
       var fid = execDriveId_(it.files[_xjdFile].url);
       if (fid) html += '<div class="xjd-preview"><iframe src="https://drive.google.com/file/d/' + fid + '/preview" allow="autoplay"></iframe></div>' +
         '<div class="lbl-hint" style="margin-top:6px">※ 한글(HWP) 등 일부 형식은 미리보기가 안 될 수 있습니다. 그때는 [↗ 새 창]으로 내려받아 확인하세요.</div>';
-    } else if (nFiles) {
-      html += '<div class="lbl-hint" style="margin-top:8px">파일명을 누르면 아래에 미리보기가 표시됩니다.</div>';
     }
     html += '</div>';
   } else {
@@ -670,7 +671,7 @@ function renderXjdScore(idx) {
   var html = '<div class="rv-opinion-receipt">접수번호 <b>' + execEsc_(it.execNo) + '</b>' +
     (it.myStatus === '임시저장' ? ' <span class="tjd-saved-tag">저장됨 · 수정 후 다시 저장 가능</span>' : '') + '</div>';
 
-  html += '<table class="tjd-score-table"><tbody>';
+  html += '<table class="tjd-score-table xjd-score-table"><tbody>';
   EXEC_SCORE_DEF.forEach(function(def) {
     html += '<tr><th>' + def.name + '<span class="max">(' + def.max + '점)</span>' +
       '<div class="xjd-desc">' + def.desc.map(function(d) { return '❍ ' + d; }).join('<br>') + '</div></th>';
