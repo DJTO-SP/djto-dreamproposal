@@ -50,6 +50,8 @@ function loadFromSheet() {
           source: r.source || ''
         };
       });
+      // 제목이 빈 행 제거 — 운영 시트(제안)의 접수 행이 공개 목록에 빈 줄로 섞여 들어오는 것을 막음
+      DATA = DATA.filter(function(d) { return d.title; });
       // 비관리자: 심사중 제안 숨기기 (서버에서도 필터링하지만 이중 보호)
       if (!isAdmin) {
         DATA = DATA.filter(function(d) { return d.award !== '심사중' && d.award !== '접수완료'; });
